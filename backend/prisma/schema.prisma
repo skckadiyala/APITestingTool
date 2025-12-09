@@ -1,0 +1,128 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id @default(uuid())
+  email         String      @unique
+  passwordHash  String      @map("password_hash")
+  name          String?
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  
+  workspaces    Workspace[]
+  requestHistory RequestHistory[]
+  
+  @@map("users")
+}
+
+model Workspace {
+  id          String        @id @default(uuid())
+  name        String
+  ownerId     String        @map("owner_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  
+  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  collections Collection[]
+  environments Environment[]
+  
+  @@map("workspaces")
+}
+
+model Collection {
+  id              String       @id @default(uuid())
+  name            String
+  description     String?
+  workspaceId     String       @map("workspace_id")
+  parentFolderId  String?      @map("parent_folder_id")
+  type            CollectionType
+  orderIndex      Int          @default(0) @map("order_index")
+  shareToken      String?      @unique @map("share_token")
+  isShared        Boolean      @default(false) @map("is_shared")
+  variables       Json?        @default("[]")
+  preRequestScript String?     @map("pre_request_script")
+  testScript      String?      @map("test_script")
+  auth            Json?        @default("{}")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  
+  workspace       Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parentFolder    Collection?  @relation("CollectionHierarchy", fields: [parentFolderId], references: [id], onDelete: Cascade)
+  childFolders    Collection[] @relation("CollectionHierarchy")
+  requests        Request[]
+  
+  @@map("collections")
+}
+
+enum CollectionType {
+  COLLECTION
+  FOLDER
+}
+
+model Request {
+  id              String    @id @default(uuid())
+  name            String
+  method          String
+  url             String
+  collectionId    String    @map("collection_id")
+  requestBodyId   String?   @map("request_body_id")
+  params          Json?     @default("[]")
+  headers         Json?     @default("[]")
+  body            Json?
+  auth            Json?     @default("{}")
+  orderIndex      Int       @default(0) @map("order_index")
+  description     String?
+  testScript      String?   @map("test_script")
+  preRequestScript String?  @map("pre_request_script")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  
+  collection      Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  history         RequestHistory[]
+  
+  @@map("requests")
+}
+
+model Environment {
+  id          String    @id @default(uuid())
+  name        String
+  workspaceId String    @map("workspace_id")
+  variables   Json      @default("[]")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  
+  @@map("environments")
+}
+
+model RequestHistory {
+  id              String    @id @default(uuid())
+  requestId       String?   @map("request_id")
+  userId          String?   @map("user_id")
+  method          String
+  url             String
+  requestBodyId   String    @map("request_body_id")
+  responseBodyId  String?   @map("response_body_id")
+  statusCode      Int?      @map("status_code")
+  responseTime    Int?      @map("response_time")
+  executedAt      DateTime  @default(now()) @map("executed_at")
+  
+  request         Request?  @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  user            User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("request_history")
+  @@index([userId, executedAt])
+  @@index([requestId])
+  @@index([method])
+  @@index([statusCode])
+}

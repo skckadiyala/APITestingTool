@@ -1,0 +1,163 @@
+import { create } from 'zustand';
+import type { CollectionRequest } from '../services/collectionService';
+
+export interface Tab {
+  id: string;
+  name: string;
+  isDirty: boolean;
+  isUntitled: boolean;
+  // Request data
+  method: string;
+  url: string;
+  params?: Array<{ key: string; value: string; enabled?: boolean }>;
+  headers?: Array<{ key: string; value: string }>;
+  body?: { type: string; content: any };
+  auth?: { type: string };
+  testScript?: string;
+  preRequestScript?: string;
+  // Reference to saved request
+  requestId?: string;
+  collectionId?: string;
+}
+
+interface TabState {
+  tabs: Tab[];
+  activeTabId: string | null;
+
+  // Actions
+  createTab: (tab?: Partial<Tab>) => void;
+  closeTab: (tabId: string) => void;
+  setActiveTab: (tabId: string) => void;
+  updateTab: (tabId: string, updates: Partial<Tab>) => void;
+  loadRequestInTab: (request: CollectionRequest) => void;
+  clearAllTabs: () => void;
+}
+
+let tabCounter = 1;
+
+export const useTabStore = create<TabState>((set, get) => ({
+  tabs: [],
+  activeTabId: null,
+
+  createTab: (tab = {}) => {
+    const newTab: Tab = {
+      id: `tab-${Date.now()}-${tabCounter++}`,
+      name: tab.name || `New Request ${tabCounter}`,
+      isDirty: false,
+      isUntitled: true,
+      method: tab.method || 'GET',
+      url: tab.url || '',
+      params: tab.params || [],
+      headers: tab.headers || [],
+      body: tab.body || { type: 'json', content: '' },
+      auth: tab.auth || { type: 'noauth' },
+      testScript: tab.testScript || '',
+      preRequestScript: tab.preRequestScript || '',
+      ...tab,
+    };
+
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTabId: newTab.id,
+    }));
+  },
+
+  closeTab: (tabId: string) => {
+    const { tabs, activeTabId } = get();
+    const newTabs = tabs.filter((t) => t.id !== tabId);
+    
+    // If closing the active tab, activate the previous or next tab
+    let newActiveTabId = activeTabId;
+    if (activeTabId === tabId) {
+      const closedIndex = tabs.findIndex((t) => t.id === tabId);
+      if (newTabs.length > 0) {
+        // Try to activate the tab before the closed one, or the first tab
+        const newIndex = closedIndex > 0 ? closedIndex - 1 : 0;
+        newActiveTabId = newTabs[newIndex]?.id || null;
+      } else {
+        newActiveTabId = null;
+      }
+    }
+
+    set({ tabs: newTabs, activeTabId: newActiveTabId });
+  },
+
+  setActiveTab: (tabId: string) => {
+    set({ activeTabId: tabId });
+  },
+
+  updateTab: (tabId: string, updates: Partial<Tab>) => {
+    set((state) => ({
+      tabs: state.tabs.map((tab) =>
+        tab.id === tabId
+          ? { ...tab, ...updates, isDirty: true }
+          : tab
+      ),
+    }));
+  },
+
+  loadRequestInTab: (request: CollectionRequest) => {
+    const { tabs, activeTabId } = get();
+    
+    // Check if this request is already open in a tab
+    const existingTab = tabs.find((t) => t.requestId === request.id);
+    if (existingTab) {
+      set({ activeTabId: existingTab.id });
+      return;
+    }
+
+    // If there's an active untitled and clean tab, replace it
+    const activeTab = tabs.find((t) => t.id === activeTabId);
+    if (activeTab && activeTab.isUntitled && !activeTab.isDirty) {
+      set((state) => ({
+        tabs: state.tabs.map((tab) =>
+          tab.id === activeTabId
+            ? {
+                ...tab,
+                name: request.name,
+                method: request.method,
+                url: request.url,
+                params: request.params || [],
+                headers: request.headers || [],
+                body: request.body || { type: 'json', content: '' },
+                auth: request.auth || { type: 'noauth' },
+                testScript: request.testScript || '',
+                preRequestScript: request.preRequestScript || '',
+                requestId: request.id,
+                collectionId: request.collectionId,
+                isUntitled: false,
+                isDirty: false,
+              }
+            : tab
+        ),
+      }));
+    } else {
+      // Create a new tab for this request
+      const newTab: Tab = {
+        id: `tab-${Date.now()}-${tabCounter++}`,
+        name: request.name,
+        isDirty: false,
+        isUntitled: false,
+        method: request.method,
+        url: request.url,
+        params: request.params || [],
+        headers: request.headers || [],
+        body: request.body || { type: 'json', content: '' },
+        auth: request.auth || { type: 'noauth' },
+        testScript: request.testScript || '',
+        preRequestScript: request.preRequestScript || '',
+        requestId: request.id,
+        collectionId: request.collectionId,
+      };
+
+      set((state) => ({
+        tabs: [...state.tabs, newTab],
+        activeTabId: newTab.id,
+      }));
+    }
+  },
+
+  clearAllTabs: () => {
+    set({ tabs: [], activeTabId: null });
+  },
+}));

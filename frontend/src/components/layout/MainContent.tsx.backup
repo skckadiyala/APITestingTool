@@ -1,0 +1,389 @@
+import { useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+import URLBar from '../request/URLBar';
+import RequestTabs from '../request/RequestTabs';
+import { type KeyValuePair } from '../request/KeyValueEditor';
+import { type BodyType } from '../request/BodyEditor';
+import { requestService, type ExecutionResult, type ExecutionResponse } from '../../services/requestService';
+
+type TabType = 'params' | 'headers' | 'body' | 'auth' | 'pre-request' | 'tests';
+type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2';
+
+export default function MainContent() {
+  // Request state
+  const [method, setMethod] = useState('GET');
+  const [url, setUrl] = useState('https://api.example.com/users');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  
+  // Tab state
+  const [activeTab, setActiveTab] = useState<TabType>('params');
+  
+  // Request configuration state
+  const [params, setParams] = useState<KeyValuePair[]>([
+    { id: '1', key: 'page', value: '1', enabled: true },
+    { id: '2', key: 'limit', value: '10', enabled: true },
+  ]);
+  
+  const [headers, setHeaders] = useState<KeyValuePair[]>([
+    { id: '1', key: 'Content-Type', value: 'application/json', enabled: true },
+    { id: '2', key: 'Accept', value: 'application/json', enabled: true },
+  ]);
+  
+  const [bodyType, setBodyType] = useState<BodyType>('json');
+  const [bodyContent, setBodyContent] = useState(`{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "role": "user"
+}`);
+  
+  const [authType, setAuthType] = useState<AuthType>('noauth');
+  const [preRequestScript, setPreRequestScript] = useState(`// Pre-request script
+// Execute code before sending the request
+
+pm.environment.set("timestamp", Date.now());
+console.log("Request will be sent to:", pm.request.url);`);
+  
+  const [testScript, setTestScript] = useState(`// Test script
+// Validate the response
+
+pm.test("Status code is 200", function () {
+  pm.response.to.have.status(200);
+});
+
+pm.test("Response has correct structure", function () {
+  const jsonData = pm.response.json();
+  pm.expect(jsonData).to.have.property("success");
+  pm.expect(jsonData.data).to.be.an("array");
+});`);
+
+  // Response state
+  const [responseTab, setResponseTab] = useState<'body' | 'headers' | 'cookies'>('body');
+  const [hasResponse, setHasResponse] = useState(false);
+  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
+
+  const handleSend = async () => {
+    if (!url.trim()) {
+      toast.error('Please enter a URL');
+      return;
+    }
+
+    setIsLoading(true);
+    setHasResponse(false);
+
+    try {
+      const result = await requestService.execute({
+        method: method as any,
+        url: url.trim(),
+  return (
+    <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      {/* Toast Notifications */}
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#333',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+          },
+          error: {
+            duration: 5000,
+          },
+        }}
+      />
+      
+      {/* URL Bar */}
+      <URLBare: bodyType,
+          content: bodyContent,
+        },
+        auth: {
+          type: authType,
+          // Add auth config based on authType when implemented
+        },
+        timeout: 30000,
+        followRedirects: true,
+        maxRedirects: 5,
+        validateSSL: true,
+      });
+
+      setExecutionResult(result);
+      setHasResponse(true);
+
+      if (result.success) {
+        const timing = result.response?.timing.total || 0;
+        toast.success(`Request completed in ${timing}ms`, {
+          icon: '✅',
+          duration: 3000,
+        });
+      } else {
+        toast.error(result.error?.message || 'Request failed', {
+          icon: '❌',
+          duration: 5000,
+        });
+      }
+    } catch (error: any) {
+      console.error('Request error:', error);
+      toast.error(error.message || 'Failed to execute request', {
+        icon: '❌',
+        duration: 5000,
+      });
+      setExecutionResult({
+        success: false,
+        request: {
+          method: method as any,
+          url: url.trim(),
+          headers: {},
+        },
+        error: {
+          message: error.message || 'Failed to execute request',
+        },
+        executedAt: new Date().toISOString(),
+      });
+      setHasResponse(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = () => {
+    setIsSaved(true);
+    setTimeout(() => setIsSaved(false), 2000);
+  };
+
+  return (
+    <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      {/* URL Bar */}
+      <URLBar
+        method={method}
+        url={url}
+        onMethodChange={setMethod}
+        onUrlChange={setUrl}
+        onSend={handleSend}
+        onSave={handleSave}
+        isLoading={isLoading}
+        isSaved={isSaved}
+      />
+
+      {/* Request Tabs */}
+      <div className="flex-1 overflow-hidden">
+        <RequestTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+      {/* Response Area */}
+      {hasResponse && executionResult && (
+        <div className="h-80 border-t-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 flex flex-col">
+          <ResponseViewer 
+            responseTab={responseTab} 
+            setResponseTab={setResponseTab}
+            result={executionResult}
+          />
+        </div>
+      )}  preRequestScript={preRequestScript}
+function ResponseViewer({ 
+  responseTab, 
+  setResponseTab,
+  result
+}: { 
+  responseTab: 'body' | 'headers' | 'cookies';
+  setResponseTab: (tab: 'body' | 'headers' | 'cookies') => void;
+  result: ExecutionResult;
+}) {
+  const formatBytes = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  };
+
+  const formatJSON = (data: any): string => {
+    try {
+      if (typeof data === 'string') {
+  return (
+    <>
+      {/* Response Status Bar */}
+      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Response</span>
+          {result.success && result.response ? (
+            <>
+              <span className={`text-sm px-2 py-0.5 rounded font-medium ${getStatusColor(result.response.status)}`}>
+                {result.response.status} {result.response.statusText}
+              </span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {result.response.timing.total} ms
+              </span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {formatBytes(result.response.size.total)}
+              </span>
+            </>
+          ) : (
+            <span className="text-sm px-2 py-0.5 rounded bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 font-medium">
+              Error
+            </span>
+          )}
+        </div> >= 300 && status < 400) return 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300';
+    if (status >= 400 && status < 500) return 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300';
+    return 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300';
+  };      onPreRequestScriptChange={setPreRequestScript}
+          onTestScriptChange={setTestScript}
+        />
+      </div>
+
+      {/* Response Area */}
+      {hasResponse && (
+        <div className="h-80 border-t-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 flex flex-col">
+          <ResponseViewer responseTab={responseTab} setResponseTab={setResponseTab} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResponseViewer({ 
+  responseTab, 
+  setResponseTab 
+}: { 
+  responseTab: 'body' | 'headers' | 'cookies';
+  setResponseTab: (tab: 'body' | 'headers' | 'cookies') => void;
+}) {
+  const TabButton = ({ tab, label }: { tab: 'body' | 'headers' | 'cookies'; label: string }) => (
+    <button
+      onClick={() => setResponseTab(tab)}
+      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+        responseTab === tab
+          ? 'border-primary-600 text-primary-600 dark:text-primary-400'
+          : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+      }`}
+    >
+      {label}
+      {/* Response Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {responseTab === 'body' && (
+          <>
+            {result.success && result.response ? (
+              <pre className="text-sm font-mono text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
+                {formatJSON(result.response.body)}
+              </pre>
+            ) : (
+              <div className="text-sm text-red-600 dark:text-red-400">
+                <div className="font-medium mb-2">Error: {result.error?.message}</div>
+                {result.error?.code && (
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">
+                    Code: {result.error.code}
+                  </div>
+                )}
+                {result.response && (
+                  <pre className="mt-4 text-xs text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+                    {formatJSON(result.response.body)}
+                  </pre>
+                )}
+              </div>
+            )}
+          </>
+        )}
+        {responseTab === 'headers' && (
+          <div className="space-y-2 text-sm">
+            {result.success && result.response ? (
+              Object.entries(result.response.headers).map(([key, value]) => (
+                <div key={key} className="grid grid-cols-[200px_1fr] gap-2">
+                  <span className="font-medium text-gray-700 dark:text-gray-300 break-words">{key}:</span>
+                  <span className="text-gray-600 dark:text-gray-400 break-words">{String(value)}</span>
+                </div>
+              ))
+            ) : (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                No headers available
+              </div>
+            )}
+          </div>
+        )}
+        {responseTab === 'cookies' && (
+          <div className="space-y-3 text-sm">
+            {result.success && result.response && result.response.cookies.length > 0 ? (
+              result.response.cookies.map((cookie, index) => (
+                <div key={index} className="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <div className="font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    {cookie.name}
+                  </div>
+                  <div className="grid grid-cols-[100px_1fr] gap-2 text-xs">
+                    <span className="text-gray-600 dark:text-gray-400">Value:</span>
+                    <span className="text-gray-900 dark:text-gray-100 break-words">{cookie.value}</span>
+                    {cookie.domain && (
+                      <>
+                        <span className="text-gray-600 dark:text-gray-400">Domain:</span>
+                        <span className="text-gray-900 dark:text-gray-100">{cookie.domain}</span>
+                      </>
+                    )}
+                    {cookie.path && (
+                      <>
+                        <span className="text-gray-600 dark:text-gray-400">Path:</span>
+                        <span className="text-gray-900 dark:text-gray-100">{cookie.path}</span>
+                      </>
+                    )}
+                    {cookie.expires && (
+                      <>
+                        <span className="text-gray-600 dark:text-gray-400">Expires:</span>
+                        <span className="text-gray-900 dark:text-gray-100">{cookie.expires}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                No cookies in response
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Response Content */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {responseTab === 'body' && (
+          <pre className="text-sm font-mono text-gray-900 dark:text-gray-100">
+{`{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com"
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "email": "jane@example.com"
+    }
+  ]
+}`}
+          </pre>
+        )}
+        {responseTab === 'headers' && (
+          <div className="space-y-2 text-sm">
+            <div className="grid grid-cols-2 gap-2">
+              <span className="font-medium text-gray-700 dark:text-gray-300">Content-Type:</span>
+              <span className="text-gray-600 dark:text-gray-400">application/json</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <span className="font-medium text-gray-700 dark:text-gray-300">Content-Length:</span>
+              <span className="text-gray-600 dark:text-gray-400">2345</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <span className="font-medium text-gray-700 dark:text-gray-300">Cache-Control:</span>
+              <span className="text-gray-600 dark:text-gray-400">no-cache</span>
+            </div>
+          </div>
+        )}
+        {responseTab === 'cookies' && (
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            No cookies in response
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
