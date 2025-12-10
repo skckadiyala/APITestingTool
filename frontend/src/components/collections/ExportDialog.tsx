@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import collectionService from '../../services/collectionService';
+import { useWorkspaceStore } from '../../stores/workspaceStore';
 
 interface ExportDialogProps {
   collectionId: string;
@@ -9,16 +10,20 @@ interface ExportDialogProps {
 }
 
 export default function ExportDialog({ collectionId, collectionName, onClose }: ExportDialogProps) {
+  const { currentWorkspace } = useWorkspaceStore();
   const [format, setFormat] = useState<'postman' | 'curl' | 'openapi' | 'zip'>('postman');
   const [includeEnvironmentVariables, setIncludeEnvironmentVariables] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExport = async () => {
+    if (!currentWorkspace) return;
+    
     try {
       setIsExporting(true);
       
       const blob = await collectionService.exportCollection(
         collectionId,
+        currentWorkspace.id,
         format,
         includeEnvironmentVariables
       );

@@ -6,15 +6,19 @@ import { ImportService } from '../services/ImportService';
 import { CollectionRunner } from '../services/CollectionRunner';
 import multer from 'multer';
 
-const router = Router();
+// mergeParams: true allows access to params from parent route (workspaceId)
+const router = Router({ mergeParams: true });
 
 /**
  * POST /api/v1/collections
+ * POST /api/v1/workspaces/:workspaceId/collections
  * Create a new collection
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, description, workspaceId, parentFolderId, type } = req.body;
+    const { name, description, parentFolderId, type } = req.body;
+    // Support both workspace-scoped route and legacy route
+    const workspaceId = req.params.workspaceId || req.body.workspaceId;
 
     if (!name || !workspaceId || !type) {
       res.status(400).json({
@@ -46,15 +50,17 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
 /**
  * GET /api/v1/collections?workspaceId=xxx
+ * GET /api/v1/workspaces/:workspaceId/collections
  * List all collections in workspace
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { workspaceId } = req.query;
+    // Support both workspace-scoped route (/workspaces/:workspaceId/collections) and legacy route
+    const workspaceId = req.params.workspaceId || req.query.workspaceId;
 
     if (!workspaceId) {
       res.status(400).json({
-        error: 'Missing required query parameter: workspaceId',
+        error: 'Missing required parameter: workspaceId',
       });
       return;
     }

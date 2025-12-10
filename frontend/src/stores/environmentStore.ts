@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import environmentService, { type Environment, type EnvironmentVariable } from '../services/environmentService';
 import toast from 'react-hot-toast';
+import { useWorkspaceStore } from './workspaceStore';
 
 interface EnvironmentState {
   environments: Environment[];
   activeEnvironmentId: string | null;
+  currentWorkspaceId: string;
   loading: boolean;
   error: string | null;
 
@@ -21,11 +23,18 @@ interface EnvironmentState {
 export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   environments: [],
   activeEnvironmentId: null,
+  currentWorkspaceId: '',
   loading: false,
   error: null,
 
   loadEnvironments: async (workspaceId: string) => {
-    set({ loading: true, error: null });
+    // Prevent concurrent loads
+    const state = get();
+    if (state.loading) {
+      return;
+    }
+    
+    set({ loading: true, error: null, currentWorkspaceId: workspaceId });
     try {
       const environments = await environmentService.listEnvironments(workspaceId);
       set({ environments, loading: false });
@@ -41,6 +50,10 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
       set((state) => ({
         environments: [...state.environments, newEnvironment],
       }));
+      
+      // Refresh workspace counts
+      useWorkspaceStore.getState().fetchWorkspaces();
+      
       toast.success('Environment created successfully');
       return newEnvironment;
     } catch (error: any) {
@@ -51,7 +64,8 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
 
   updateEnvironment: async (id: string, data) => {
     try {
-      const updated = await environmentService.updateEnvironment(id, data);
+      const workspaceId = get().currentWorkspaceId;
+      const updated = await environmentService.updateEnvironment(id, workspaceId, data);
       set((state) => ({
         environments: state.environments.map((env) =>
           env.id === id ? updated : env
@@ -65,11 +79,16 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
 
   deleteEnvironment: async (id: string) => {
     try {
-      await environmentService.deleteEnvironment(id);
+      const workspaceId = get().currentWorkspaceId;
+      await environmentService.deleteEnvironment(id, workspaceId);
       set((state) => ({
         environments: state.environments.filter((env) => env.id !== id),
         activeEnvironmentId: state.activeEnvironmentId === id ? null : state.activeEnvironmentId,
       }));
+      
+      // Refresh workspace counts
+      useWorkspaceStore.getState().fetchWorkspaces();
+      
       toast.success('Environment deleted successfully');
     } catch (error: any) {
       toast.error('Failed to delete environment');
@@ -78,10 +97,15 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
 
   duplicateEnvironment: async (id: string) => {
     try {
-      const duplicate = await environmentService.duplicateEnvironment(id);
+      const workspaceId = get().currentWorkspaceId;
+      const duplicate = await environmentService.duplicateEnvironment(id, workspaceId);
       set((state) => ({
         environments: [...state.environments, duplicate],
       }));
+      
+      // Refresh workspace counts
+      useWorkspaceStore.getState().fetchWorkspaces();
+      
       toast.success('Environment duplicated successfully');
     } catch (error: any) {
       toast.error('Failed to duplicate environment');

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useTabStore } from '../../stores/tabStore';
+import { useWorkspaceStore } from '../../stores/workspaceStore';
 import type { Collection, CollectionRequest } from '../../services/collectionService';
 import type { MainContentRef } from './MainContent';
 import ExportDialog from '../collections/ExportDialog';
@@ -192,9 +193,10 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
   };
 
   useEffect(() => {
-    // Load collections on mount
+    // Load collections when workspace changes
     loadCollections(currentWorkspaceId);
-  }, [loadCollections, currentWorkspaceId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentWorkspaceId]); // Only reload when workspace changes, not when loadCollections function changes
 
   // Filter collections based on search query
   const filterCollections = (collections: Collection[]): Collection[] => {
@@ -493,6 +495,7 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
           onClose={() => setShowImportDialog(false)}
           onImportComplete={() => {
             loadCollections(currentWorkspaceId);
+            useWorkspaceStore.getState().fetchWorkspaces(); // Refresh workspace counts
           }}
         />
       )}

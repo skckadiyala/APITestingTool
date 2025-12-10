@@ -96,6 +96,57 @@ export class RequestExecutor {
       config = await this.resolveVariables(config, environmentId, collectionId);
     }
 
+    // Execute pre-request script if provided
+    if (config.preRequestScript && config.preRequestScript.trim()) {
+      try {
+        // Create a temporary result object for pre-request script execution
+        const tempResult: ExecutionResult = {
+          success: true,
+          request: {
+            method: config.method,
+            url: config.url,
+            headers: this.buildHeaders(config.headers, config.auth),
+            body: config.body,
+          },
+          response: undefined,
+          executedAt: new Date(),
+        };
+
+        const preRequestResults = await this.testEngine.executeTests(
+          config.preRequestScript,
+          tempResult,
+          currentEnvVariables,
+          currentCollectionVariables
+        );
+
+        // Apply environment variable updates from pre-request script
+        if (environmentId && preRequestResults.environmentUpdates) {
+          await this.updateEnvironmentVariables(environmentId, preRequestResults.environmentUpdates);
+          // Update current variables for request resolution
+          Object.assign(currentEnvVariables, preRequestResults.environmentUpdates);
+          // Re-resolve variables with updated environment
+          config = await this.resolveVariables(config, environmentId, collectionId);
+        }
+
+        // Apply collection variable updates from pre-request script
+        if (collectionId && preRequestResults.collectionUpdates) {
+          await this.updateCollectionVariables(collectionId, preRequestResults.collectionUpdates);
+          // Update current variables
+          Object.assign(currentCollectionVariables, preRequestResults.collectionUpdates);
+          // Re-resolve variables with updated collection
+          config = await this.resolveVariables(config, environmentId, collectionId);
+        }
+
+        console.log('Pre-request script executed:', {
+          environmentUpdates: preRequestResults.environmentUpdates,
+          collectionUpdates: preRequestResults.collectionUpdates,
+          consoleOutput: preRequestResults.consoleOutput,
+        });
+      } catch (error: any) {
+        console.error('Pre-request script execution failed:', error);
+      }
+    }
+
     try {
       // Build the request
       const axiosConfig = this.buildAxiosConfig(config);

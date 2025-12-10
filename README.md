@@ -271,6 +271,16 @@ docker-compose ps                 # Check status
 
 ## 🐛 Troubleshooting
 
+### Docker daemon not running error?
+If you get "Cannot connect to the Docker daemon" error:
+
+1. **Open Docker Desktop** - Make sure Docker Desktop app is running
+2. **Wait for Docker to start** - Look for the whale icon in your menu bar
+3. **Run docker-compose**:
+   ```bash
+   docker-compose up -d
+   ```
+
 ### Databases not connecting?
 ```bash
 # Check if containers are running

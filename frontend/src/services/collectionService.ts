@@ -99,7 +99,7 @@ class CollectionService {
    * Create a new collection
    */
   async createCollection(data: CreateCollectionDto): Promise<Collection> {
-    const response = await axios.post(`${API_BASE_URL}/collections`, data);
+    const response = await axios.post(`${API_BASE_URL}/workspaces/${data.workspaceId}/collections`, data);
     return response.data;
   }
 
@@ -107,17 +107,15 @@ class CollectionService {
    * Get all collections in a workspace
    */
   async getCollections(workspaceId: string): Promise<{ collections: Collection[]; total: number }> {
-    const response = await axios.get(`${API_BASE_URL}/collections`, {
-      params: { workspaceId },
-    });
+    const response = await axios.get(`${API_BASE_URL}/workspaces/${workspaceId}/collections`);
     return response.data;
   }
 
   /**
    * Get a collection by ID
    */
-  async getCollectionById(id: string, nested = true): Promise<Collection> {
-    const response = await axios.get(`${API_BASE_URL}/collections/${id}`, {
+  async getCollectionById(id: string, workspaceId: string, nested = true): Promise<Collection> {
+    const response = await axios.get(`${API_BASE_URL}/workspaces/${workspaceId}/collections/${id}`, {
       params: { nested },
     });
     return response.data;
@@ -126,63 +124,63 @@ class CollectionService {
   /**
    * Update a collection
    */
-  async updateCollection(id: string, data: UpdateCollectionDto): Promise<Collection> {
-    const response = await axios.put(`${API_BASE_URL}/collections/${id}`, data);
+  async updateCollection(id: string, workspaceId: string, data: UpdateCollectionDto): Promise<Collection> {
+    const response = await axios.put(`${API_BASE_URL}/workspaces/${workspaceId}/collections/${id}`, data);
     return response.data;
   }
 
   /**
    * Delete a collection
    */
-  async deleteCollection(id: string): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/collections/${id}`);
+  async deleteCollection(id: string, workspaceId: string): Promise<void> {
+    await axios.delete(`${API_BASE_URL}/workspaces/${workspaceId}/collections/${id}`);
   }
 
   /**
    * Create a folder in a collection
    */
-  async createFolder(collectionId: string, data: CreateFolderDto): Promise<Collection> {
-    const response = await axios.post(`${API_BASE_URL}/collections/${collectionId}/folders`, data);
+  async createFolder(collectionId: string, workspaceId: string, data: CreateFolderDto): Promise<Collection> {
+    const response = await axios.post(`${API_BASE_URL}/workspaces/${workspaceId}/collections/${collectionId}/folders`, data);
     return response.data;
   }
 
   /**
    * Add a request to a collection
    */
-  async addRequest(collectionId: string, data: AddRequestDto): Promise<CollectionRequest> {
-    const response = await axios.post(`${API_BASE_URL}/collections/${collectionId}/requests`, data);
+  async addRequest(collectionId: string, workspaceId: string, data: AddRequestDto): Promise<CollectionRequest> {
+    const response = await axios.post(`${API_BASE_URL}/workspaces/${workspaceId}/collections/${collectionId}/requests`, data);
     return response.data;
   }
 
   /**
    * Update an existing request
    */
-  async updateRequest(requestId: string, data: UpdateRequestDto): Promise<CollectionRequest> {
-    const response = await axios.put(`${API_BASE_URL}/collections/requests/${requestId}`, data);
+  async updateRequest(requestId: string, workspaceId: string, data: UpdateRequestDto): Promise<CollectionRequest> {
+    const response = await axios.put(`${API_BASE_URL}/workspaces/${workspaceId}/collections/requests/${requestId}`, data);
     return response.data;
   }
 
   /**
    * Move a request to a different folder/collection
    */
-  async moveRequest(requestId: string, data: MoveRequestDto): Promise<CollectionRequest> {
-    const response = await axios.put(`${API_BASE_URL}/collections/requests/${requestId}/move`, data);
+  async moveRequest(requestId: string, workspaceId: string, data: MoveRequestDto): Promise<CollectionRequest> {
+    const response = await axios.put(`${API_BASE_URL}/workspaces/${workspaceId}/collections/requests/${requestId}/move`, data);
     return response.data;
   }
 
   /**
    * Reorder items in a collection
    */
-  async reorderItems(collectionId: string, items: ReorderItemDto[]): Promise<Collection> {
-    const response = await axios.put(`${API_BASE_URL}/collections/${collectionId}/reorder`, { items });
+  async reorderItems(collectionId: string, workspaceId: string, items: ReorderItemDto[]): Promise<Collection> {
+    const response = await axios.put(`${API_BASE_URL}/workspaces/${workspaceId}/collections/${collectionId}/reorder`, { items });
     return response.data;
   }
 
   /**
    * Duplicate a collection
    */
-  async duplicateCollection(id: string): Promise<Collection> {
-    const response = await axios.post(`${API_BASE_URL}/collections/${id}/duplicate`);
+  async duplicateCollection(id: string, workspaceId: string): Promise<Collection> {
+    const response = await axios.post(`${API_BASE_URL}/workspaces/${workspaceId}/collections/${id}/duplicate`);
     return response.data;
   }
 
@@ -212,20 +210,21 @@ class CollectionService {
   /**
    * Delete a request from a collection
    */
-  async deleteRequest(requestId: string): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/collections/requests/${requestId}`);
+  async deleteRequest(requestId: string, workspaceId: string): Promise<void> {
+    await axios.delete(`${API_BASE_URL}/workspaces/${workspaceId}/collections/requests/${requestId}`);
   }
 
   /**
    * Export collection
    */
   async exportCollection(
-    collectionId: string, 
+    collectionId: string,
+    workspaceId: string,
     format: 'postman' | 'curl' | 'openapi' | 'zip',
     includeEnvironmentVariables: boolean = false
   ): Promise<Blob> {
     const response = await axios.get(
-      `${API_BASE_URL}/collections/${collectionId}/export`,
+      `${API_BASE_URL}/workspaces/${workspaceId}/collections/${collectionId}/export`,
       {
         params: { format, includeEnvironmentVariables: includeEnvironmentVariables.toString() },
         responseType: 'blob'
@@ -250,7 +249,7 @@ class CollectionService {
     }
 
     const response = await axios.post<{ message: string; result: ImportResult }>(
-      `${API_BASE_URL}/collections/import`,
+      `${API_BASE_URL}/workspaces/${workspaceId}/collections/import`,
       formData,
       {
         headers: {
