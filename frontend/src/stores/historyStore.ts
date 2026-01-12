@@ -57,7 +57,7 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   hasMore: false,
   filters: DEFAULT_FILTERS,
   isFilterPanelOpen: false,
-  isSidebarOpen: true,
+  isSidebarOpen: false,
   selectedHistoryId: null,
 
   // Load history with current filters

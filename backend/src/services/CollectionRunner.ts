@@ -10,6 +10,7 @@ export interface RunOptions {
   delay?: number;
   stopOnError?: boolean;
   folderId?: string;
+  dataFileId?: string;
 }
 
 export interface RunResult {
@@ -35,6 +36,7 @@ export interface IterationResult {
   passed: number;
   failed: number;
   totalTime: number;
+  dataRow?: any;
 }
 
 export interface CollectionRunResult {
@@ -74,6 +76,7 @@ export class CollectionRunner {
       delay = 0,
       stopOnError = false,
       folderId,
+      dataFileId,
     } = options;
 
     // Get collection
@@ -92,11 +95,32 @@ export class CollectionRunner {
       throw new Error('No requests found to execute');
     }
 
+    // Load data file if provided
+    let dataRows: any[] = [];
+    if (dataFileId) {
+      const dataFile = await prisma.dataFile.findUnique({
+        where: { id: dataFileId },
+      });
+
+      if (!dataFile) {
+        throw new Error('Data file not found');
+      }
+
+      dataRows = dataFile.parsedData as any[];
+      
+      // Override iterations with data file row count
+      if (dataRows.length > 0) {
+        options.iterations = dataRows.length;
+      }
+    }
+
+    const finalIterations = dataFileId && dataRows.length > 0 ? dataRows.length : iterations;
+
     const result: CollectionRunResult = {
       collectionId,
       collectionName: collection.name,
       startTime,
-      totalRequests: requests.length * iterations,
+      totalRequests: requests.length * finalIterations,
       totalPassed: 0,
       totalFailed: 0,
       totalTime: 0,
@@ -105,7 +129,7 @@ export class CollectionRunner {
     };
 
     // Run iterations
-    for (let i = 0; i < iterations; i++) {
+    for (let i = 0; i < finalIterations; i++) {
       if (this.cancelled) {
         result.status = 'cancelled';
         break;
@@ -120,6 +144,11 @@ export class CollectionRunner {
         totalTime: 0,
       };
 
+      // If using data file, add data row to iteration
+      if (dataFileId && dataRows.length > 0) {
+        iterationResult.dataRow = dataRows[i];
+      }
+
       // Execute requests in order
       for (const request of requests) {
         if (this.cancelled) {
@@ -130,7 +159,8 @@ export class CollectionRunner {
         const runResult = await this.executeRequest(
           request,
           collectionId,
-          environmentId
+          environmentId,
+          iterationResult.dataRow
         );
 
         iterationResult.results.push(runResult);
@@ -216,13 +246,14 @@ export class CollectionRunner {
   private async executeRequest(
     request: any,
     collectionId: string,
-    environmentId?: string
+    environmentId?: string,
+    dataRow?: any
   ): Promise<RunResult> {
     const startTime = Date.now();
 
     try {
       // Build request config
-      const config: RequestConfig = {
+      let config: RequestConfig = {
         method: request.method,
         url: request.url,
         headers: request.headers || [],
@@ -232,6 +263,11 @@ export class CollectionRunner {
         testScript: request.testScript || '',
         preRequestScript: request.preRequestScript || '',
       };
+
+      // If data row is provided, inject variables into config
+      if (dataRow) {
+        config = this.injectDataRowVariables(config, dataRow);
+      }
 
       // Execute the request
       const result = await this.executor.execute(
@@ -288,6 +324,45 @@ export class CollectionRunner {
         timestamp: new Date(),
       };
     }
+  }
+
+  /**
+   * Inject data row variables into request config
+   */
+  private injectDataRowVariables(config: RequestConfig, dataRow: any): RequestConfig {
+    const replaceVariables = (str: string): string => {
+      return str.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+        if (dataRow.hasOwnProperty(key)) {
+          return String(dataRow[key]);
+        }
+        return match; // Keep original if not found in data row
+      });
+    };
+
+    const replaceInObject = (obj: any): any => {
+      if (typeof obj === 'string') {
+        return replaceVariables(obj);
+      }
+      if (Array.isArray(obj)) {
+        return obj.map(replaceInObject);
+      }
+      if (obj && typeof obj === 'object') {
+        const result: any = {};
+        for (const key in obj) {
+          result[key] = replaceInObject(obj[key]);
+        }
+        return result;
+      }
+      return obj;
+    };
+
+    return {
+      ...config,
+      url: replaceVariables(config.url),
+      headers: replaceInObject(config.headers),
+      params: replaceInObject(config.params),
+      body: replaceInObject(config.body),
+    };
   }
 
   /**

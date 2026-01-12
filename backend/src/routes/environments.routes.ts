@@ -1,15 +1,19 @@
 import { Router, Request, Response } from 'express';
 import EnvironmentService from '../services/EnvironmentService';
 
-const router = Router();
+// mergeParams: true allows access to params from parent route (workspaceId)
+const router = Router({ mergeParams: true });
 
 /**
  * POST /api/v1/environments
+ * POST /api/v1/workspaces/:workspaceId/environments
  * Create a new environment
  */
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, workspaceId, variables } = req.body;
+    const { name, variables } = req.body;
+    // Support both workspace-scoped route and legacy route
+    const workspaceId = req.params.workspaceId || req.body.workspaceId;
 
     if (!name || !workspaceId) {
       res.status(400).json({
@@ -32,14 +36,16 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
 /**
  * GET /api/v1/environments
+ * GET /api/v1/workspaces/:workspaceId/environments
  * List all environments in a workspace
  */
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { workspaceId } = req.query;
+    // Support both workspace-scoped route (/workspaces/:workspaceId/environments) and legacy route
+    const workspaceId = req.params.workspaceId || req.query.workspaceId;
 
     if (!workspaceId) {
-      res.status(400).json({ error: 'Missing required query parameter: workspaceId' });
+      res.status(400).json({ error: 'Missing required parameter: workspaceId' });
       return;
     }
 

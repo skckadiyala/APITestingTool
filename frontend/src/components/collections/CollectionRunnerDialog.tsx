@@ -1,5 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useEnvironmentStore } from '../../stores/environmentStore';
+import { useWorkspaceStore } from '../../stores/workspaceStore';
+import { Upload, FileText, Eye } from 'lucide-react';
+import dataFileService, { type DataFile } from '../../services/dataFileService';
+import DataFileUpload from './DataFileUpload';
+import DataFilePreview from './DataFilePreview';
 
 interface CollectionRunnerDialogProps {
   collectionId: string;
@@ -14,6 +19,7 @@ export interface RunOptions {
   delay: number;
   stopOnError: boolean;
   folderId?: string;
+  dataFileId?: string;
 }
 
 export default function CollectionRunnerDialog({
@@ -22,17 +28,59 @@ export default function CollectionRunnerDialog({
   onRun,
 }: CollectionRunnerDialogProps) {
   const { environments } = useEnvironmentStore();
+  const { currentWorkspace } = useWorkspaceStore();
+  const currentWorkspaceId = currentWorkspace?.id;
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>('');
   const [iterations, setIterations] = useState(1);
   const [delay, setDelay] = useState(0);
   const [stopOnError, setStopOnError] = useState(false);
+  const [dataFiles, setDataFiles] = useState<DataFile[]>([]);
+  const [selectedDataFileId, setSelectedDataFileId] = useState<string>('');
+  const [selectedDataFile, setSelectedDataFile] = useState<DataFile | null>(null);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (currentWorkspaceId) {
+      loadDataFiles();
+    }
+  }, [currentWorkspaceId]);
+
+  useEffect(() => {
+    if (selectedDataFileId) {
+      const file = dataFiles.find((f) => f.id === selectedDataFileId);
+      setSelectedDataFile(file || null);
+    } else {
+      setSelectedDataFile(null);
+    }
+  }, [selectedDataFileId, dataFiles]);
+
+  const loadDataFiles = async () => {
+    if (!currentWorkspaceId) return;
+    try {
+      setLoading(true);
+      const files = await dataFileService.getDataFiles(currentWorkspaceId);
+      setDataFiles(files);
+    } catch (error) {
+      console.error('Failed to load data files:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadSuccess = (dataFile: DataFile) => {
+    setDataFiles([dataFile, ...dataFiles]);
+    setSelectedDataFileId(dataFile.id);
+  };
 
   const handleRun = () => {
     const options: RunOptions = {
       environmentId: selectedEnvironmentId || undefined,
-      iterations,
+      iterations: selectedDataFile ? selectedDataFile.rowCount : iterations,
       delay,
       stopOnError,
+      dataFileId: selectedDataFileId || undefined,
     };
     onRun(options);
   };
@@ -91,6 +139,59 @@ export default function CollectionRunnerDialog({
             </select>
           </div>
 
+          {/* Data File */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Data File (Optional)
+            </label>
+            <div className="flex gap-2">
+              <select
+                value={selectedDataFileId}
+                onChange={(e) => setSelectedDataFileId(e.target.value)}
+                disabled={loading}
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
+              >
+                <option value="">No Data File</option>
+                {dataFiles.map((file) => (
+                  <option key={file.id} value={file.id}>
+                    {file.name} ({file.rowCount} rows)
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => {
+                  if (!currentWorkspaceId) {
+                    alert('Please select a workspace first');
+                    return;
+                  }
+                  setShowUploadDialog(true);
+                }}
+                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                title="Upload new data file"
+              >
+                <Upload className="w-4 h-4" />
+              </button>
+              {selectedDataFile && (
+                <button
+                  onClick={() => setShowPreviewDialog(true)}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  title="Preview data file"
+                >
+                  <Eye className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {selectedDataFile ? (
+              <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+                ✓ Using {selectedDataFile.rowCount} rows from {selectedDataFile.name}
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                Upload CSV or JSON file for data-driven testing
+              </p>
+            )}
+          </div>
+
           {/* Iterations */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -100,12 +201,15 @@ export default function CollectionRunnerDialog({
               type="number"
               min="1"
               max="100"
-              value={iterations}
+              value={selectedDataFile ? selectedDataFile.rowCount : iterations}
               onChange={(e) => setIterations(parseInt(e.target.value) || 1)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              disabled={!!selectedDataFile}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Number of times to run the collection (1-100)
+              {selectedDataFile
+                ? 'Iterations set by data file row count'
+                : 'Number of times to run the collection (1-100)'}
             </p>
           </div>
 
@@ -162,6 +266,44 @@ export default function CollectionRunnerDialog({
           </button>
         </div>
       </div>
+
+      {/* Upload Dialog */}
+      {showUploadDialog && (
+        currentWorkspaceId ? (
+          <DataFileUpload
+            isOpen={showUploadDialog}
+            onClose={() => setShowUploadDialog(false)}
+            workspaceId={currentWorkspaceId}
+            onUploadSuccess={handleUploadSuccess}
+          />
+        ) : (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md mx-4">
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
+                Workspace Required
+              </h3>
+              <p className="text-gray-700 dark:text-gray-300 mb-4">
+                Please select a workspace before uploading data files.
+              </p>
+              <button
+                onClick={() => setShowUploadDialog(false)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 w-full"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )
+      )}
+
+      {/* Preview Dialog */}
+      {showPreviewDialog && (
+        <DataFilePreview
+          isOpen={showPreviewDialog}
+          onClose={() => setShowPreviewDialog(false)}
+          dataFile={selectedDataFile}
+        />
+      )}
     </div>
   );
 }

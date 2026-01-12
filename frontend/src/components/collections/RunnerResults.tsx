@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface RunResult {
   requestId: string;
@@ -23,6 +23,7 @@ interface IterationResult {
   passed: number;
   failed: number;
   totalTime: number;
+  dataRow?: any;
 }
 
 interface CollectionRunResult {
@@ -47,11 +48,27 @@ interface RunnerResultsProps {
 export default function RunnerResults({ result, onClose, onExport }: RunnerResultsProps) {
   const [selectedIteration, setSelectedIteration] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState<RunResult | null>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   const currentIteration = result.iterations[selectedIteration];
   const successRate = result.totalRequests > 0 
     ? ((result.totalPassed / result.totalRequests) * 100).toFixed(1)
     : '0';
+
+  // Close export menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+
+    if (showExportMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showExportMenu]);
 
   const getMethodColor = (method: string) => {
     const colors: Record<string, string> = {
@@ -103,24 +120,38 @@ export default function RunnerResults({ result, onClose, onExport }: RunnerResul
           </div>
           <div className="flex items-center gap-2">
             {onExport && (
-              <div className="relative group">
-                <button className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600">
+              <div className="relative" ref={exportMenuRef}>
+                <button 
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center gap-1"
+                >
                   Export
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </button>
-                <div className="hidden group-hover:block absolute right-0 mt-1 w-32 bg-white dark:bg-gray-700 rounded shadow-lg border border-gray-200 dark:border-gray-600 z-10">
-                  <button
-                    onClick={() => onExport('json')}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
-                  >
-                    Export JSON
-                  </button>
-                  <button
-                    onClick={() => onExport('html')}
-                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600"
-                  >
-                    Export HTML
-                  </button>
-                </div>
+                {showExportMenu && (
+                  <div className="absolute right-0 mt-1 w-36 bg-white dark:bg-gray-700 rounded shadow-lg border border-gray-200 dark:border-gray-600 z-10">
+                    <button
+                      onClick={() => {
+                        onExport('json');
+                        setShowExportMenu(false);
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 rounded-t"
+                    >
+                      Export JSON
+                    </button>
+                    <button
+                      onClick={() => {
+                        onExport('html');
+                        setShowExportMenu(false);
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-600 rounded-b"
+                    >
+                      Export HTML
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             <button
@@ -192,6 +223,15 @@ export default function RunnerResults({ result, onClose, onExport }: RunnerResul
                 ))}
               </select>
             </div>
+            {/* Data Row Info */}
+            {currentIteration?.dataRow && (
+              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-sm">
+                <span className="font-medium text-blue-700 dark:text-blue-300">Data: </span>
+                <span className="text-blue-600 dark:text-blue-400 font-mono">
+                  {JSON.stringify(currentIteration.dataRow)}
+                </span>
+              </div>
+            )}
           </div>
         )}
 

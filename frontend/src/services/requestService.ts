@@ -41,6 +41,8 @@ export interface RequestConfig {
   followRedirects?: boolean;
   maxRedirects?: number;
   validateSSL?: boolean;
+  testScript?: string;
+  preRequestScript?: string;
 }
 
 export interface ExecutionResponse {

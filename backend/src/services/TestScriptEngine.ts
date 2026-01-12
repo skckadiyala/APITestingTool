@@ -189,6 +189,26 @@ export class TestScriptEngine {
               throw new Error(`Expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
             }
           },
+          include: (substring: any) => {
+            const actualStr = String(actual);
+            const substringStr = String(substring);
+            if (!actualStr.includes(substringStr)) {
+              throw new Error(`Expected "${actualStr}" to include "${substringStr}"`);
+            }
+          },
+          contain: (substring: any) => {
+            const actualStr = String(actual);
+            const substringStr = String(substring);
+            if (!actualStr.includes(substringStr)) {
+              throw new Error(`Expected "${actualStr}" to contain "${substringStr}"`);
+            }
+          },
+          match: (pattern: RegExp) => {
+            const actualStr = String(actual);
+            if (!pattern.test(actualStr)) {
+              throw new Error(`Expected "${actualStr}" to match ${pattern}`);
+            }
+          },
           be: {
             a: (type: string) => {
               const actualType = Array.isArray(actual) ? 'array' : typeof actual;

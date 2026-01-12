@@ -86,7 +86,7 @@ pm.test("Collection: Response time is acceptable", function () {
           type: 'default'
         }));
 
-      await collectionService.updateCollection(collection.id, {
+      await collectionService.updateCollection(collection.id, currentWorkspaceId, {
         variables: variablesData,
         preRequestScript,
         testScript,

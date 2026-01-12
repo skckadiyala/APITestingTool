@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import collectionService from '../services/collectionService';
 import type { Collection, CollectionRequest } from '../services/collectionService';
 import toast from 'react-hot-toast';
+import { useWorkspaceStore } from './workspaceStore';
 
 interface CollectionState {
   collections: Collection[];
@@ -32,18 +33,28 @@ interface CollectionState {
 
 export const useCollectionStore = create<CollectionState>((set, get) => ({
   collections: [],
-  currentWorkspaceId: 'test-workspace-1', // Default workspace
+  currentWorkspaceId: '', // Will be set from workspace store
   loading: false,
   error: null,
   selectedCollection: null,
   selectedRequest: null,
 
   setWorkspaceId: (workspaceId: string) => {
-    set({ currentWorkspaceId: workspaceId });
-    get().loadCollections(workspaceId);
+    const state = get();
+    // Only update if workspace ID actually changed
+    if (state.currentWorkspaceId !== workspaceId) {
+      set({ currentWorkspaceId: workspaceId });
+      get().loadCollections(workspaceId);
+    }
   },
 
   loadCollections: async (workspaceId: string) => {
+    // Prevent concurrent loads
+    const state = get();
+    if (state.loading) {
+      return;
+    }
+    
     set({ loading: true, error: null });
     try {
       const { collections } = await collectionService.getCollections(workspaceId);
@@ -68,6 +79,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       // Reload collections to get the updated list
       await get().loadCollections(currentWorkspaceId);
       
+      // Refresh workspace counts
+      useWorkspaceStore.getState().fetchWorkspaces();
+      
       toast.success(`Collection "${name}" created successfully`);
       set({ loading: false });
       return collection;
@@ -81,7 +95,8 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   createFolder: async (collectionId: string, name: string, description?: string) => {
     set({ loading: true, error: null });
     try {
-      const folder = await collectionService.createFolder(collectionId, { name, description });
+      const workspaceId = get().currentWorkspaceId;
+      const folder = await collectionService.createFolder(collectionId, workspaceId, { name, description });
       
       // Reload collections to get the updated list
       await get().loadCollections(get().currentWorkspaceId);
@@ -99,7 +114,8 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   addRequestToCollection: async (collectionId: string, name: string, method: string, url: string, requestBodyId?: string, testScript?: string, preRequestScript?: string, params?: any) => {
     set({ loading: true, error: null });
     try {
-      const request = await collectionService.addRequest(collectionId, {
+      const workspaceId = get().currentWorkspaceId;
+      const request = await collectionService.addRequest(collectionId, workspaceId, {
         name,
         method,
         url,
@@ -125,7 +141,8 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   updateRequestInCollection: async (requestId: string, data: { name?: string; method?: string; url?: string; params?: any; headers?: any; body?: any; auth?: any; testScript?: string; preRequestScript?: string }) => {
     set({ loading: true, error: null });
     try {
-      await collectionService.updateRequest(requestId, data);
+      const workspaceId = get().currentWorkspaceId;
+      await collectionService.updateRequest(requestId, workspaceId, data);
       
       // Reload collections to get the updated list
       await get().loadCollections(get().currentWorkspaceId);
@@ -141,7 +158,8 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   updateCollection: async (id: string, name?: string, description?: string) => {
     set({ loading: true, error: null });
     try {
-      await collectionService.updateCollection(id, { name, description });
+      const workspaceId = get().currentWorkspaceId;
+      await collectionService.updateCollection(id, workspaceId, { name, description });
       
       // Reload collections to get the updated list
       await get().loadCollections(get().currentWorkspaceId);
@@ -157,10 +175,14 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   deleteCollection: async (id: string) => {
     set({ loading: true, error: null });
     try {
-      await collectionService.deleteCollection(id);
+      const workspaceId = get().currentWorkspaceId;
+      await collectionService.deleteCollection(id, workspaceId);
       
       // Reload collections to get the updated list
       await get().loadCollections(get().currentWorkspaceId);
+      
+      // Refresh workspace counts
+      useWorkspaceStore.getState().fetchWorkspaces();
       
       toast.success('Collection deleted successfully');
       set({ loading: false });
@@ -173,7 +195,8 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   deleteRequest: async (requestId: string) => {
     set({ loading: true, error: null });
     try {
-      await collectionService.deleteRequest(requestId);
+      const workspaceId = get().currentWorkspaceId;
+      await collectionService.deleteRequest(requestId, workspaceId);
       
       // Reload collections to get the updated list
       await get().loadCollections(get().currentWorkspaceId);
@@ -189,10 +212,14 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   duplicateCollection: async (id: string) => {
     set({ loading: true, error: null });
     try {
-      await collectionService.duplicateCollection(id);
+      const workspaceId = get().currentWorkspaceId;
+      await collectionService.duplicateCollection(id, workspaceId);
       
       // Reload collections to get the updated list
       await get().loadCollections(get().currentWorkspaceId);
+      
+      // Refresh workspace counts
+      useWorkspaceStore.getState().fetchWorkspaces();
       
       toast.success('Collection duplicated successfully');
       set({ loading: false });
@@ -203,32 +230,31 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   },
 
   moveRequest: async (requestId: string, targetCollectionId: string, orderIndex?: number) => {
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
-      await collectionService.moveRequest(requestId, { collectionId: targetCollectionId, orderIndex });
+      const workspaceId = get().currentWorkspaceId;
+      await collectionService.moveRequest(requestId, workspaceId, { collectionId: targetCollectionId, orderIndex });
       
       // Reload collections to get the updated list
       await get().loadCollections(get().currentWorkspaceId);
       
       toast.success('Request moved successfully');
-      set({ loading: false });
     } catch (error: any) {
-      set({ error: error.message || 'Failed to move request', loading: false });
+      set({ error: error.message || 'Failed to move request' });
       toast.error('Failed to move request');
     }
   },
 
   reorderItems: async (collectionId: string, items: { id: string; orderIndex: number }[]) => {
-    set({ loading: true, error: null });
+    set({ error: null });
     try {
-      await collectionService.reorderItems(collectionId, items);
+      const workspaceId = get().currentWorkspaceId;
+      await collectionService.reorderItems(collectionId, workspaceId, items);
       
       // Reload collections to get the updated order
       await get().loadCollections(get().currentWorkspaceId);
-      
-      set({ loading: false });
     } catch (error: any) {
-      set({ error: error.message || 'Failed to reorder items', loading: false });
+      set({ error: error.message || 'Failed to reorder items' });
       toast.error('Failed to reorder items');
     }
   },

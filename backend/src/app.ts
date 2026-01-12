@@ -11,11 +11,13 @@ dotenv.config();
 // Import database connections
 import { connectMongoDB } from './config/database';
 
-// Import routes (will be created later)
-// import authRoutes from './routes/authRoutes';
+// Import routes
+import authRoutes from './routes/auth.routes';
+import workspaceRoutes from './routes/workspace.routes';
 import requestsRoutes from './routes/requests.routes';
 import collectionsRoutes from './routes/collections.routes';
 import environmentsRoutes from './routes/environments.routes';
+import dataFileRoutes from './routes/dataFile.routes';
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
@@ -72,11 +74,18 @@ app.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-// API Routes (will be uncommented as routes are created)
-// app.use(`${API_PREFIX}/auth`, authRoutes);
+// API Routes
+app.use(`${API_PREFIX}/auth`, authRoutes);
+app.use(`${API_PREFIX}/workspaces`, workspaceRoutes);
 app.use(`${API_PREFIX}/requests`, requestsRoutes);
+app.use(`${API_PREFIX}/data-files`, dataFileRoutes);
+
+// Legacy routes (backward compatibility) - keeping these for now
 app.use(`${API_PREFIX}/collections`, collectionsRoutes);
 app.use(`${API_PREFIX}/environments`, environmentsRoutes);
+
+// Workspace-scoped routes - these are now handled by the workspace routes
+// The workspace router will mount collections and environments at /:id/collections and /:id/environments
 
 // 404 handler
 app.use((_req: Request, res: Response) => {

@@ -545,6 +545,8 @@ pm.test("Response has correct structure", function () {
         followRedirects: true,
         maxRedirects: 5,
         validateSSL: true,
+        testScript: testScript || undefined,
+        preRequestScript: preRequestScript || undefined,
       }, 'demo-user', undefined, activeEnvironmentId, collectionId); // Pass environmentId and collectionId for variable resolution
 
       // Log the resolved URL from the request
@@ -616,7 +618,6 @@ pm.test("Response has correct structure", function () {
       setExecutionResult(result);
       setHasResponse(true);
       setConsoleLogs(logs);
-      console.log('Console logs set:', logs);
 
       if (result.success) {
         const timing = result.response?.timing.total || 0;
@@ -631,10 +632,13 @@ pm.test("Response has correct structure", function () {
         }
 
         // Refresh environment if test scripts updated variables
-        if (activeEnvironmentId && result.testResults?.logs?.some((msg: string) => msg.includes('Environment variable'))) {
-          // Reload all environments to get the updated values
-          loadEnvironments('test-workspace-1');
-          console.log('Environment reloaded after test script updates');
+        if (activeEnvironmentId && result.testResults?.consoleOutput?.some((msg: string) => msg.includes('Environment variable'))) {
+          // Get the current workspace ID from environment store
+          const { currentWorkspaceId } = useEnvironmentStore.getState();
+          if (currentWorkspaceId) {
+            // Reload all environments to get the updated values
+            loadEnvironments(currentWorkspaceId);
+          }
         }
         
         toast.success(`Request completed in ${timing}ms`, {
