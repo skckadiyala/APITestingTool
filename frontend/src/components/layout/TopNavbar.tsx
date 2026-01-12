@@ -77,11 +77,11 @@ export default function TopNavbar() {
       {/* Logo and App Name */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-lg">A</span>
+          <div className="w-8 h-8 flex items-center justify-center">
+            <img src="/Simba.png" alt="Simba Logo" className="w-8 h-8 object-contain" />
           </div>
           <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            API Testing Tool
+            Simba
           </h1>
         </div>
 

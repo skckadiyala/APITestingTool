@@ -26,7 +26,7 @@ export const NoWorkspaceScreen = () => {
           </div>
 
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">
-            Welcome to API Testing Tool
+            Welcome to Simba
           </h1>
           
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
