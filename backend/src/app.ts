@@ -28,8 +28,17 @@ app.use(helmet());
 
 // CORS configuration
 const getAllowedOrigins = (): string[] => {
-  const defaultOrigins = ['http://localhost:5173', 'http://localhost:5174'];
-  const envOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim()) || [];
+  const frontendUrl = process.env.FRONTEND_URL || `http://${process.env.FRONTEND_HOST || 'localhost'}:${process.env.FRONTEND_PORT || '5173'}`;
+  const corsOrigin = process.env.CORS_ORIGIN;
+  const defaultOrigins = [frontendUrl];
+  
+  // Add CORS_ORIGIN if it exists and is different
+  if (corsOrigin && !defaultOrigins.includes(corsOrigin)) {
+    defaultOrigins.push(corsOrigin);
+  }
+  
+  // Add any additional origins from ALLOWED_ORIGINS
+  const envOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim()).filter(o => o) || [];
   return [...defaultOrigins, ...envOrigins];
 };
 
@@ -113,10 +122,11 @@ const startServer = async () => {
     await connectMongoDB();
     
     app.listen(PORT, () => {
+      const host = process.env.BACKEND_HOST || 'localhost';
       console.log(`🚀 Server is running on port ${PORT}`);
       console.log(`📍 Environment: ${process.env.NODE_ENV}`);
-      console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-      console.log(`🔗 API Base URL: http://localhost:${PORT}${API_PREFIX}`);
+      console.log(`🔗 Health check: http://${host}:${PORT}/health`);
+      console.log(`🔗 API Base URL: http://${host}:${PORT}${API_PREFIX}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
