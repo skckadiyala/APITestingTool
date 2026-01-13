@@ -144,11 +144,13 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       const workspaceId = get().currentWorkspaceId;
       await collectionService.updateRequest(requestId, workspaceId, data);
       
+      // Reset loading state before reloading collections
+      set({ loading: false });
+      
       // Reload collections to get the updated list
       await get().loadCollections(get().currentWorkspaceId);
       
       toast.success('Request updated successfully');
-      set({ loading: false });
     } catch (error: any) {
       set({ error: error.message || 'Failed to update request', loading: false });
       toast.error('Failed to update request');
@@ -198,11 +200,21 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
       const workspaceId = get().currentWorkspaceId;
       await collectionService.deleteRequest(requestId, workspaceId);
       
+      // Close the tab if this request is currently open
+      const { useTabStore } = await import('./tabStore');
+      const tabs = useTabStore.getState().tabs;
+      const tabToClose = tabs.find(t => t.requestId === requestId);
+      if (tabToClose) {
+        useTabStore.getState().closeTab(tabToClose.id);
+      }
+      
+      // Reset loading state before reloading collections
+      set({ loading: false });
+      
       // Reload collections to get the updated list
       await get().loadCollections(get().currentWorkspaceId);
       
       toast.success('Request deleted successfully');
-      set({ loading: false });
     } catch (error: any) {
       set({ error: error.message || 'Failed to delete request', loading: false });
       toast.error('Failed to delete request');

@@ -230,7 +230,7 @@ export default function URLBar({
           onClick={onSave}
           disabled={!url}
           className="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          title={isExistingRequest && isDirty ? 'Save changes to this request' : 'Save as new request to collection'}
+          title={isExistingRequest ? 'Save changes to this request' : 'Save as new request to collection'}
         >
           {isSaved ? (
             <>
@@ -249,7 +249,7 @@ export default function URLBar({
                   d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
                 />
               </svg>
-              {isExistingRequest && isDirty ? 'Save' : 'Save As'}
+              {isExistingRequest ? 'Save' : 'Save As'}
             </>
           )}
         </button>

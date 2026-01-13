@@ -575,7 +575,8 @@ function CollectionItem({
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   
-  const { createFolder, deleteCollection, duplicateCollection } = useCollectionStore();
+  const { createFolder, deleteCollection, duplicateCollection, loadCollections, selectRequest } = useCollectionStore();
+  const { loadRequestInTab } = useTabStore();
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -641,10 +642,33 @@ function CollectionItem({
           {showMenu && (
             <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10 py-1 min-w-[180px]">
               <button
-                onClick={() => {
-                  // TODO: Implement Add Request dialog
-                  alert('Add Request functionality coming soon!');
+                onClick={async () => {
                   setShowMenu(false);
+                  try {
+                    const collectionService = (await import('../../services/collectionService')).default;
+                    const { currentWorkspaceId } = useCollectionStore.getState();
+                    
+                    if (!currentWorkspaceId) {
+                      console.error('No workspace selected');
+                      return;
+                    }
+
+                    // Create new request with default values
+                    const newRequest = await collectionService.addRequest(collection.id, currentWorkspaceId, {
+                      name: 'New Request',
+                      method: 'GET',
+                      url: 'https://api.example.com',
+                    });
+
+                    // Reload collections to show the new request
+                    await loadCollections(currentWorkspaceId);
+                    
+                    // Select and open the new request in a tab
+                    selectRequest(newRequest);
+                    loadRequestInTab(newRequest);
+                  } catch (error) {
+                    console.error('Failed to create request:', error);
+                  }
                 }}
                 className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
               >
@@ -788,6 +812,7 @@ function CollectionItem({
           </div>
         </div>
       )}
+
     </>
   );
 }

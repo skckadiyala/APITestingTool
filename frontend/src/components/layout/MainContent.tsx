@@ -47,6 +47,7 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>(({ selectedColl
   // Request state
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('');
+  const [requestName, setRequestName] = useState('New Request');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -109,6 +110,13 @@ pm.test("Response has correct structure", function () {
     setUrl(newUrl);
     if (activeTabId) {
       updateTab(activeTabId, { url: newUrl });
+    }
+  };
+
+  const handleRequestNameChange = (newName: string) => {
+    setRequestName(newName);
+    if (activeTabId) {
+      updateTab(activeTabId, { name: newName, isDirty: true });
     }
   };
 
@@ -256,6 +264,7 @@ pm.test("Response has correct structure", function () {
     if (activeTab) {
       setMethod(activeTab.method);
       setUrl(activeTab.url);
+      setRequestName(activeTab.name || 'New Request');
       setParams(activeTab.params?.map((p, idx) => ({
         id: String(idx + 1),
         key: p.key,
@@ -735,16 +744,20 @@ pm.test("Response has correct structure", function () {
   const handleSave = () => {
     const activeTab = tabs.find(t => t.id === activeTabId);
     
-    // Check if this is an existing request with changes
-    if (activeTab?.requestId && activeTab?.isDirty) {
+    // Check if this is an existing request (part of a collection)
+    if (activeTab?.requestId) {
       // Update existing request
       handleUpdateExistingRequest();
     } else {
       // Save as new request
       setShowSaveDialog(true);
       // Generate default name from URL
-      const defaultName = `${method} ${new URL(url).pathname}`;
-      setSaveRequestName(defaultName);
+      try {
+        const defaultName = url ? `${method} ${new URL(url).pathname}` : `${method} Request`;
+        setSaveRequestName(defaultName);
+      } catch {
+        setSaveRequestName(`${method} Request`);
+      }
     }
   };
 
@@ -754,7 +767,7 @@ pm.test("Response has correct structure", function () {
 
     try {
       await updateRequestInCollection(activeTab.requestId, {
-        name: activeTab.name,
+        name: requestName,
         method,
         url,
         params,
@@ -770,7 +783,7 @@ pm.test("Response has correct structure", function () {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
     } catch (error) {
-      toast.error('Failed to update request');
+      // Error toast is already shown by the store
     }
   };
 
@@ -856,6 +869,17 @@ pm.test("Response has correct structure", function () {
         </div>
       ) : (
         <>
+          {/* Request Name Input */}
+          <div className="px-4 pt-4 pb-2">
+            <input
+              type="text"
+              value={requestName}
+              onChange={(e) => handleRequestNameChange(e.target.value)}
+              className="w-full px-3 py-2 text-lg font-semibold border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-primary-500 bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
+              placeholder="Request Name"
+            />
+          </div>
+
           <URLBar
             method={method}
             url={url}
