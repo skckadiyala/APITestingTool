@@ -30,7 +30,12 @@ app.use(helmet());
 const getAllowedOrigins = (): string[] => {
   const frontendUrl = process.env.FRONTEND_URL || `http://${process.env.FRONTEND_HOST || 'localhost'}:${process.env.FRONTEND_PORT || '5173'}`;
   const corsOrigin = process.env.CORS_ORIGIN;
-  const defaultOrigins = [frontendUrl];
+  
+  const defaultOrigins = [
+    frontendUrl,
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+  ];
   
   // Add CORS_ORIGIN if it exists and is different
   if (corsOrigin && !defaultOrigins.includes(corsOrigin)) {
@@ -45,15 +50,28 @@ const getAllowedOrigins = (): string[] => {
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = getAllowedOrigins();
+    
     // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+    
+    // Case-insensitive origin matching
+    const isAllowed = allowedOrigins.some(allowedOrigin => 
+      allowedOrigin.toLowerCase() === origin.toLowerCase()
+    );
+    
+    if (isAllowed) {
       callback(null, true);
     } else {
+      console.error(`CORS blocked origin: ${origin}. Allowed: ${allowedOrigins.join(', ')}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
 }));
+//}));
 
 // Rate limiting
 const limiter = rateLimit({
