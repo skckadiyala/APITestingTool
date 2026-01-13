@@ -185,7 +185,7 @@ router.post('/:id/folders', async (req: Request, res: Response): Promise<void> =
 router.post('/:id/requests', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, method, url, requestBodyId, params, testScript, preRequestScript } = req.body;
+    const { name, method, url, requestBodyId, params, headers, body, auth, testScript, preRequestScript } = req.body;
 
     if (!name || !method || !url) {
       res.status(400).json({
@@ -200,6 +200,9 @@ router.post('/:id/requests', async (req: Request, res: Response): Promise<void> 
       url,
       requestBodyId,
       params,
+      headers,
+      body,
+      auth,
       testScript,
       preRequestScript,
     });

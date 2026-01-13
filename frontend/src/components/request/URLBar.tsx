@@ -201,6 +201,7 @@ export default function URLBar({
         <button
           onClick={onSend}
           disabled={isLoading || !url}
+          title="Send request (Ctrl+Enter or ⌘+Enter)"
           className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 min-w-[100px] justify-center"
         >
           {isLoading ? (
@@ -253,11 +254,6 @@ export default function URLBar({
             </>
           )}
         </button>
-      </div>
-
-      {/* Keyboard Shortcut Hint */}
-      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-        Press <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">⌘</kbd> + <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600">Enter</kbd> to send
       </div>
     </div>
   );

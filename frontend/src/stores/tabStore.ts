@@ -90,7 +90,7 @@ export const useTabStore = create<TabState>((set, get) => ({
     set((state) => ({
       tabs: state.tabs.map((tab) =>
         tab.id === tabId
-          ? { ...tab, ...updates, isDirty: true }
+          ? { ...tab, ...updates, isDirty: updates.isDirty !== undefined ? updates.isDirty : true }
           : tab
       ),
     }));

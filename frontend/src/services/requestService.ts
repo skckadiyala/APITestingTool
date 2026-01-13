@@ -87,9 +87,17 @@ export interface ExecutionResult {
     stack?: string;
   };
   testResults?: {
-    passed: string[];
-    failed: string[];
-    logs: string[];
+    tests: Array<{
+      name: string;
+      passed: boolean;
+      error?: string;
+    }>;
+    passed: number;
+    failed: number;
+    totalTime: number;
+    consoleOutput: string[];
+    environmentUpdates?: Record<string, any>;
+    collectionUpdates?: Record<string, any>;
   };
   executedAt: string;
   historyId?: string;

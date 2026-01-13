@@ -563,14 +563,11 @@ pm.test("Response has correct structure", function () {
     }
 
     try {
-      // Parse body content for x-www-form-urlencoded and form-data to ensure variable resolution works
+      // For x-www-form-urlencoded and form-data, use the formData state (most current)
+      // For other types, use bodyContent
       let bodyContentForExecution = bodyContent;
-      if ((bodyType === 'x-www-form-urlencoded' || bodyType === 'form-data') && bodyContent) {
-        try {
-          bodyContentForExecution = JSON.parse(bodyContent);
-        } catch {
-          // If parsing fails, keep as string
-        }
+      if (bodyType === 'x-www-form-urlencoded' || bodyType === 'form-data') {
+        bodyContentForExecution = JSON.stringify(formData);
       }
       
       // Get collectionId from active tab for variable resolution
@@ -652,8 +649,8 @@ pm.test("Response has correct structure", function () {
         });
         
         // Add test script console output
-        if (result.testResults.logs && result.testResults.logs.length > 0) {
-          result.testResults.logs.forEach((output: string) => {
+        if (result.testResults.consoleOutput && result.testResults.consoleOutput.length > 0) {
+          result.testResults.consoleOutput.forEach((output: string) => {
             logs.push({
               type: 'info',
               message: `[Test Script] ${output}`,
@@ -680,13 +677,25 @@ pm.test("Response has correct structure", function () {
         }
 
         // Refresh environment if test scripts updated variables
-        if (activeEnvironmentId && result.testResults?.logs?.some((msg: string) => msg.includes('Environment variable'))) {
+        if (activeEnvironmentId && result.testResults?.environmentUpdates && Object.keys(result.testResults.environmentUpdates).length > 0) {
           // Get the current workspace ID from environment store
           const { currentWorkspaceId } = useEnvironmentStore.getState();
           if (currentWorkspaceId) {
             // Reload all environments to get the updated values
             loadEnvironments(currentWorkspaceId);
           }
+        }
+
+        // Refresh collections if test scripts updated collection variables
+        if (result.testResults?.collectionUpdates && Object.keys(result.testResults.collectionUpdates).length > 0) {
+          // Reload collections to get the updated variables
+          import('../../stores/collectionStore').then(({ useCollectionStore }) => {
+            const { loadCollections } = useCollectionStore.getState();
+            const { currentWorkspaceId } = useEnvironmentStore.getState();
+            if (currentWorkspaceId) {
+              loadCollections(currentWorkspaceId);
+            }
+          });
         }
         
         toast.success(`Request completed in ${timing}ms`, {
@@ -766,20 +775,38 @@ pm.test("Response has correct structure", function () {
     if (!activeTab?.requestId) return;
 
     try {
+      // For x-www-form-urlencoded and form-data, serialize formData array
+      let bodyContentToSave = bodyContent;
+      if (bodyType === 'x-www-form-urlencoded' || bodyType === 'form-data') {
+        bodyContentToSave = JSON.stringify(formData);
+      }
+
       await updateRequestInCollection(activeTab.requestId, {
         name: requestName,
         method,
         url,
         params,
         headers,
-        body: bodyContent ? { type: bodyType, content: bodyContent } : undefined,
+        body: bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
         auth: { type: authType },
         testScript: testScript.trim() || undefined,
         preRequestScript: preRequestScript.trim() || undefined,
       });
       
-      // Mark tab as saved
-      updateTab(activeTab.id, { isDirty: false });
+      // Update the tab with the saved data
+      updateTab(activeTab.id, {
+        name: requestName,
+        method,
+        url,
+        params,
+        headers,
+        body: bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
+        auth: { type: authType },
+        testScript: testScript.trim() || undefined,
+        preRequestScript: preRequestScript.trim() || undefined,
+        isDirty: false,
+      });
+      
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 2000);
     } catch (error) {
@@ -814,15 +841,24 @@ pm.test("Response has correct structure", function () {
     }
 
     try {
+      // For x-www-form-urlencoded and form-data, serialize formData array
+      let bodyContentToSave = bodyContent;
+      if (bodyType === 'x-www-form-urlencoded' || bodyType === 'form-data') {
+        bodyContentToSave = JSON.stringify(formData);
+      }
+
       await addRequestToCollection(
         selectedCollectionId,
         saveRequestName.trim(),
         method,
         url,
-        undefined,
+        undefined, // requestBodyId
         testScript.trim() || undefined,
-        undefined,
-        params
+        preRequestScript.trim() || undefined,
+        params,
+        headers,
+        bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
+        { type: authType }
       );
       setIsSaved(true);
       setShowSaveDialog(false);

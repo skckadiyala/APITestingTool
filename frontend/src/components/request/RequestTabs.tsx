@@ -109,12 +109,6 @@ export default function RequestTabs({
         {/* Params Tab */}
         {activeTab === 'params' && (
           <div>
-            <div className="mb-3">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Query Parameters</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Query parameters are appended to the URL
-              </p>
-            </div>
             <KeyValueEditor
               pairs={params}
               onChange={onParamsChange}
@@ -128,12 +122,6 @@ export default function RequestTabs({
         {/* Headers Tab */}
         {activeTab === 'headers' && (
           <div>
-            <div className="mb-3">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Headers</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                HTTP headers let the client and server pass additional information
-              </p>
-            </div>
             <KeyValueEditor
               pairs={headers}
               onChange={onHeadersChange}
@@ -148,12 +136,6 @@ export default function RequestTabs({
         {/* Body Tab */}
         {activeTab === 'body' && (
           <div>
-            <div className="mb-3">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Request Body</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                The data sent with your request
-              </p>
-            </div>
             <BodyEditor
               type={bodyType}
               content={bodyContent}
@@ -169,7 +151,6 @@ export default function RequestTabs({
         {activeTab === 'auth' && (
           <div className="space-y-4">
             <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Authentication</h3>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Auth Type
               </label>
@@ -314,12 +295,6 @@ export default function RequestTabs({
         {/* Pre-request Script Tab */}
         {activeTab === 'pre-request' && (
           <div>
-            <div className="mb-3">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Pre-request Script</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Execute JavaScript code before sending the request
-              </p>
-            </div>
             <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
               <Editor
                 height="400px"
@@ -349,12 +324,6 @@ export default function RequestTabs({
         {/* Tests Tab */}
         {activeTab === 'tests' && (
           <div>
-            <div className="mb-3">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Tests</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Write test assertions to validate the response
-              </p>
-            </div>
             <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
               <Editor
                 height="400px"

@@ -82,6 +82,8 @@ export interface TestExecutionResult {
   failed: number;
   totalTime: number;
   consoleOutput: string[];
+  environmentUpdates?: Record<string, any>;
+  collectionUpdates?: Record<string, any>;
 }
 
 export interface ExecutionResult {

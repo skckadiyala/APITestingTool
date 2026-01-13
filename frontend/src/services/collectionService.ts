@@ -67,6 +67,9 @@ export interface AddRequestDto {
   url: string;
   requestBodyId?: string;
   params?: any;
+  headers?: any;
+  body?: any;
+  auth?: any;
   testScript?: string;
   preRequestScript?: string;
 }

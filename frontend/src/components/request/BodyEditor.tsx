@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import Editor from '@monaco-editor/react';
+import type * as Monaco from 'monaco-editor';
+import VariableInput from '../common/VariableInput';
+import VariableTextarea from '../common/VariableTextarea';
+import { useVariables } from '../../hooks/useVariables';
 
 export type BodyType = 'none' | 'json' | 'x-www-form-urlencoded' | 'form-data' | 'xml' | 'raw' | 'binary';
 
@@ -21,6 +25,7 @@ export default function BodyEditor({
   onFormDataChange,
 }: BodyEditorProps) {
   const [jsonError, setJsonError] = useState<string | null>(null);
+  const { allVariables } = useVariables();
 
   const formatJSON = () => {
     try {
@@ -73,6 +78,84 @@ export default function BodyEditor({
     if (file && onFormDataChange) {
       updateFormDataField(id, 'value', file.name);
     }
+  };
+
+  // Setup Monaco Editor with variable autocomplete
+  const handleEditorMount = (_editor: any, monaco: typeof Monaco) => {
+    // Register completion provider for variables
+    monaco.languages.registerCompletionItemProvider('json', {
+      triggerCharacters: ['{'],
+      provideCompletionItems: (model, position) => {
+        const textUntilPosition = model.getValueInRange({
+          startLineNumber: position.lineNumber,
+          startColumn: 1,
+          endLineNumber: position.lineNumber,
+          endColumn: position.column,
+        });
+
+        // Check if we're inside {{
+        const match = textUntilPosition.match(/\{\{([^}]*)$/);
+        if (!match) {
+          return { suggestions: [] };
+        }
+
+        const word = model.getWordUntilPosition(position);
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
+
+        const suggestions = allVariables.map((variable) => ({
+          label: variable.key,
+          kind: monaco.languages.CompletionItemKind.Variable,
+          detail: variable.type === 'secret' ? '(secret)' : variable.value,
+          documentation: `Source: ${variable.source}`,
+          insertText: variable.key,
+          range: range,
+        }));
+
+        return { suggestions };
+      },
+    });
+
+    // Register for XML as well
+    monaco.languages.registerCompletionItemProvider('xml', {
+      triggerCharacters: ['{'],
+      provideCompletionItems: (model, position) => {
+        const textUntilPosition = model.getValueInRange({
+          startLineNumber: position.lineNumber,
+          startColumn: 1,
+          endLineNumber: position.lineNumber,
+          endColumn: position.column,
+        });
+
+        const match = textUntilPosition.match(/\{\{([^}]*)$/);
+        if (!match) {
+          return { suggestions: [] };
+        }
+
+        const word = model.getWordUntilPosition(position);
+        const range = {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
+
+        const suggestions = allVariables.map((variable) => ({
+          label: variable.key,
+          kind: monaco.languages.CompletionItemKind.Variable,
+          detail: variable.type === 'secret' ? '(secret)' : variable.value,
+          documentation: `Source: ${variable.source}`,
+          insertText: variable.key,
+          range: range,
+        }));
+
+        return { suggestions };
+      },
+    });
   };
 
   return (
@@ -156,7 +239,11 @@ export default function BodyEditor({
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <div className="text-xs text-gray-600 dark:text-gray-400">
-              {jsonError && <span className="text-red-600 dark:text-red-400">⚠️ {jsonError}</span>}
+              {jsonError ? (
+                <span className="text-red-600 dark:text-red-400">⚠️ {jsonError}</span>
+              ) : (
+                <span>💡 Tip: Type <code className="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">{'{{'}</code> to insert variables</span>
+              )}
             </div>
             <button
               onClick={formatJSON}
@@ -177,6 +264,7 @@ export default function BodyEditor({
                 onContentChange(value || '');
                 validateJSON(value || '');
               }}
+              onMount={handleEditorMount}
               theme="vs-dark"
               options={{
                 minimap: { enabled: false },
@@ -223,11 +311,10 @@ export default function BodyEditor({
 
               {/* Value Input */}
               <div className="col-span-6">
-                <input
-                  type="text"
+                <VariableInput
                   value={field.value}
-                  onChange={(e) => updateFormDataField(field.id, 'value', e.target.value)}
-                  placeholder="Value"
+                  onChange={(value) => updateFormDataField(field.id, 'value', value)}
+                  placeholder="Value (use {{variable}} for variables)"
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
@@ -301,11 +388,10 @@ export default function BodyEditor({
               {/* Value Input or File Selector */}
               <div className="col-span-5">
                 {field.type === 'text' ? (
-                  <input
-                    type="text"
+                  <VariableInput
                     value={field.value}
-                    onChange={(e) => updateFormDataField(field.id, 'value', e.target.value)}
-                    placeholder="Value"
+                    onChange={(value) => updateFormDataField(field.id, 'value', value)}
+                    placeholder="Value (use {{variable}} for variables)"
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
                 ) : (
@@ -353,12 +439,17 @@ export default function BodyEditor({
 
       {/* XML Editor */}
       {type === 'xml' && (
-        <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
+        <div className="space-y-2">
+          <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
+            💡 Tip: Type <code className="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">{'{{'}</code> to insert variables
+          </div>
+          <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
           <Editor
             height="300px"
             defaultLanguage="xml"
             value={content}
             onChange={(value) => onContentChange(value || '')}
+            onMount={handleEditorMount}
             theme="vs-dark"
             options={{
               minimap: { enabled: false },
@@ -370,15 +461,17 @@ export default function BodyEditor({
             }}
           />
         </div>
+        </div>
       )}
 
       {/* Raw Text Editor */}
       {type === 'raw' && (
-        <textarea
+        <VariableTextarea
           value={content}
-          onChange={(e) => onContentChange(e.target.value)}
-          placeholder="Enter raw body content..."
-          className="w-full h-64 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          onChange={onContentChange}
+          placeholder="Enter raw body content (use {{variable}} for variables)..."
+          rows={12}
+          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       )}
 

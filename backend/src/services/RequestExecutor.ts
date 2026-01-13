@@ -695,6 +695,13 @@ export class RequestExecutor {
           };
         } else if (resolvedConfig.body.type === 'raw' && resolvedConfig.body.content) {
           resolvedConfig.body.content = replaceVars(resolvedConfig.body.content as string);
+        } else if (resolvedConfig.body.type === 'xml' && resolvedConfig.body.content) {
+          resolvedConfig.body.content = replaceVars(resolvedConfig.body.content as string);
+        } else if (resolvedConfig.body.type === 'binary' && resolvedConfig.body.content) {
+          // Binary content might be a string path or base64, only replace if it's a string
+          if (typeof resolvedConfig.body.content === 'string') {
+            resolvedConfig.body.content = replaceVars(resolvedConfig.body.content);
+          }
         } else if (resolvedConfig.body.type === 'x-www-form-urlencoded') {
           // Handle both array and string content
           let contentArray: any[] = [];
