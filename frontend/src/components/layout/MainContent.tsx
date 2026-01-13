@@ -633,7 +633,7 @@ pm.test("Response has correct structure", function () {
         }
 
         // Refresh environment if test scripts updated variables
-        if (activeEnvironmentId && result.testResults?.consoleOutput?.some((msg: string) => msg.includes('Environment variable'))) {
+        if (activeEnvironmentId && result.testResults?.logs?.some((msg: string) => msg.includes('Environment variable'))) {
           // Get the current workspace ID from environment store
           const { currentWorkspaceId } = useEnvironmentStore.getState();
           if (currentWorkspaceId) {
