@@ -496,8 +496,13 @@ router.post('/import', upload.single('file'), async (req: Request, res: Response
     const importService = new ImportService();
     let result;
 
-    // Parse file content
-    const content = file.buffer.toString('utf-8');
+    // Parse file content - remove BOM if present
+    let content = file.buffer.toString('utf-8');
+    // Remove UTF-8 BOM if present (EF BB BF)
+    if (content.charCodeAt(0) === 0xFEFF) {
+      content = content.substring(1);
+    }
+    
     let data: any;
 
     try {
