@@ -72,6 +72,7 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>(({ selectedColl
   const [formData, setFormData] = useState<Array<{ id: string; key: string; value: string; type: 'text' | 'file'; enabled: boolean }>>([]);
   
   const [authType, setAuthType] = useState<AuthType>('noauth');
+  const [validateSSL, setValidateSSL] = useState(true);
   const [preRequestScript, setPreRequestScript] = useState(`// Pre-request script
 // Execute code before sending the request
 
@@ -309,37 +310,75 @@ pm.test("Response has correct structure", function () {
       // Fetch full history details including request/response bodies
       const historyDetail = await fetchHistoryDetail(entry.id);
 
+      // Create a new tab or use existing active tab
+      const { tabs, activeTabId, createTab, updateTab } = useTabStore.getState();
+      
+      let targetTabId = activeTabId;
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      
+      // If no active tab or active tab has been modified/has content, create a new tab
+      if (!activeTabId || activeTab?.isDirty || activeTab?.url) {
+        const pathname = historyDetail.url.includes('://') 
+          ? new URL(historyDetail.url).pathname 
+          : historyDetail.url.split('?')[0];
+        
+        createTab({
+          name: `${historyDetail.method} ${pathname}`,
+          method: historyDetail.method,
+          url: historyDetail.url,
+          isUntitled: false,
+        });
+        targetTabId = useTabStore.getState().activeTabId;
+      }
+
       // Restore method and URL
       setMethod(historyDetail.method);
       setUrl(historyDetail.url);
 
       // Restore headers
-      if (historyDetail.requestBody?.headers) {
-        const restoredHeaders: KeyValuePair[] = historyDetail.requestBody.headers.map(
-          (h, index) => ({
-            id: String(index + 1),
-            key: h.key,
-            value: h.value,
-            enabled: true,
-          })
-        );
-        setHeaders(restoredHeaders);
-      }
+      const restoredHeaders: KeyValuePair[] = historyDetail.requestBody?.headers?.map(
+        (h, index) => ({
+          id: String(index + 1),
+          key: h.key,
+          value: h.value,
+          enabled: true,
+        })
+      ) || [];
+      setHeaders(restoredHeaders);
 
       // Restore body
+      let restoredBodyType: BodyType = 'json';
+      let restoredBodyContent = '';
+      
       if (historyDetail.requestBody?.body) {
         const body = historyDetail.requestBody.body;
-        setBodyType(body.type as BodyType);
+        restoredBodyType = body.type as BodyType;
+        setBodyType(restoredBodyType);
         // If content is a JSON object, stringify it for the editor
         const content = typeof body.content === 'string' 
           ? body.content 
           : JSON.stringify(body.content, null, 2);
+        restoredBodyContent = content;
         setBodyContent(content);
       }
 
       // Restore auth
-      if (historyDetail.requestBody?.auth) {
-        setAuthType(historyDetail.requestBody.auth.type as AuthType);
+      const restoredAuth = historyDetail.requestBody?.auth || { type: 'noauth' };
+      setAuthType(restoredAuth.type as AuthType);
+
+      // Update the tab with all restored data
+      if (targetTabId) {
+        updateTab(targetTabId, {
+          method: historyDetail.method,
+          url: historyDetail.url,
+          headers: restoredHeaders,
+          body: {
+            type: restoredBodyType,
+            content: restoredBodyContent
+          },
+          auth: restoredAuth,
+          isDirty: false,
+        });
       }
 
       // Clear response if any
@@ -544,7 +583,7 @@ pm.test("Response has correct structure", function () {
         timeout: 30000,
         followRedirects: true,
         maxRedirects: 5,
-        validateSSL: true,
+        validateSSL: validateSSL,
         testScript: testScript || undefined,
         preRequestScript: preRequestScript || undefined,
       }, 'demo-user', undefined, activeEnvironmentId, collectionId); // Pass environmentId and collectionId for variable resolution
@@ -828,6 +867,8 @@ pm.test("Response has correct structure", function () {
             isSaved={isSaved}
             isExistingRequest={!!tabs.find(t => t.id === activeTabId)?.requestId}
             isDirty={!!tabs.find(t => t.id === activeTabId)?.isDirty}
+            validateSSL={validateSSL}
+            onValidateSSLChange={setValidateSSL}
           />
 
           <div className="flex-1 overflow-hidden">
