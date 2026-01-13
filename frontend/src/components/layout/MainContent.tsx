@@ -72,7 +72,6 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>(({ selectedColl
   const [formData, setFormData] = useState<Array<{ id: string; key: string; value: string; type: 'text' | 'file'; enabled: boolean }>>([]);
   
   const [authType, setAuthType] = useState<AuthType>('noauth');
-  const [validateSSL, setValidateSSL] = useState(true);
   const [preRequestScript, setPreRequestScript] = useState(`// Pre-request script
 // Execute code before sending the request
 
@@ -545,7 +544,7 @@ pm.test("Response has correct structure", function () {
         timeout: 30000,
         followRedirects: true,
         maxRedirects: 5,
-        validateSSL: validateSSL,
+        validateSSL: true,
         testScript: testScript || undefined,
         preRequestScript: preRequestScript || undefined,
       }, 'demo-user', undefined, activeEnvironmentId, collectionId); // Pass environmentId and collectionId for variable resolution
@@ -829,8 +828,6 @@ pm.test("Response has correct structure", function () {
             isSaved={isSaved}
             isExistingRequest={!!tabs.find(t => t.id === activeTabId)?.requestId}
             isDirty={!!tabs.find(t => t.id === activeTabId)?.isDirty}
-            validateSSL={validateSSL}
-            onValidateSSLChange={setValidateSSL}
           />
 
           <div className="flex-1 overflow-hidden">
