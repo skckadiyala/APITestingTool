@@ -11,6 +11,10 @@ build/
 .env.local
 .env.*.local
 
+package-lock.json
+
+
+
 # Logs
 logs/
 *.log
