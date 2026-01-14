@@ -906,12 +906,12 @@ pm.test("Response has correct structure", function () {
       ) : (
         <>
           {/* Request Name Input */}
-          <div className="px-4 pt-4 pb-2">
+          <div className="px-4 pt-3 pb-1">
             <input
               type="text"
               value={requestName}
               onChange={(e) => handleRequestNameChange(e.target.value)}
-              className="w-full px-3 py-2 text-lg font-semibold border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-primary-500 bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
+              className="w-full px-2 py-1.5 text-sm font-semibold border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-primary-500 bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
               placeholder="Request Name"
             />
           </div>

@@ -75,7 +75,7 @@ export default function RequestTabs({
   const TabButton = ({ tab, label, count }: { tab: TabType; label: string; count?: number }) => (
     <button
       onClick={() => onTabChange(tab)}
-      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+      className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
         activeTab === tab
           ? 'border-primary-600 text-primary-600 dark:text-primary-400'
           : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
@@ -83,7 +83,7 @@ export default function RequestTabs({
     >
       {label}
       {count !== undefined && count > 0 && (
-        <span className="ml-1.5 px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">
+        <span className="ml-1 px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">
           {count}
         </span>
       )}
@@ -94,7 +94,7 @@ export default function RequestTabs({
     <div className="flex flex-col h-full">
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex gap-1 px-4">
+        <div className="flex gap-1 px-2">
           <TabButton tab="params" label="Params" count={params.filter(p => p.enabled).length} />
           <TabButton tab="headers" label="Headers" count={headers.filter(h => h.enabled).length} />
           <TabButton tab="body" label="Body" />
@@ -105,7 +105,7 @@ export default function RequestTabs({
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800 p-4">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800 p-2">
         {/* Params Tab */}
         {activeTab === 'params' && (
           <div>

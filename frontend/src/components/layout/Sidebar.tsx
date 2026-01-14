@@ -58,9 +58,70 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
   const [showRunnerResults, setShowRunnerResults] = useState(false);
   const [runResults, setRunResults] = useState<CollectionRunResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
+  const [expandedCollections, setExpandedCollections] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('expandedCollections');
+    return saved ? JSON.parse(saved) : {};
+  });
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem('expandedFolders');
+    return saved ? JSON.parse(saved) : {};
+  });
   const sidebarRef = useRef<HTMLDivElement>(null);
   
   const { collections, loading, loadCollections, createCollection, currentWorkspaceId, moveRequest, reorderItems } = useCollectionStore();
+
+  // Initialize expanded state for new collections and folders
+  useEffect(() => {
+    const newExpandedCollections = { ...expandedCollections };
+    const newExpandedFolders = { ...expandedFolders };
+    let hasChanges = false;
+    
+    const initializeFolders = (items: Collection[]) => {
+      items.forEach(item => {
+        if (item.type === 'COLLECTION' && !(item.id in newExpandedCollections)) {
+          newExpandedCollections[item.id] = false; // Default to collapsed for new collections
+          hasChanges = true;
+        } else if (item.type === 'FOLDER' && !(item.id in newExpandedFolders)) {
+          newExpandedFolders[item.id] = false; // Default to collapsed for new folders
+          hasChanges = true;
+        }
+        
+        if (item.childFolders && item.childFolders.length > 0) {
+          initializeFolders(item.childFolders);
+        }
+      });
+    };
+    
+    initializeFolders(collections);
+    
+    if (hasChanges) {
+      setExpandedCollections(newExpandedCollections);
+      setExpandedFolders(newExpandedFolders);
+    }
+  }, [collections]);
+
+  // Save expanded state to localStorage
+  useEffect(() => {
+    localStorage.setItem('expandedCollections', JSON.stringify(expandedCollections));
+  }, [expandedCollections]);
+
+  useEffect(() => {
+    localStorage.setItem('expandedFolders', JSON.stringify(expandedFolders));
+  }, [expandedFolders]);
+
+  const toggleCollectionExpanded = (collectionId: string) => {
+    setExpandedCollections(prev => ({
+      ...prev,
+      [collectionId]: !prev[collectionId]
+    }));
+  };
+
+  const toggleFolderExpanded = (folderId: string) => {
+    setExpandedFolders(prev => ({
+      ...prev,
+      [folderId]: !prev[folderId]
+    }));
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -294,13 +355,37 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
       className="transition-all duration-300 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col relative"
     >
       {/* Sidebar Header */}
-      <div className="h-12 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3">
+      <div className="h-12 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3 gap-2">
         {!isCollapsed && (
-          <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Collections</h3>
+          <>
+            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Collections</h3>
+            <div className="flex gap-1.5 flex-1 justify-end">
+              <button 
+                onClick={() => setShowNewCollectionDialog(true)}
+                className="px-2 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center gap-1 transition-colors"
+                title="Create New Collection"
+              >
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>New</span>
+              </button>
+              <button 
+                onClick={() => setShowImportDialog(true)}
+                className="px-2 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center gap-1 transition-colors"
+                title="Import Collection"
+              >
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>Import</span>
+              </button>
+            </div>
+          </>
         )}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 flex-shrink-0"
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <svg
@@ -345,29 +430,6 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
           {/* Content Area */}
           <div className="flex-1 overflow-y-auto p-3">
             <div className="space-y-2">
-              {/* Action Buttons */}
-              <div className="flex gap-2 justify-end">
-                <button 
-                  onClick={() => setShowNewCollectionDialog(true)}
-                  className="w-[100px] flex-shrink-0 px-2 py-2 text-sm font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  <span className="whitespace-nowrap">New</span>
-                </button>
-                <button 
-                  onClick={() => setShowImportDialog(true)}
-                  className="w-[100px] flex-shrink-0 px-2 py-2 text-sm font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center justify-center gap-1.5 transition-colors"
-                  title="Import Collection"
-                >
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
-                  <span className="whitespace-nowrap">Import</span>
-                </button>
-              </div>
-
               {/* Loading State */}
               {loading && (
                 <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
@@ -409,6 +471,10 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
                         onCollectionSelect={onCollectionSelect}
                         onDeselectCollection={onDeselectCollection}
                         isSelected={selectedCollectionId === collection.id}
+                        expanded={expandedCollections[collection.id] ?? true}
+                        onToggleExpanded={() => toggleCollectionExpanded(collection.id)}
+                        expandedFolders={expandedFolders}
+                        toggleFolderExpanded={toggleFolderExpanded}
                         onExport={(id, name) => {
                           setExportingCollectionId(id);
                           setExportingCollectionName(name);
@@ -436,7 +502,7 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
       {showNewCollectionDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96 max-w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Create New Collection
             </h3>
             <form onSubmit={handleCreateCollection}>
@@ -560,7 +626,11 @@ function CollectionItem({
   onRunCollection,
   onCollectionSelect,
   onDeselectCollection,
-  isSelected
+  isSelected,
+  expanded,
+  onToggleExpanded,
+  expandedFolders,
+  toggleFolderExpanded
 }: { 
   collection: Collection; 
   mainContentRef?: React.RefObject<MainContentRef>;
@@ -569,8 +639,11 @@ function CollectionItem({
   onCollectionSelect?: (collection: Collection) => void;
   onDeselectCollection?: () => void;
   isSelected?: boolean;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  expandedFolders: Record<string, boolean>;
+  toggleFolderExpanded: (folderId: string) => void;
 }) {
-  const [expanded, setExpanded] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -609,7 +682,7 @@ function CollectionItem({
             className={`w-3 h-3 text-gray-500 transform ${expanded ? 'rotate-90' : ''} mt-0.5`}
             fill="currentColor"
             viewBox="0 0 20 20"
-            onClick={() => setExpanded(!expanded)}
+            onClick={onToggleExpanded}
           >
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
           </svg>
@@ -754,7 +827,16 @@ function CollectionItem({
         {expanded && (
           <div className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2 mt-1 space-y-1">
             {collection.childFolders && collection.childFolders.map((folder) => (
-              <FolderItem key={folder.id} folder={folder} mainContentRef={mainContentRef} onDeselectCollection={onDeselectCollection} />
+              <FolderItem 
+                key={folder.id} 
+                folder={folder} 
+                mainContentRef={mainContentRef} 
+                onDeselectCollection={onDeselectCollection}
+                expanded={expandedFolders[folder.id] ?? false}
+                onToggleExpanded={() => toggleFolderExpanded(folder.id)}
+                expandedFolders={expandedFolders}
+                toggleFolderExpanded={toggleFolderExpanded}
+              />
             ))}
             {collection.requests && collection.requests.length > 0 && (
               <SortableContext
@@ -774,7 +856,7 @@ function CollectionItem({
       {showFolderDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96 max-w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
               Create New Folder
             </h3>
             <form onSubmit={handleCreateFolder}>
@@ -817,8 +899,23 @@ function CollectionItem({
   );
 }
 
-function FolderItem({ folder, mainContentRef, onDeselectCollection }: { folder: Collection; mainContentRef?: React.RefObject<MainContentRef>; onDeselectCollection?: () => void }) {
-  const [expanded, setExpanded] = useState(false);
+function FolderItem({ 
+  folder, 
+  mainContentRef, 
+  onDeselectCollection,
+  expanded,
+  onToggleExpanded,
+  expandedFolders,
+  toggleFolderExpanded
+}: { 
+  folder: Collection; 
+  mainContentRef?: React.RefObject<MainContentRef>; 
+  onDeselectCollection?: () => void;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  expandedFolders: Record<string, boolean>;
+  toggleFolderExpanded: (folderId: string) => void;
+}) {
   const { deleteCollection } = useCollectionStore();
   const { setNodeRef, isOver } = useSortable({
     id: `folder-${folder.id}`,
@@ -846,14 +943,14 @@ function FolderItem({ folder, mainContentRef, onDeselectCollection }: { folder: 
           className={`w-3 h-3 text-gray-500 transform ${expanded ? 'rotate-90' : ''} mt-0.5`}
           fill="currentColor"
           viewBox="0 0 20 20"
-          onClick={() => setExpanded(!expanded)}
+          onClick={onToggleExpanded}
         >
           <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
         </svg>
-        <svg className="w-4 h-4 text-yellow-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" onClick={() => setExpanded(!expanded)}>
+        <svg className="w-4 h-4 text-yellow-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" onClick={onToggleExpanded}>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
         </svg>
-        <span className="text-sm text-left text-gray-900 dark:text-gray-100 flex-1" onClick={() => setExpanded(!expanded)}>{folder.name}</span>
+        <span className="text-sm text-left text-gray-900 dark:text-gray-100 flex-1" onClick={onToggleExpanded}>{folder.name}</span>
         <button
           onClick={handleDeleteFolder}
           className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900"
@@ -867,7 +964,16 @@ function FolderItem({ folder, mainContentRef, onDeselectCollection }: { folder: 
       {expanded && (
         <div className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2 mt-1 space-y-1">
           {folder.childFolders && folder.childFolders.map((child) => (
-            <FolderItem key={child.id} folder={child} mainContentRef={mainContentRef} onDeselectCollection={onDeselectCollection} />
+            <FolderItem 
+              key={child.id} 
+              folder={child} 
+              mainContentRef={mainContentRef} 
+              onDeselectCollection={onDeselectCollection}
+              expanded={expandedFolders[child.id] ?? false}
+              onToggleExpanded={() => toggleFolderExpanded(child.id)}
+              expandedFolders={expandedFolders}
+              toggleFolderExpanded={toggleFolderExpanded}
+            />
           ))}
           {folder.requests && folder.requests.length > 0 && (
             <SortableContext

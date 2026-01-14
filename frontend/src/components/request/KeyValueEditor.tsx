@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VariableInput from '../common/VariableInput';
 
 export interface KeyValuePair {
@@ -36,16 +36,47 @@ export default function KeyValueEditor({
       key: '',
       value: '',
       description: '',
-      enabled: true,
+      enabled: false,
     };
     onChange([...pairs, newPair]);
   };
 
   const updatePair = (id: string, field: keyof KeyValuePair, value: string | boolean) => {
-    const updated = pairs.map((pair) =>
-      pair.id === id ? { ...pair, [field]: value } : pair
-    );
-    onChange(updated);
+    const updated = pairs.map((pair) => {
+      if (pair.id === id) {
+        const updatedPair = { ...pair, [field]: value };
+        
+        // Auto-enable checkbox when key or value is filled (but only if it's not manually set)
+        if (field === 'key' || field === 'value' || field === 'description') {
+          const hasContent = updatedPair.key || updatedPair.value || updatedPair.description;
+          // Only auto-enable if the pair was previously empty (enabled === false)
+          if (hasContent && !pair.enabled && field !== 'enabled') {
+            updatedPair.enabled = true;
+          }
+        }
+        
+        return updatedPair;
+      }
+      return pair;
+    });
+    
+    // Auto-add new empty row if the last row is being edited and has content
+    const lastPair = updated[updated.length - 1];
+    const isLastRow = id === lastPair?.id;
+    const hasContent = lastPair && (lastPair.key || lastPair.value || lastPair.description);
+    
+    if (isLastRow && hasContent) {
+      const newPair: KeyValuePair = {
+        id: Date.now().toString(),
+        key: '',
+        value: '',
+        description: '',
+        enabled: false,
+      };
+      onChange([...updated, newPair]);
+    } else {
+      onChange(updated);
+    }
   };
 
   const removePair = (id: string) => {
@@ -82,6 +113,36 @@ export default function KeyValueEditor({
     );
   };
 
+  // Ensure there's always at least one empty row at the end
+  useEffect(() => {
+    if (pairs.length === 0) {
+      const newPair: KeyValuePair = {
+        id: Date.now().toString(),
+        key: '',
+        value: '',
+        description: '',
+        enabled: false,
+      };
+      onChange([newPair]);
+    } else {
+      // Check if the last row is empty
+      const lastPair = pairs[pairs.length - 1];
+      const isEmpty = !lastPair.key && !lastPair.value && !lastPair.description;
+      
+      if (!isEmpty) {
+        // Add an empty row at the end
+        const newPair: KeyValuePair = {
+          id: Date.now().toString(),
+          key: '',
+          value: '',
+          description: '',
+          enabled: false,
+        };
+        onChange([...pairs, newPair]);
+      }
+    }
+  }, [pairs.length]);
+
   if (isBulkMode) {
     return (
       <div className="space-y-3">
@@ -107,8 +168,8 @@ export default function KeyValueEditor({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between mb-3">
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
             {pairs.filter((p) => p.enabled).length} enabled
@@ -169,7 +230,7 @@ export default function KeyValueEditor({
               onFocus={() => pair.key && setShowSuggestions(pair.id)}
               onBlur={() => setTimeout(() => setShowSuggestions(null), 200)}
               placeholder={placeholder.key}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             
             {/* Suggestions Dropdown */}
@@ -197,7 +258,7 @@ export default function KeyValueEditor({
               value={pair.value}
               onChange={(value) => updatePair(pair.id, 'value', value)}
               placeholder={placeholder.value}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -209,7 +270,7 @@ export default function KeyValueEditor({
                 value={pair.description || ''}
                 onChange={(e) => updatePair(pair.id, 'description', e.target.value)}
                 placeholder="Description"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           )}
@@ -228,17 +289,6 @@ export default function KeyValueEditor({
           </div>
         </div>
       ))}
-
-      {/* Add Button */}
-      <button
-        onClick={addPair}
-        className="w-full px-4 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md text-gray-600 dark:text-gray-400 hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors text-sm font-medium flex items-center justify-center gap-2"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-        Add {placeholder.key}
-      </button>
     </div>
   );
 }
