@@ -1,5 +1,4 @@
-import axios from 'axios';
-import { API_BASE_URL } from './api';
+import api from './api';
 
 export interface EnvironmentVariable {
   key: string;
@@ -28,7 +27,7 @@ class EnvironmentService {
     name: string,
     variables: EnvironmentVariable[] = []
   ): Promise<Environment> {
-    const response = await axios.post(`${API_BASE_URL}/workspaces/${workspaceId}/environments`, {
+    const response = await api.post(`/workspaces/${workspaceId}/environments`, {
       name,
       workspaceId,
       variables,
@@ -40,7 +39,7 @@ class EnvironmentService {
    * Get all environments in a workspace
    */
   async listEnvironments(workspaceId: string): Promise<Environment[]> {
-    const response = await axios.get(`${API_BASE_URL}/workspaces/${workspaceId}/environments`);
+    const response = await api.get(`/workspaces/${workspaceId}/environments`);
     return response.data.environments;
   }
 
@@ -48,7 +47,7 @@ class EnvironmentService {
    * Get a single environment by ID
    */
   async getEnvironment(id: string, workspaceId: string): Promise<Environment> {
-    const response = await axios.get(`${API_BASE_URL}/workspaces/${workspaceId}/environments/${id}`);
+    const response = await api.get(`/workspaces/${workspaceId}/environments/${id}`);
     return response.data;
   }
 
@@ -60,7 +59,7 @@ class EnvironmentService {
     workspaceId: string,
     data: { name?: string; variables?: EnvironmentVariable[] }
   ): Promise<Environment> {
-    const response = await axios.put(`${API_BASE_URL}/workspaces/${workspaceId}/environments/${id}`, data);
+    const response = await api.put(`/workspaces/${workspaceId}/environments/${id}`, data);
     return response.data;
   }
 
@@ -68,14 +67,14 @@ class EnvironmentService {
    * Delete an environment
    */
   async deleteEnvironment(id: string, workspaceId: string): Promise<void> {
-    await axios.delete(`${API_BASE_URL}/workspaces/${workspaceId}/environments/${id}`);
+    await api.delete(`/workspaces/${workspaceId}/environments/${id}`);
   }
 
   /**
    * Duplicate an environment
    */
   async duplicateEnvironment(id: string, workspaceId: string): Promise<Environment> {
-    const response = await axios.post(`${API_BASE_URL}/workspaces/${workspaceId}/environments/${id}/duplicate`);
+    const response = await api.post(`/workspaces/${workspaceId}/environments/${id}/duplicate`);
     return response.data;
   }
 }

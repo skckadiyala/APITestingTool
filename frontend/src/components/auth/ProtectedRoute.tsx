@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
@@ -10,17 +10,31 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children, requireWorkspace = true }: ProtectedRouteProps) => {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, accessToken } = useAuthStore();
   const { currentWorkspace, workspaces, isLoading, fetchWorkspaces } = useWorkspaceStore();
   const location = useLocation();
+  const [isRehydrated, setIsRehydrated] = useState(false);
+
+  // Wait for Zustand persist to rehydrate
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsRehydrated(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
-    // Fetch workspaces if authenticated and not already loaded or loading
-    if (isAuthenticated && workspaces.length === 0 && !isLoading) {
+    // Fetch workspaces only after rehydration and if authenticated with a token
+    if (isRehydrated && isAuthenticated && accessToken && workspaces.length === 0 && !isLoading) {
       fetchWorkspaces();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]); // Only run when authentication status changes
+  }, [isAuthenticated, accessToken, isRehydrated]); // Run when authentication or rehydration changes
+
+  // Wait for rehydration before making auth decisions
+  if (!isRehydrated) {
+    return <WorkspaceLoading />;
+  }
 
   // Check authentication first
   if (!isAuthenticated) {

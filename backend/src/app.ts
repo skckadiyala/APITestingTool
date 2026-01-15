@@ -18,6 +18,7 @@ import requestsRoutes from './routes/requests.routes';
 import collectionsRoutes from './routes/collections.routes';
 import environmentsRoutes from './routes/environments.routes';
 import dataFileRoutes from './routes/dataFile.routes';
+import workspaceMembersRoutes from './routes/workspaceMembers.routes';
 
 const app: Application = express();
 const PORT = process.env.PORT || 5000;
@@ -34,7 +35,9 @@ const getAllowedOrigins = (): string[] => {
   const defaultOrigins = [
     frontendUrl,
     'http://localhost:5173',
+    'http://localhost:5174',
     'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
   ];
   
   // Add CORS_ORIGIN if it exists and is different
@@ -103,6 +106,7 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // API Routes
 app.use(`${API_PREFIX}/auth`, authRoutes);
+app.use(`${API_PREFIX}`, workspaceMembersRoutes);
 app.use(`${API_PREFIX}/workspaces`, workspaceRoutes);
 app.use(`${API_PREFIX}/requests`, requestsRoutes);
 app.use(`${API_PREFIX}/data-files`, dataFileRoutes);

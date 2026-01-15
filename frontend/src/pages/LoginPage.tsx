@@ -52,6 +52,9 @@ export const LoginPage = () => {
         refreshToken: response.data.refreshToken,
       });
 
+      // Wait a moment for Zustand persist to save to localStorage
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Fetch workspaces after successful login
       await fetchWorkspaces();
 

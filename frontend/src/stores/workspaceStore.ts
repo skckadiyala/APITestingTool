@@ -2,11 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import toast from 'react-hot-toast';
 import * as workspaceService from '../services/workspaceService';
+import workspaceMemberService from '../services/workspaceMemberService';
 import type { Workspace } from '../services/workspaceService';
+import type { WorkspaceMember, UserSearchResult, WorkspaceRole } from '../types/workspace.types';
 
 interface WorkspaceState {
   workspaces: Workspace[];
   currentWorkspace: Workspace | null;
+  workspaceMembers: WorkspaceMember[];
   isLoading: boolean;
   error: string | null;
 
@@ -14,10 +17,17 @@ interface WorkspaceState {
   fetchWorkspaces: () => Promise<void>;
   setCurrentWorkspace: (workspaceId: string) => void;
   createWorkspace: (name: string) => Promise<Workspace | null>;
-  updateWorkspace: (id: string, updates: Partial<Workspace>) => Promise<void>;
+  updateWorkspace: (id: string, name: string, description?: string) => Promise<void>;
   deleteWorkspace: (id: string) => Promise<void>;
   duplicateWorkspace: (id: string) => Promise<void>;
   clearWorkspaces: () => void;
+  
+  // Member management actions
+  fetchWorkspaceMembers: (workspaceId: string) => Promise<void>;
+  addMember: (workspaceId: string, userId: string, role: WorkspaceRole) => Promise<void>;
+  updateMemberRole: (workspaceId: string, memberId: string, role: WorkspaceRole) => Promise<void>;
+  removeMember: (workspaceId: string, memberId: string) => Promise<void>;
+  searchUsers: (searchTerm: string) => Promise<UserSearchResult[]>;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -25,11 +35,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
     (set, get) => ({
       workspaces: [],
       currentWorkspace: null,
+      workspaceMembers: [],
       isLoading: false,
       error: null,
 
       /**
        * Fetch all workspaces for the authenticated user
+       * Includes both owned and member workspaces with userRole
        */
       fetchWorkspaces: async () => {
         // Prevent concurrent fetches
@@ -40,6 +52,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         
         set({ isLoading: true, error: null });
         try {
+          // Fetch both owned and member workspaces (backend already returns merged list)
           const workspaces = await workspaceService.getWorkspaces();
           
           const currentState = get();
@@ -66,6 +79,9 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               currentWorkspace = workspaces[0];
             } else if (!exists) {
               currentWorkspace = null;
+            } else {
+              // Update current workspace with fresh data including userRole
+              currentWorkspace = exists;
             }
           }
 
@@ -82,7 +98,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       },
 
       /**
-       * Set current workspace
+       * Set current workspace and update with userRole from workspace data
        */
       setCurrentWorkspace: (workspaceId: string) => {
         const state = get();
@@ -90,8 +106,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
         if (workspace) {
           set({ currentWorkspace: workspace });
-          
-          // Persist to localStorage is handled by persist middleware
+          localStorage.setItem('lastWorkspaceId', workspaceId);
           
           // Note: Collection/environment loading for new workspace is handled in Layout component
         } else {
@@ -128,11 +143,12 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       /**
        * Update workspace
        */
-      updateWorkspace: async (id: string, updates: Partial<Workspace>) => {
+      updateWorkspace: async (id: string, name: string, description?: string) => {
         set({ isLoading: true, error: null });
         try {
           const updatedWorkspace = await workspaceService.updateWorkspace(id, {
-            name: updates.name || '',
+            name,
+            description,
           });
 
           const state = get();
@@ -205,9 +221,113 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         set({
           workspaces: [],
           currentWorkspace: null,
+          workspaceMembers: [],
           isLoading: false,
           error: null,
         });
+      },
+
+      /**
+       * Fetch workspace members
+       */
+      fetchWorkspaceMembers: async (workspaceId: string) => {
+        try {
+          const members = await workspaceMemberService.getWorkspaceMembers(workspaceId);
+          set({ workspaceMembers: members });
+        } catch (error: any) {
+          toast.error(error.response?.data?.error || 'Failed to fetch workspace members');
+        }
+      },
+
+      /**
+       * Add a member to workspace
+       */
+      addMember: async (workspaceId: string, userId: string, role: WorkspaceRole) => {
+        try {
+          const newMember = await workspaceMemberService.addMember(workspaceId, userId, role);
+          
+          const state = get();
+          set({ workspaceMembers: [...state.workspaceMembers, newMember] });
+          
+          // Update member count in workspace list
+          const workspaces = state.workspaces.map((w) =>
+            w.id === workspaceId 
+              ? { ...w, membersCount: (w.membersCount || 1) + 1 }
+              : w
+          );
+          
+          const currentWorkspace = state.currentWorkspace?.id === workspaceId
+            ? { ...state.currentWorkspace, membersCount: (state.currentWorkspace.membersCount || 1) + 1 }
+            : state.currentWorkspace;
+          
+          set({ workspaces, currentWorkspace });
+          toast.success('Member added successfully');
+        } catch (error: any) {
+          toast.error(error.response?.data?.error || 'Failed to add member');
+          throw error;
+        }
+      },
+
+      /**
+       * Update member role
+       */
+      updateMemberRole: async (workspaceId: string, memberId: string, role: WorkspaceRole) => {
+        try {
+          const updatedMember = await workspaceMemberService.updateMemberRole(workspaceId, memberId, role);
+          
+          const state = get();
+          const workspaceMembers = state.workspaceMembers.map((m) =>
+            m.id === memberId ? updatedMember : m
+          );
+          
+          set({ workspaceMembers });
+          toast.success('Member role updated');
+        } catch (error: any) {
+          toast.error(error.response?.data?.error || 'Failed to update member role');
+          throw error;
+        }
+      },
+
+      /**
+       * Remove member from workspace
+       */
+      removeMember: async (workspaceId: string, memberId: string) => {
+        try {
+          await workspaceMemberService.removeMember(workspaceId, memberId);
+          
+          const state = get();
+          const workspaceMembers = state.workspaceMembers.filter((m) => m.id !== memberId);
+          set({ workspaceMembers });
+          
+          // Update member count in workspace list
+          const workspaces = state.workspaces.map((w) =>
+            w.id === workspaceId 
+              ? { ...w, membersCount: Math.max((w.membersCount || 1) - 1, 1) }
+              : w
+          );
+          
+          const currentWorkspace = state.currentWorkspace?.id === workspaceId
+            ? { ...state.currentWorkspace, membersCount: Math.max((state.currentWorkspace.membersCount || 1) - 1, 1) }
+            : state.currentWorkspace;
+          
+          set({ workspaces, currentWorkspace });
+          toast.success('Member removed successfully');
+        } catch (error: any) {
+          toast.error(error.response?.data?.error || 'Failed to remove member');
+          throw error;
+        }
+      },
+
+      /**
+       * Search users for adding to workspace
+       */
+      searchUsers: async (searchTerm: string): Promise<UserSearchResult[]> => {
+        try {
+          return await workspaceMemberService.searchUsers(searchTerm);
+        } catch (error: any) {
+          toast.error('Failed to search users');
+          return [];
+        }
       },
     }),
     {

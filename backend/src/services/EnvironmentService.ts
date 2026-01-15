@@ -25,6 +25,7 @@ interface UpdateEnvironmentDto {
 class EnvironmentService {
   /**
    * Create a new environment
+   * Note: Workspace permission checks are handled by route middleware (requireWorkspaceEditor)
    */
   async createEnvironment(data: CreateEnvironmentDto) {
     const { name, workspaceId, variables = [] } = data;
@@ -52,6 +53,7 @@ class EnvironmentService {
 
   /**
    * Get all environments in a workspace
+   * Note: Workspace permission checks are handled by route middleware (requireWorkspaceViewer)
    */
   async listEnvironments(workspaceId: string) {
     const environments = await prisma.environment.findMany({
@@ -79,6 +81,7 @@ class EnvironmentService {
 
   /**
    * Update an environment
+   * Note: Workspace permission checks are handled by route middleware (requireWorkspaceEditor)
    */
   async updateEnvironment(id: string, data: UpdateEnvironmentDto) {
     // Verify environment exists
@@ -236,6 +239,7 @@ class EnvironmentService {
       return value !== undefined ? value : match;
     });
   }
+
 }
 
 export default new EnvironmentService();

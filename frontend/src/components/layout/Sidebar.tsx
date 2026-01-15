@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
+import { useWorkspacePermission } from '../../hooks/useWorkspacePermission';
 import type { Collection, CollectionRequest } from '../../services/collectionService';
 import type { MainContentRef } from './MainContent';
 import ExportDialog from '../collections/ExportDialog';
@@ -69,6 +70,7 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
   const sidebarRef = useRef<HTMLDivElement>(null);
   
   const { collections, loading, loadCollections, createCollection, currentWorkspaceId, moveRequest, reorderItems } = useCollectionStore();
+  const { canEdit } = useWorkspacePermission(currentWorkspaceId);
 
   // Initialize expanded state for new collections and folders
   useEffect(() => {
@@ -360,26 +362,38 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
           <>
             <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Collections</h3>
             <div className="flex gap-1.5 flex-1 justify-end">
-              <button 
-                onClick={() => setShowNewCollectionDialog(true)}
-                className="px-2 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center gap-1 transition-colors"
-                title="Create New Collection"
-              >
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span>New</span>
-              </button>
-              <button 
-                onClick={() => setShowImportDialog(true)}
-                className="px-2 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center gap-1 transition-colors"
-                title="Import Collection"
-              >
-                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span>Import</span>
-              </button>
+              {canEdit ? (
+                <>
+                  <button 
+                    onClick={() => setShowNewCollectionDialog(true)}
+                    className="px-2 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center gap-1 transition-colors"
+                    title="Create New Collection"
+                  >
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>New</span>
+                  </button>
+                  <button 
+                    onClick={() => setShowImportDialog(true)}
+                    className="px-2 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center gap-1 transition-colors"
+                    title="Import Collection"
+                  >
+                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    <span>Import</span>
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 dark:text-gray-400" title="Read-only access">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span>View Only</span>
+                </div>
+              )}
             </div>
           </>
         )}

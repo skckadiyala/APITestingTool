@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import EnvironmentService from '../services/EnvironmentService';
+import { authenticate } from '../middleware/auth.middleware';
+import { requireWorkspaceViewer, requireWorkspaceEditor } from '../middleware/workspace.middleware';
 
 // mergeParams: true allows access to params from parent route (workspaceId)
 const router = Router({ mergeParams: true });
@@ -9,7 +11,7 @@ const router = Router({ mergeParams: true });
  * POST /api/v1/workspaces/:workspaceId/environments
  * Create a new environment
  */
-router.post('/', async (req: Request, res: Response): Promise<void> => {
+router.post('/', authenticate, requireWorkspaceEditor(), async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, variables } = req.body;
     // Support both workspace-scoped route and legacy route
@@ -39,7 +41,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  * GET /api/v1/workspaces/:workspaceId/environments
  * List all environments in a workspace
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticate, requireWorkspaceViewer(), async (req: Request, res: Response): Promise<void> => {
   try {
     // Support both workspace-scoped route (/workspaces/:workspaceId/environments) and legacy route
     const workspaceId = req.params.workspaceId || req.query.workspaceId;
@@ -61,7 +63,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  * GET /api/v1/environments/:id
  * Get a single environment with all variables
  */
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+router.get('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -81,7 +83,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
  * PUT /api/v1/environments/:id
  * Update an environment
  */
-router.put('/:id', async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', authenticate, requireWorkspaceEditor(), async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { name, variables } = req.body;
@@ -105,7 +107,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
  * DELETE /api/v1/environments/:id
  * Delete an environment
  */
-router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', authenticate, requireWorkspaceEditor(), async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -125,7 +127,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
  * POST /api/v1/environments/:id/duplicate
  * Duplicate an environment
  */
-router.post('/:id/duplicate', async (req: Request, res: Response): Promise<void> => {
+router.post('/:id/duplicate', authenticate, requireWorkspaceEditor(), async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 

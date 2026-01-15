@@ -1,4 +1,5 @@
-import { PrismaClient, Workspace, Prisma } from '@prisma/client';
+import { PrismaClient, Workspace, Prisma, WorkspaceRole } from '@prisma/client';
+import WorkspaceMemberService from './WorkspaceMemberService';
 
 const prisma = new PrismaClient();
 
@@ -47,7 +48,8 @@ export class WorkspaceService {
    * Get all workspaces for a user
    */
   static async getUserWorkspaces(userId: string) {
-    const workspaces = await prisma.workspace.findMany({
+    // Get workspaces where user is owner
+    const ownedWorkspaces = await prisma.workspace.findMany({
       where: {
         ownerId: userId,
       },
@@ -60,36 +62,86 @@ export class WorkspaceService {
               },
             },
             environments: true,
+            members: true,
           },
         },
       },
-      orderBy: {
-        updatedAt: 'desc',
+    });
+
+    // Get workspaces where user is a member
+    const memberWorkspaces = await prisma.workspaceMember.findMany({
+      where: {
+        userId: userId,
+      },
+      include: {
+        workspace: {
+          include: {
+            _count: {
+              select: {
+                collections: {
+                  where: {
+                    type: 'COLLECTION',
+                  },
+                },
+                environments: true,
+                members: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    // Transform the response to include counts
-    return workspaces.map((workspace) => ({
-      id: workspace.id,
-      name: workspace.name,
-      description: workspace.description,
-      ownerId: workspace.ownerId,
-      createdAt: workspace.createdAt,
-      updatedAt: workspace.updatedAt,
-      settings: workspace.settings,
-      collectionsCount: workspace._count.collections,
-      environmentsCount: workspace._count.environments,
-    }));
+    // Combine and format results
+    const allWorkspaces = [
+      ...ownedWorkspaces.map((workspace) => ({
+        id: workspace.id,
+        name: workspace.name,
+        description: workspace.description,
+        ownerId: workspace.ownerId,
+        createdAt: workspace.createdAt,
+        updatedAt: workspace.updatedAt,
+        settings: workspace.settings,
+        collectionsCount: workspace._count.collections,
+        environmentsCount: workspace._count.environments,
+        membersCount: workspace._count.members + 1, // +1 for owner
+        userRole: WorkspaceRole.OWNER, // Frontend expects userRole
+      })),
+      ...memberWorkspaces.map((member) => ({
+        id: member.workspace.id,
+        name: member.workspace.name,
+        description: member.workspace.description,
+        ownerId: member.workspace.ownerId,
+        createdAt: member.workspace.createdAt,
+        updatedAt: member.workspace.updatedAt,
+        settings: member.workspace.settings,
+        collectionsCount: member.workspace._count.collections,
+        environmentsCount: member.workspace._count.environments,
+        membersCount: member.workspace._count.members + 1, // +1 for owner
+        userRole: member.role, // Frontend expects userRole
+      })),
+    ];
+
+    // Sort by updatedAt descending
+    allWorkspaces.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+
+    return allWorkspaces;
   }
 
   /**
    * Get workspace by ID
    */
   static async getWorkspaceById(workspaceId: string, userId: string) {
-    const workspace = await prisma.workspace.findFirst({
+    // Check if user has access (owner or member)
+    const userRole = await WorkspaceMemberService.checkUserPermission(workspaceId, userId);
+    
+    if (!userRole) {
+      throw new Error('Workspace not found or access denied');
+    }
+
+    const workspace = await prisma.workspace.findUnique({
       where: {
         id: workspaceId,
-        ownerId: userId,
       },
       include: {
         owner: {
@@ -107,13 +159,14 @@ export class WorkspaceService {
               },
             },
             environments: true,
+            members: true,
           },
         },
       },
     });
 
     if (!workspace) {
-      throw new Error('Workspace not found or access denied');
+      throw new Error('Workspace not found');
     }
 
     return {
@@ -127,6 +180,8 @@ export class WorkspaceService {
       owner: workspace.owner,
       collectionsCount: workspace._count.collections,
       environmentsCount: workspace._count.environments,
+      membersCount: workspace._count.members + 1, // +1 for owner
+      userRole: userRole,
     };
   }
 
@@ -138,16 +193,25 @@ export class WorkspaceService {
     userId: string,
     updates: { name?: string; description?: string; settings?: any }
   ): Promise<Workspace> {
-    // Validate ownership
-    const workspace = await prisma.workspace.findFirst({
-      where: {
-        id: workspaceId,
-        ownerId: userId,
-      },
-    });
+    // Check user's role in workspace
+    const userRole = await WorkspaceMemberService.checkUserPermission(workspaceId, userId);
 
-    if (!workspace) {
+    if (!userRole) {
       throw new Error('Workspace not found or access denied');
+    }
+
+    // Check if user has OWNER or EDITOR role for name/description updates
+    if (updates.name !== undefined || updates.description !== undefined) {
+      if (!WorkspaceMemberService.hasPermission(userRole, WorkspaceRole.EDITOR)) {
+        throw new Error('You need EDITOR or OWNER role to update workspace details');
+      }
+    }
+
+    // Only OWNER can update settings
+    if (updates.settings !== undefined) {
+      if (userRole !== WorkspaceRole.OWNER) {
+        throw new Error('Only workspace owners can update settings');
+      }
     }
 
     // Validate name if provided
@@ -188,7 +252,7 @@ export class WorkspaceService {
    * Delete workspace
    */
   static async deleteWorkspace(workspaceId: string, userId: string): Promise<void> {
-    // Check if user owns the workspace
+    // Only workspace owner can delete workspace
     const workspace = await prisma.workspace.findFirst({
       where: {
         id: workspaceId,
@@ -197,7 +261,7 @@ export class WorkspaceService {
     });
 
     if (!workspace) {
-      throw new Error('Workspace not found or access denied');
+      throw new Error('Workspace not found or only the owner can delete a workspace');
     }
 
     // Check if this is the user's only workspace
@@ -211,7 +275,7 @@ export class WorkspaceService {
       throw new Error('Cannot delete your only workspace');
     }
 
-    // Delete workspace (cascade will handle related data)
+    // Delete workspace (cascade will handle related data including WorkspaceMembers)
     await prisma.workspace.delete({
       where: {
         id: workspaceId,
@@ -312,5 +376,25 @@ export class WorkspaceService {
     });
 
     return duplicatedWorkspace;
+  }
+
+  /**
+   * Check if user is a member of workspace (owner or has WorkspaceMember record)
+   */
+  static async isWorkspaceMember(workspaceId: string, userId: string): Promise<boolean> {
+    const userRole = await WorkspaceMemberService.checkUserPermission(workspaceId, userId);
+    return userRole !== null;
+  }
+
+  /**
+   * Check if user has required permission level in workspace
+   */
+  static async hasWorkspacePermission(
+    workspaceId: string,
+    userId: string,
+    requiredRole: WorkspaceRole
+  ): Promise<boolean> {
+    const userRole = await WorkspaceMemberService.checkUserPermission(workspaceId, userId);
+    return WorkspaceMemberService.hasPermission(userRole, requiredRole);
   }
 }
