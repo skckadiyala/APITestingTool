@@ -5,6 +5,8 @@ import { ExportService } from '../services/ExportService';
 import { ImportService } from '../services/ImportService';
 import { CollectionRunner } from '../services/CollectionRunner';
 import multer from 'multer';
+import { authenticate } from '../middleware/auth.middleware';
+import { requireWorkspaceViewer, requireWorkspaceEditor } from '../middleware/workspace.middleware';
 
 // mergeParams: true allows access to params from parent route (workspaceId)
 const router = Router({ mergeParams: true });
@@ -14,7 +16,7 @@ const router = Router({ mergeParams: true });
  * POST /api/v1/workspaces/:workspaceId/collections
  * Create a new collection
  */
-router.post('/', async (req: Request, res: Response): Promise<void> => {
+router.post('/', authenticate, requireWorkspaceEditor(), async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, description, parentFolderId, type } = req.body;
     // Support both workspace-scoped route and legacy route
@@ -53,7 +55,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
  * GET /api/v1/workspaces/:workspaceId/collections
  * List all collections in workspace
  */
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', authenticate, requireWorkspaceViewer(), async (req: Request, res: Response): Promise<void> => {
   try {
     // Support both workspace-scoped route (/workspaces/:workspaceId/collections) and legacy route
     const workspaceId = req.params.workspaceId || req.query.workspaceId;
@@ -82,7 +84,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
  * GET /api/v1/collections/:id
  * Get collection with requests
  */
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+router.get('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const includeNested = req.query.nested === 'true';
@@ -107,7 +109,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
  * PUT /api/v1/collections/:id
  * Update collection
  */
-router.put('/:id', async (req: Request, res: Response): Promise<void> => {
+router.put('/:id', authenticate, requireWorkspaceEditor(), async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { name, description, variables, preRequestScript, testScript, auth } = req.body;
@@ -139,7 +141,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
  * DELETE /api/v1/collections/:id
  * Delete collection
  */
-router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
+router.delete('/:id', authenticate, requireWorkspaceEditor(), async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 

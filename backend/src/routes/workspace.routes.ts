@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { WorkspaceService } from '../services/WorkspaceService';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import { requireWorkspaceViewer, requireWorkspaceOwner } from '../middleware/workspace.middleware';
 import collectionsRoutes from './collections.routes';
 import environmentsRoutes from './environments.routes';
 
@@ -62,7 +63,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
  * GET /api/workspaces/:id
  * Get workspace by ID
  */
-router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/:id', authenticate, requireWorkspaceViewer(), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -86,7 +87,7 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
  * PUT /api/workspaces/:id
  * Update workspace
  */
-router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+router.put('/:id', authenticate, requireWorkspaceViewer(), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { name, description, settings } = req.body;
@@ -124,7 +125,7 @@ router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
  * DELETE /api/workspaces/:id
  * Delete workspace
  */
-router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+router.delete('/:id', authenticate, requireWorkspaceOwner(), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -152,7 +153,7 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
  * POST /api/workspaces/:id/duplicate
  * Duplicate workspace
  */
-router.post('/:id/duplicate', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/:id/duplicate', authenticate, requireWorkspaceViewer(), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 

@@ -161,18 +161,36 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
   },
 
   updateCollection: async (id: string, name?: string, description?: string) => {
-    set({ loading: true, error: null });
+    set({ error: null });
+    
+    // Store original collections for rollback
+    const originalCollections = get().collections;
+    
     try {
       const workspaceId = get().currentWorkspaceId;
+      
+      // Optimistically update the collection in state immediately
+      const updateCollectionInList = (collections: Collection[]): Collection[] => {
+        return collections.map(col => {
+          if (col.id === id) {
+            return { ...col, ...(name !== undefined && { name }), ...(description !== undefined && { description }) };
+          }
+          if (col.childFolders?.length) {
+            return { ...col, childFolders: updateCollectionInList(col.childFolders) };
+          }
+          return col;
+        });
+      };
+      
+      set({ collections: updateCollectionInList(originalCollections) });
+      
+      // Update in the backend - no need to reload since optimistic update is already applied
       await collectionService.updateCollection(id, workspaceId, { name, description });
       
-      // Reload collections to get the updated list
-      await get().loadCollections(get().currentWorkspaceId);
-      
       toast.success('Collection updated successfully');
-      set({ loading: false });
     } catch (error: any) {
-      set({ error: error.message || 'Failed to update collection', loading: false });
+      // Revert optimistic update on error
+      set({ collections: originalCollections, error: error.message || 'Failed to update collection' });
       toast.error('Failed to update collection');
     }
   },

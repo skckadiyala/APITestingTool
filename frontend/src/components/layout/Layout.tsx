@@ -10,13 +10,12 @@ import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
 import { useWorkspaceSwitch } from '../../hooks/useWorkspaceSwitch';
-import type { Collection } from '../../services/collectionService';
+
 
 export default function Layout() {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  // const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const mainContentRef = useRef<any>(null);
   const [consoleLogs, setConsoleLogs] = useState<Array<{ type: 'request' | 'response' | 'error' | 'info'; message: string; timestamp: number }>>([]);
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
   const { workspaces, currentWorkspace, isLoading, fetchWorkspaces } = useWorkspaceStore();
   const { isSwitching } = useWorkspaceSwitch();
 
@@ -111,10 +110,7 @@ export default function Layout() {
       <div className="flex-1 flex overflow-hidden relative">
         {/* Sidebar */}
         <Sidebar 
-          mainContentRef={mainContentRef} 
-          onCollectionSelect={setSelectedCollection}
-          onDeselectCollection={() => setSelectedCollection(null)}
-          selectedCollectionId={selectedCollection?.id}
+          mainContentRef={mainContentRef}
         />
 
         {/* Main Content + Bottom Panel */}
@@ -122,9 +118,7 @@ export default function Layout() {
           isSwitching ? 'opacity-50 pointer-events-none' : 'opacity-100'
         }`}>
           <MainContent 
-            ref={mainContentRef} 
-            selectedCollection={selectedCollection}
-            onDeselectCollection={() => setSelectedCollection(null)}
+            ref={mainContentRef}
           />
           <BottomPanel consoleLogs={consoleLogs} onClear={handleClearLogs} />
         </div>

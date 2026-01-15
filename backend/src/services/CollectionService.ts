@@ -63,6 +63,7 @@ export interface ReorderItemDto {
 class CollectionService {
   /**
    * Create a new collection
+   * Note: Workspace permission checks are handled by route middleware (requireWorkspaceEditor)
    */
   async createCollection(data: CreateCollectionDto) {
     // Get the max order index for collections at this level
@@ -100,6 +101,7 @@ class CollectionService {
 
   /**
    * Get all collections in a workspace
+   * Note: Workspace permission checks are handled by route middleware (requireWorkspaceViewer)
    */
   async getCollections(workspaceId: string) {
     // Recursive function to get nested structure
@@ -159,6 +161,7 @@ class CollectionService {
 
   /**
    * Get a collection by ID with all nested folders and requests
+   * Note: Workspace permission checks are handled by route middleware (requireWorkspaceViewer)
    */
   async getCollectionById(id: string, includeNested = true) {
     if (!includeNested) {
@@ -217,6 +220,7 @@ class CollectionService {
 
   /**
    * Update a collection
+   * Note: Workspace permission checks are handled by route middleware (requireWorkspaceEditor)
    */
   async updateCollection(id: string, data: UpdateCollectionDto) {
     return await prisma.collection.update({
@@ -239,6 +243,7 @@ class CollectionService {
 
   /**
    * Delete a collection (cascades to child folders and requests)
+   * Note: Workspace permission checks are handled by route middleware (requireWorkspaceEditor)
    */
   async deleteCollection(id: string) {
     return await prisma.collection.delete({
@@ -529,6 +534,7 @@ class CollectionService {
       where: { id: requestId },
     });
   }
+
 }
 
 export default new CollectionService();

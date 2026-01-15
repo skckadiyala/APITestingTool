@@ -5,6 +5,7 @@ import RequestTabs from '../request/RequestTabs';
 import RequestTabBar from '../request/RequestTabBar';
 import ResponseViewer from '../response/ResponseViewer';
 import CollectionViewer from '../collections/CollectionViewer';
+import WorkspaceSettingsTabContent from '../workspace/WorkspaceSettingsTabContent';
 import { type KeyValuePair } from '../request/KeyValueEditor';
 import { type BodyType } from '../request/BodyEditor';
 import { requestService, type ExecutionResult } from '../../services/requestService';
@@ -12,7 +13,7 @@ import { fetchHistoryDetail, type HistoryEntry } from '../../services/historySer
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
-import type { Collection } from '../../services/collectionService';
+
 
 type TabType = 'params' | 'headers' | 'body' | 'auth' | 'pre-request' | 'tests';
 type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2';
@@ -34,11 +35,11 @@ export interface MainContentRef {
 }
 
 interface MainContentProps {
-  selectedCollection?: Collection | null;
-  onDeselectCollection?: () => void;
+  // Props kept for backward compatibility but collections now use tab system
 }
 
-const MainContent = forwardRef<MainContentRef, MainContentProps>(({ selectedCollection }, ref) => {
+const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
+  
   // Stores
   const { collections, addRequestToCollection, updateRequestInCollection } = useCollectionStore();
   const { tabs, activeTabId, updateTab } = useTabStore();
@@ -891,9 +892,7 @@ pm.test("Response has correct structure", function () {
       {/* Request Tabs */}
       <RequestTabBar />
       
-      {selectedCollection ? (
-        <CollectionViewer collection={selectedCollection} />
-      ) : !activeTabId ? (
+      {!activeTabId ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center text-gray-400 dark:text-gray-500">
             <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -903,6 +902,10 @@ pm.test("Response has correct structure", function () {
             <p className="text-sm mt-2">Create a new request or select one from a collection</p>
           </div>
         </div>
+      ) : tabs.find(t => t.id === activeTabId)?.type === 'workspace-settings' ? (
+        <WorkspaceSettingsTabContent />
+      ) : tabs.find(t => t.id === activeTabId)?.type === 'collection' ? (
+        <CollectionViewer collection={tabs.find(t => t.id === activeTabId)?.collectionData} />
       ) : (
         <>
           {/* Request Name Input */}

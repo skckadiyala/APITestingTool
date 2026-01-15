@@ -80,10 +80,7 @@ export default function WorkspaceSettingsModal({ isOpen, onClose }: WorkspaceSet
 
     setIsSaving(true);
     try {
-      await updateWorkspace(currentWorkspace.id, {
-        name: name.trim(),
-        description: description.trim() || undefined,
-      });
+      await updateWorkspace(currentWorkspace.id, name.trim(), description.trim() || undefined);
       setHasUnsavedChanges(false);
       toast.success('Workspace settings saved');
     } catch (error: any) {

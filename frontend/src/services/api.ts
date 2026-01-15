@@ -49,6 +49,8 @@ apiClient.interceptors.request.use(
     
     if (accessToken && config.headers) {
       config.headers.Authorization = `Bearer ${accessToken}`;
+    } else {
+      console.warn('No access token found in request interceptor');
     }
     
     return config;

@@ -20,9 +20,11 @@ model User {
   createdAt         DateTime    @default(now()) @map("created_at")
   updatedAt         DateTime    @updatedAt @map("updated_at")
   
-  workspaces        Workspace[]
-  requestHistory    RequestHistory[]
-  refreshTokens     RefreshToken[]
+  workspaces          Workspace[]
+  requestHistory      RequestHistory[]
+  refreshTokens       RefreshToken[]
+  workspaceMemberships WorkspaceMember[]
+  addedMembers        WorkspaceMember[] @relation("AddedBy")
   
   @@map("users")
 }
@@ -48,9 +50,10 @@ model Workspace {
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   
-  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  collections Collection[]
-  environments Environment[]
+  owner         User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  collections   Collection[]
+  environments  Environment[]
+  members       WorkspaceMember[]
   
   @@map("workspaces")
 }
@@ -167,4 +170,30 @@ model DataFile {
 enum FileType {
   CSV
   JSON
+}
+
+model WorkspaceMember {
+  id          String        @id @default(uuid())
+  workspaceId String        @map("workspace_id")
+  userId      String        @map("user_id")
+  role        WorkspaceRole @default(VIEWER)
+  addedBy     String?       @map("added_by")
+  addedAt     DateTime      @default(now()) @map("added_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addedByUser User?         @relation("AddedBy", fields: [addedBy], references: [id])
+  
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("workspace_members")
+}
+
+enum WorkspaceRole {
+  OWNER
+  EDITOR
+  VIEWER
 }
