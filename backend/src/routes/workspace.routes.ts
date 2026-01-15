@@ -87,7 +87,7 @@ router.get('/:id', authenticate, requireWorkspaceViewer(), async (req: AuthReque
  * PUT /api/workspaces/:id
  * Update workspace
  */
-router.put('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+router.put('/:id', authenticate, requireWorkspaceViewer(), async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
     const { name, description, settings } = req.body;
