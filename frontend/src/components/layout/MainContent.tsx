@@ -13,7 +13,7 @@ import { fetchHistoryDetail, type HistoryEntry } from '../../services/historySer
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
-import type { Collection } from '../../services/collectionService';
+
 
 type TabType = 'params' | 'headers' | 'body' | 'auth' | 'pre-request' | 'tests';
 type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2';
@@ -38,7 +38,8 @@ interface MainContentProps {
   // Props kept for backward compatibility but collections now use tab system
 }
 
-const MainContent = forwardRef<MainContentRef, MainContentProps>((props, ref) => {
+const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
+  
   // Stores
   const { collections, addRequestToCollection, updateRequestInCollection } = useCollectionStore();
   const { tabs, activeTabId, updateTab } = useTabStore();

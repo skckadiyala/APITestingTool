@@ -1,4 +1,5 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
@@ -11,7 +12,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children, requireWorkspace = true }: ProtectedRouteProps) => {
   const { isAuthenticated, accessToken } = useAuthStore();
-  const { currentWorkspace, workspaces, isLoading, fetchWorkspaces } = useWorkspaceStore();
+  const { workspaces, isLoading, fetchWorkspaces } = useWorkspaceStore();
   const location = useLocation();
   const [isRehydrated, setIsRehydrated] = useState(false);
 

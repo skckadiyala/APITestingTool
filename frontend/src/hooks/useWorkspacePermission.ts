@@ -1,7 +1,7 @@
 import { useWorkspaceStore } from '../stores/workspaceStore';
 import { WorkspaceRole } from '../types/workspace.types';
 
-export const useWorkspacePermission = (workspaceId?: string) => {
+export const useWorkspacePermission = (_workspaceId?: string) => {
   const { currentWorkspace } = useWorkspaceStore();
   
   const userRole = currentWorkspace?.userRole;

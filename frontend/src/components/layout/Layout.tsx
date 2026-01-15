@@ -10,10 +10,10 @@ import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
 import { useWorkspaceSwitch } from '../../hooks/useWorkspaceSwitch';
-import type { Collection } from '../../services/collectionService';
+
 
 export default function Layout() {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  // const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const mainContentRef = useRef<any>(null);
   const [consoleLogs, setConsoleLogs] = useState<Array<{ type: 'request' | 'response' | 'error' | 'info'; message: string; timestamp: number }>>([]);
   const { workspaces, currentWorkspace, isLoading, fetchWorkspaces } = useWorkspaceStore();

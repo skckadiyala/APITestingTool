@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useEnvironmentStore } from '../../stores/environmentStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
-import { Upload, FileText, Eye } from 'lucide-react';
+import { Upload, Eye } from 'lucide-react';
 import dataFileService, { type DataFile } from '../../services/dataFileService';
 import DataFileUpload from './DataFileUpload';
 import DataFilePreview from './DataFilePreview';

@@ -132,7 +132,7 @@ class RequestService {
   /**
    * Execute an HTTP request
    */
-  async execute(config: RequestConfig, userId?: string, requestId?: string, environmentId?: string | null, collectionId?: string | null): Promise<ExecutionResult> {
+  async execute(config: RequestConfig, _userId?: string, requestId?: string, environmentId?: string | null, collectionId?: string | null): Promise<ExecutionResult> {
     try {
       const response = await apiClient.post<ExecutionResult>('/requests/execute', {
         ...config,
@@ -176,7 +176,7 @@ class RequestService {
   /**
    * Get history entry detail
    */
-  async getHistoryDetail(historyId: string, userId?: string) {
+  async getHistoryDetail(historyId: string, _userId?: string) {
     const response = await apiClient.get(`/requests/history/${historyId}`);
     return response.data;
   }

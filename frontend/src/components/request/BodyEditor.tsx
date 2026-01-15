@@ -69,14 +69,14 @@ export default function BodyEditor({
     }
   };
 
-  const addFormDataField = () => {
-    if (onFormDataChange) {
-      onFormDataChange([
-        ...formData,
-        { id: Date.now().toString(), key: '', value: '', type: 'text', enabled: false },
-      ]);
-    }
-  };
+  // const addFormDataField = () => {
+  //   if (onFormDataChange) {
+  //     onFormDataChange([
+  //       ...formData,
+  //       { id: Date.now().toString(), key: '', value: '', type: 'text', enabled: false },
+  //     ]);
+  //   }
+  // };
 
   const updateFormDataField = (id: string, field: string, value: string | boolean) => {
     if (onFormDataChange) {
@@ -88,7 +88,7 @@ export default function BodyEditor({
           if (field === 'key' || field === 'value') {
             const hasContent = updatedItem.key || updatedItem.value;
             // Only auto-enable if the item was previously empty (enabled === false)
-            if (hasContent && !item.enabled && field !== 'enabled') {
+            if (hasContent && !item.enabled) { //&& field !== 'enabled'
               updatedItem.enabled = true;
             }
           }

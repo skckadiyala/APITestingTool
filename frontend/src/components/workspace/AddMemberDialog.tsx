@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import workspaceMemberService from '../../services/workspaceMemberService';
-import type { UserSearchResult, WorkspaceRole } from '../../types/workspace.types';
+import type { UserSearchResult } from '../../types/workspace.types';
+import { WorkspaceRole } from '../../types/workspace.types';
 import toast from 'react-hot-toast';
 
 interface AddMemberDialogProps {

@@ -95,7 +95,7 @@ export default function WorkspaceSettingsTabContent() {
     }
   };
 
-  const handleUpdateRole = async (memberId: string, newRole: WorkspaceRole, userName: string) => {
+  const handleUpdateRole = async (memberId: string, newRole: WorkspaceRole) => {
     if (!currentWorkspace) return;
     try {
       await workspaceMemberService.updateMemberRole(currentWorkspace.id, memberId, newRole);
@@ -110,7 +110,7 @@ export default function WorkspaceSettingsTabContent() {
     if (value === 'REMOVE') {
       handleRemoveMember(memberId, userName);
     } else {
-      handleUpdateRole(memberId, value as WorkspaceRole, userName);
+      handleUpdateRole(memberId, value as WorkspaceRole);
     }
   };
 

@@ -70,7 +70,7 @@ export default function WorkspaceManagementModal({
       return;
     }
 
-    await updateWorkspace(workspaceId, { name: trimmedName });
+    await updateWorkspace(workspaceId, trimmedName);
     setEditingId(null);
     setEditingName('');
   };

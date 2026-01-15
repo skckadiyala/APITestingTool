@@ -30,16 +30,16 @@ export default function KeyValueEditor({
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState<string | null>(null);
 
-  const addPair = () => {
-    const newPair: KeyValuePair = {
-      id: Date.now().toString(),
-      key: '',
-      value: '',
-      description: '',
-      enabled: false,
-    };
-    onChange([...pairs, newPair]);
-  };
+  // const addPair = () => {
+  //   const newPair: KeyValuePair = {
+  //     id: Date.now().toString(),
+  //     key: '',
+  //     value: '',
+  //     description: '',
+  //     enabled: false,
+  //   };
+  //   onChange([...pairs, newPair]);
+  // };
 
   const updatePair = (id: string, field: keyof KeyValuePair, value: string | boolean) => {
     const updated = pairs.map((pair) => {
@@ -50,7 +50,7 @@ export default function KeyValueEditor({
         if (field === 'key' || field === 'value' || field === 'description') {
           const hasContent = updatedPair.key || updatedPair.value || updatedPair.description;
           // Only auto-enable if the pair was previously empty (enabled === false)
-          if (hasContent && !pair.enabled && field !== 'enabled') {
+          if (hasContent && !pair.enabled) { //  && field !== 'enabled'
             updatedPair.enabled = true;
           }
         }

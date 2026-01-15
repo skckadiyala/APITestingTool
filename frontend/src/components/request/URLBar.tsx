@@ -40,7 +40,7 @@ export default function URLBar({
   isLoading = false,
   isSaved = false,
   isExistingRequest = false,
-  isDirty = false,
+ // isDirty = false,
   validateSSL = true,
   onValidateSSLChange,
 }: URLBarProps) {
@@ -49,7 +49,7 @@ export default function URLBar({
   const [showSettings, setShowSettings] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   const { currentWorkspaceId } = useCollectionStore();
-  const { canEdit, isViewer } = useWorkspacePermission(currentWorkspaceId);
+  const { canEdit } = useWorkspacePermission(currentWorkspaceId);
 
   // Close settings dropdown when clicking outside
   useEffect(() => {
