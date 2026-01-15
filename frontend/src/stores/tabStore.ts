@@ -4,7 +4,7 @@ import type { CollectionRequest } from '../services/collectionService';
 export interface Tab {
   id: string;
   name: string;
-  type: 'request' | 'workspace-settings';
+  type: 'request' | 'workspace-settings' | 'collection';
   isDirty: boolean;
   isUntitled: boolean;
   // Request data
@@ -19,6 +19,8 @@ export interface Tab {
   // Reference to saved request
   requestId?: string;
   collectionId?: string;
+  // Collection tab specific
+  collectionData?: any;
 }
 
 interface TabState {
@@ -32,6 +34,7 @@ interface TabState {
   updateTab: (tabId: string, updates: Partial<Tab>) => void;
   loadRequestInTab: (request: CollectionRequest) => void;
   openWorkspaceSettings: () => void;
+  openCollectionInTab: (collection: any) => void;
   clearAllTabs: () => void;
 }
 
@@ -181,6 +184,35 @@ export const useTabStore = create<TabState>((set, get) => ({
       isUntitled: false,
       method: '',
       url: '',
+    };
+
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTabId: newTab.id,
+    }));
+  },
+
+  openCollectionInTab: (collection: any) => {
+    const { tabs } = get();
+    
+    // Check if collection tab is already open
+    const existingTab = tabs.find((t) => t.type === 'collection' && t.collectionId === collection.id);
+    if (existingTab) {
+      set({ activeTabId: existingTab.id });
+      return;
+    }
+
+    // Create a new collection tab
+    const newTab: Tab = {
+      id: `tab-${Date.now()}-${tabCounter++}`,
+      name: collection.name,
+      type: 'collection',
+      isDirty: false,
+      isUntitled: false,
+      method: '',
+      url: '',
+      collectionId: collection.id,
+      collectionData: collection,
     };
 
     set((state) => ({

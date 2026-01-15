@@ -32,16 +32,13 @@ import { CSS } from '@dnd-kit/utilities';
 
 interface SidebarProps {
   mainContentRef?: React.RefObject<MainContentRef>;
-  onCollectionSelect?: (collection: Collection) => void;
-  selectedCollectionId?: string;
-  onDeselectCollection?: () => void;
 }
 
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 600;
 const DEFAULT_WIDTH = 280;
 
-export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCollectionId, onDeselectCollection }: SidebarProps) {
+export default function Sidebar({ mainContentRef }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [width, setWidth] = useState(DEFAULT_WIDTH);
   const [isResizing, setIsResizing] = useState(false);
@@ -482,9 +479,6 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
                         key={collection.id} 
                         collection={collection} 
                         mainContentRef={mainContentRef}
-                        onCollectionSelect={onCollectionSelect}
-                        onDeselectCollection={onDeselectCollection}
-                        isSelected={selectedCollectionId === collection.id}
                         expanded={expandedCollections[collection.id] ?? true}
                         onToggleExpanded={() => toggleCollectionExpanded(collection.id)}
                         expandedFolders={expandedFolders}
@@ -638,9 +632,6 @@ const CollectionItem = memo(function CollectionItem({
   mainContentRef,
   onExport,
   onRunCollection,
-  onCollectionSelect,
-  onDeselectCollection,
-  isSelected,
   expanded,
   onToggleExpanded,
   expandedFolders,
@@ -650,9 +641,6 @@ const CollectionItem = memo(function CollectionItem({
   mainContentRef?: React.RefObject<MainContentRef>;
   onExport: (id: string, name: string) => void;
   onRunCollection: (id: string, name: string) => void;
-  onCollectionSelect?: (collection: Collection) => void;
-  onDeselectCollection?: () => void;
-  isSelected?: boolean;
   expanded: boolean;
   onToggleExpanded: () => void;
   expandedFolders: Record<string, boolean>;
@@ -665,7 +653,7 @@ const CollectionItem = memo(function CollectionItem({
   const [editValue, setEditValue] = useState(collection.name);
   
   const { createFolder, deleteCollection, duplicateCollection, loadCollections, selectRequest, updateCollection } = useCollectionStore();
-  const { loadRequestInTab } = useTabStore();
+  const { loadRequestInTab, openCollectionInTab } = useTabStore();
 
   // Update editValue when collection name changes
   useEffect(() => {
@@ -759,12 +747,8 @@ const CollectionItem = memo(function CollectionItem({
             />
           ) : (
             <span 
-              className={`text-sm text-left flex-1 cursor-pointer ${
-                isSelected 
-                  ? 'text-primary-600 dark:text-primary-400 font-medium' 
-                  : 'text-gray-900 dark:text-gray-100'
-              }`}
-              onClick={() => onCollectionSelect?.(collection)}
+              className="text-sm text-left flex-1 cursor-pointer text-gray-900 dark:text-gray-100"
+              onClick={() => openCollectionInTab(collection)}
             >
               {collection.name}
             </span>
@@ -896,8 +880,7 @@ const CollectionItem = memo(function CollectionItem({
               <FolderItem 
                 key={folder.id} 
                 folder={folder} 
-                mainContentRef={mainContentRef} 
-                onDeselectCollection={onDeselectCollection}
+                mainContentRef={mainContentRef}
                 expanded={expandedFolders[folder.id] ?? false}
                 onToggleExpanded={() => toggleFolderExpanded(folder.id)}
                 expandedFolders={expandedFolders}
@@ -910,7 +893,7 @@ const CollectionItem = memo(function CollectionItem({
                 strategy={verticalListSortingStrategy}
               >
                 {collection.requests.map((request) => (
-                  <RequestItem key={request.id} request={request} collectionId={collection.id} onDeselectCollection={onDeselectCollection || (() => {})} />
+                  <RequestItem key={request.id} request={request} collectionId={collection.id} />
                 ))}
               </SortableContext>
             )}
@@ -966,16 +949,14 @@ const CollectionItem = memo(function CollectionItem({
 
 const FolderItem = memo(function FolderItem({ 
   folder, 
-  mainContentRef, 
-  onDeselectCollection,
+  mainContentRef,
   expanded,
   onToggleExpanded,
   expandedFolders,
   toggleFolderExpanded
 }: { 
   folder: Collection; 
-  mainContentRef?: React.RefObject<MainContentRef>; 
-  onDeselectCollection?: () => void;
+  mainContentRef?: React.RefObject<MainContentRef>;
   expanded: boolean;
   onToggleExpanded: () => void;
   expandedFolders: Record<string, boolean>;
@@ -1032,8 +1013,7 @@ const FolderItem = memo(function FolderItem({
             <FolderItem 
               key={child.id} 
               folder={child} 
-              mainContentRef={mainContentRef} 
-              onDeselectCollection={onDeselectCollection}
+              mainContentRef={mainContentRef}
               expanded={expandedFolders[child.id] ?? false}
               onToggleExpanded={() => toggleFolderExpanded(child.id)}
               expandedFolders={expandedFolders}
@@ -1046,7 +1026,7 @@ const FolderItem = memo(function FolderItem({
               strategy={verticalListSortingStrategy}
             >
               {folder.requests.map((request) => (
-                <RequestItem key={request.id} request={request} collectionId={folder.id} onDeselectCollection={onDeselectCollection || (() => {})} />
+                <RequestItem key={request.id} request={request} collectionId={folder.id} />
               ))}
             </SortableContext>
           )}
@@ -1056,7 +1036,7 @@ const FolderItem = memo(function FolderItem({
   );
 });
 
-const RequestItem = memo(function RequestItem({ request, collectionId, onDeselectCollection }: { request: CollectionRequest; collectionId: string; onDeselectCollection: () => void }) {
+const RequestItem = memo(function RequestItem({ request, collectionId }: { request: CollectionRequest; collectionId: string }) {
   const { deleteRequest, selectRequest, selectedRequest, moveRequest, collections } = useCollectionStore();
   const { loadRequestInTab } = useTabStore();
   const [showMoveDialog, setShowMoveDialog] = useState(false);
@@ -1100,10 +1080,7 @@ const RequestItem = memo(function RequestItem({ request, collectionId, onDeselec
     }
   };
 
-  const handleClick = () => {
-    // Deselect collection when a request is clicked
-    onDeselectCollection?.();
-    
+  const handleClick = () => {    
     // Select request in store
     selectRequest(request);
     

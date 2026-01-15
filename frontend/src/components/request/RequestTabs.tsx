@@ -149,15 +149,16 @@ export default function RequestTabs({
 
         {/* Auth Tab */}
         {activeTab === 'auth' && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <div className="flex h-full">
+            {/* Left Panel - Auth Type Selector */}
+            <div className="w-64 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 Auth Type
-              </label>
+              </h3>
               <select
                 value={authType}
                 onChange={(e) => onAuthTypeChange(e.target.value as AuthType)}
-                className="w-full md:w-64 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
               >
                 <option value="noauth">No Auth</option>
                 <option value="bearer">Bearer Token</option>
@@ -165,130 +166,189 @@ export default function RequestTabs({
                 <option value="apikey">API Key</option>
                 <option value="oauth2">OAuth 2.0</option>
               </select>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                {authType === 'noauth' && 'No authorization required'}
+                {authType === 'bearer' && 'Token-based authentication'}
+                {authType === 'basic' && 'Username and password'}
+                {authType === 'apikey' && 'Key-based authentication'}
+                {authType === 'oauth2' && 'OAuth 2.0 protocol'}
+              </p>
             </div>
 
-            {/* Bearer Token */}
-            {authType === 'bearer' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Token
-                </label>
-                <input
-                  type="text"
-                  value={authConfig.bearerToken}
-                  onChange={(e) => setAuthConfig({ ...authConfig, bearerToken: e.target.value })}
-                  placeholder="Enter bearer token"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  Token will be included in the Authorization header as: Bearer {'{token}'}
-                </p>
-              </div>
-            )}
-
-            {/* Basic Auth */}
-            {authType === 'basic' && (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Username
-                  </label>
-                  <input
-                    type="text"
-                    value={authConfig.basicUsername}
-                    onChange={(e) => setAuthConfig({ ...authConfig, basicUsername: e.target.value })}
-                    placeholder="Enter username"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    value={authConfig.basicPassword}
-                    onChange={(e) => setAuthConfig({ ...authConfig, basicPassword: e.target.value })}
-                    placeholder="Enter password"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Credentials will be Base64 encoded and sent in the Authorization header
-                </p>
-              </div>
-            )}
-
-            {/* API Key */}
-            {authType === 'apikey' && (
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Key Name
-                  </label>
-                  <input
-                    type="text"
-                    value={authConfig.apiKeyName}
-                    onChange={(e) => setAuthConfig({ ...authConfig, apiKeyName: e.target.value })}
-                    placeholder="X-API-Key"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Value
-                  </label>
-                  <input
-                    type="text"
-                    value={authConfig.apiKeyValue}
-                    onChange={(e) => setAuthConfig({ ...authConfig, apiKeyValue: e.target.value })}
-                    placeholder="Enter API key"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Add to
-                  </label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        checked={authConfig.apiKeyLocation === 'header'}
-                        onChange={() => setAuthConfig({ ...authConfig, apiKeyLocation: 'header' })}
-                        className="mr-2"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Header</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input
-                        type="radio"
-                        checked={authConfig.apiKeyLocation === 'query'}
-                        onChange={() => setAuthConfig({ ...authConfig, apiKeyLocation: 'query' })}
-                        className="mr-2"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Query Params</span>
-                    </label>
+            {/* Right Panel - Auth Configuration */}
+            <div className="flex-1 p-8 overflow-auto bg-white dark:bg-gray-800">
+              {/* No Auth */}
+              {authType === 'noauth' && (
+                <div className="max-w-2xl">
+                  <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <svg className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                        This request does not use any authorization. The request will be sent without authentication headers.
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        You can configure authorization for this request using any of the auth types above.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* OAuth 2.0 */}
-            {authType === 'oauth2' && (
-              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-                <p className="text-sm text-blue-800 dark:text-blue-300">
-                  OAuth 2.0 configuration will be implemented in Phase 5
-                </p>
-              </div>
-            )}
+              {/* Bearer Token */}
+              {authType === 'bearer' && (
+                <div className="max-w-2xl">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-6">
+                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                        Token
+                      </label>
+                      <input
+                        type="text"
+                        value={authConfig.bearerToken}
+                        onChange={(e) => setAuthConfig({ ...authConfig, bearerToken: e.target.value })}
+                        placeholder="Enter your bearer token"
+                        className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                      />
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
+                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>The token will be sent in the Authorization header as <code className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-800 rounded text-xs font-mono">Bearer {'{token}'}</code></span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-            {/* No Auth */}
-            {authType === 'noauth' && (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                This request does not use any authentication
-              </div>
-            )}
+              {/* Basic Auth */}
+              {authType === 'basic' && (
+                <div className="max-w-2xl">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-6">
+                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        value={authConfig.basicUsername}
+                        onChange={(e) => setAuthConfig({ ...authConfig, basicUsername: e.target.value })}
+                        placeholder="Username"
+                        className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                      />
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                        Password
+                      </label>
+                      <input
+                        type="password"
+                        value={authConfig.basicPassword}
+                        onChange={(e) => setAuthConfig({ ...authConfig, basicPassword: e.target.value })}
+                        placeholder="Password"
+                        className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                      />
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
+                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Credentials will be Base64 encoded and sent in the Authorization header</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* API Key */}
+              {authType === 'apikey' && (
+                <div className="max-w-2xl">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-6">
+                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                        Key Name
+                      </label>
+                      <input
+                        type="text"
+                        value={authConfig.apiKeyName}
+                        onChange={(e) => setAuthConfig({ ...authConfig, apiKeyName: e.target.value })}
+                        placeholder="e.g., X-API-Key"
+                        className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                      />
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                        Value
+                      </label>
+                      <input
+                        type="text"
+                        value={authConfig.apiKeyValue}
+                        onChange={(e) => setAuthConfig({ ...authConfig, apiKeyValue: e.target.value })}
+                        placeholder="Your API key"
+                        className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                      />
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                        Add To
+                      </label>
+                      <div className="flex gap-6">
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            checked={authConfig.apiKeyLocation === 'header'}
+                            onChange={() => setAuthConfig({ ...authConfig, apiKeyLocation: 'header' })}
+                            className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                          />
+                          <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Header</span>
+                        </label>
+                        <label className="flex items-center cursor-pointer">
+                          <input
+                            type="radio"
+                            checked={authConfig.apiKeyLocation === 'query'}
+                            onChange={() => setAuthConfig({ ...authConfig, apiKeyLocation: 'query' })}
+                            className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                          />
+                          <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Query Params</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
+                      <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>The API key will be added to {authConfig.apiKeyLocation === 'header' ? 'request headers' : 'query parameters'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* OAuth 2.0 */}
+              {authType === 'oauth2' && (
+                <div className="max-w-2xl">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                          OAuth 2.0 Coming Soon
+                        </h4>
+                        <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                          Full OAuth 2.0 configuration support will be available in an upcoming release.
+                        </p>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          In the meantime, you can use <span className="font-medium">Bearer Token</span> authentication with a manually obtained access token.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

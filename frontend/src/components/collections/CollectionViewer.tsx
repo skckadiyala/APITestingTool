@@ -116,124 +116,211 @@ pm.test("Collection: Response time is acceptable", function () {
     { id: 'variables' as const, label: 'Variables' },
   ];
 
+  const authTypes = [
+    { id: 'noauth' as const, label: 'No Auth', description: 'No authorization required' },
+    { id: 'bearer' as const, label: 'Bearer Token', description: 'Token-based authentication' },
+    { id: 'basic' as const, label: 'Basic Auth', description: 'Username and password' },
+    { id: 'apikey' as const, label: 'API Key', description: 'Key-based authentication' },
+    { id: 'oauth2' as const, label: 'OAuth 2.0', description: 'OAuth 2.0 protocol' },
+  ];
+
   const renderAuthorizationContent = () => {
     return (
-      <div className="p-4">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Type
-          </label>
+      <div className="flex h-full">
+        {/* Left Panel - Auth Type Selector */}
+        <div className="w-64 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            Auth Type
+          </h3>
           <select
             value={authType}
             onChange={(e) => setAuthType(e.target.value as AuthType)}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
           >
-            <option value="noauth">No Auth</option>
-            <option value="bearer">Bearer Token</option>
-            <option value="basic">Basic Auth</option>
-            <option value="apikey">API Key</option>
-            <option value="oauth2">OAuth 2.0</option>
+            {authTypes.map((type) => (
+              <option key={type.id} value={type.id}>
+                {type.label}
+              </option>
+            ))}
           </select>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+            {authTypes.find(t => t.id === authType)?.description}
+          </p>
         </div>
 
-        {authType === 'bearer' && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Token
-            </label>
-            <input
-              type="text"
-              value={bearerToken}
-              onChange={(e) => setBearerToken(e.target.value)}
-              placeholder="Enter bearer token"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
-          </div>
-        )}
+        {/* Right Panel - Auth Configuration */}
+        <div className="flex-1 p-8 overflow-auto bg-white dark:bg-gray-800">
+          {authType === 'noauth' && (
+            <div className="max-w-2xl">
+              <div className="flex items-start gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
+                <svg className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    This collection does not use any authorization. Requests in this collection will be sent without authentication headers.
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    You can still configure authorization for individual requests if needed.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
-        {authType === 'basic' && (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                value={basicUsername}
-                onChange={(e) => setBasicUsername(e.target.value)}
-                placeholder="Enter username"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
+          {authType === 'bearer' && (
+            <div className="max-w-2xl">
+              <div className="space-y-4">
+                <div className="flex items-center gap-6">
+                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                    Token
+                  </label>
+                  <input
+                    type="text"
+                    value={bearerToken}
+                    onChange={(e) => setBearerToken(e.target.value)}
+                    placeholder="Enter your bearer token"
+                    className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                  />
+                </div>
+                <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
+                  <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>The token will be sent in the Authorization header as <code className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-800 rounded text-xs font-mono">Bearer {'{token}'}</code></span>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                value={basicPassword}
-                onChange={(e) => setBasicPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-          </div>
-        )}
+          )}
 
-        {authType === 'apikey' && (
-          <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Key
-              </label>
-              <input
-                type="text"
-                value={apiKeyKey}
-                onChange={(e) => setApiKeyKey(e.target.value)}
-                placeholder="e.g., X-API-Key"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
+          {authType === 'basic' && (
+            <div className="max-w-2xl">
+              <div className="space-y-4">
+                <div className="flex items-center gap-6">
+                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    value={basicUsername}
+                    onChange={(e) => setBasicUsername(e.target.value)}
+                    placeholder="Username"
+                    className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                  />
+                </div>
+                <div className="flex items-center gap-6">
+                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    value={basicPassword}
+                    onChange={(e) => setBasicPassword(e.target.value)}
+                    placeholder="Password"
+                    className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                  />
+                </div>
+                <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
+                  <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Credentials will be Base64 encoded and sent in the Authorization header</span>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Value
-              </label>
-              <input
-                type="text"
-                value={apiKeyValue}
-                onChange={(e) => setApiKeyValue(e.target.value)}
-                placeholder="Enter API key"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Add to
-              </label>
-              <select
-                value={apiKeyAddTo}
-                onChange={(e) => setApiKeyAddTo(e.target.value as 'header' | 'query')}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="header">Header</option>
-                <option value="query">Query Params</option>
-              </select>
-            </div>
-          </div>
-        )}
+          )}
 
-        {authType === 'noauth' && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            This collection does not use any authorization. You can still configure authorization for individual requests.
-          </p>
-        )}
+          {authType === 'apikey' && (
+            <div className="max-w-2xl">
+              <div className="space-y-4">
+                <div className="flex items-center gap-6">
+                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                    Key Name
+                  </label>
+                  <input
+                    type="text"
+                    value={apiKeyKey}
+                    onChange={(e) => setApiKeyKey(e.target.value)}
+                    placeholder="e.g., X-API-Key"
+                    className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                  />
+                </div>
+                <div className="flex items-center gap-6">
+                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                    Value
+                  </label>
+                  <input
+                    type="text"
+                    value={apiKeyValue}
+                    onChange={(e) => setApiKeyValue(e.target.value)}
+                    placeholder="Your API key"
+                    className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                  />
+                </div>
+                <div className="flex items-center gap-6">
+                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                    Add To
+                  </label>
+                  <div className="flex gap-6">
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="apiKeyLocation"
+                        value="header"
+                        checked={apiKeyAddTo === 'header'}
+                        onChange={(e) => setApiKeyAddTo(e.target.value as 'header' | 'query')}
+                        className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Header</span>
+                    </label>
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="apiKeyLocation"
+                        value="query"
+                        checked={apiKeyAddTo === 'query'}
+                        onChange={(e) => setApiKeyAddTo(e.target.value as 'header' | 'query')}
+                        className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Query Params</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
+                  <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>The API key will be added to {apiKeyAddTo === 'header' ? 'request headers' : 'query parameters'}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
-        {authType === 'oauth2' && (
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            <p className="mb-2">OAuth 2.0 configuration will be available in a future update.</p>
-            <p>For now, you can use Bearer Token with a manually obtained access token.</p>
-          </div>
-        )}
+          {authType === 'oauth2' && (
+            <div className="max-w-2xl">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                      OAuth 2.0 Coming Soon
+                    </h4>
+                    <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                      Full OAuth 2.0 configuration support will be available in an upcoming release.
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      In the meantime, you can use <span className="font-medium">Bearer Token</span> authentication with a manually obtained access token.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
@@ -246,14 +333,9 @@ pm.test("Collection: Response time is acceptable", function () {
           <svg className="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {collection.name}
-            </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Collection Settings
-            </p>
-          </div>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {collection.name}
+          </h2>
         </div>
 
         {/* Save Button */}
@@ -288,7 +370,7 @@ pm.test("Collection: Response time is acceptable", function () {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600 dark:text-primary-400'
                   : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'

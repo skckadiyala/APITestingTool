@@ -35,11 +35,10 @@ export interface MainContentRef {
 }
 
 interface MainContentProps {
-  selectedCollection?: Collection | null;
-  onDeselectCollection?: () => void;
+  // Props kept for backward compatibility but collections now use tab system
 }
 
-const MainContent = forwardRef<MainContentRef, MainContentProps>(({ selectedCollection }, ref) => {
+const MainContent = forwardRef<MainContentRef, MainContentProps>((props, ref) => {
   // Stores
   const { collections, addRequestToCollection, updateRequestInCollection } = useCollectionStore();
   const { tabs, activeTabId, updateTab } = useTabStore();
@@ -892,9 +891,7 @@ pm.test("Response has correct structure", function () {
       {/* Request Tabs */}
       <RequestTabBar />
       
-      {selectedCollection ? (
-        <CollectionViewer collection={selectedCollection} />
-      ) : !activeTabId ? (
+      {!activeTabId ? (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center text-gray-400 dark:text-gray-500">
             <svg className="w-24 h-24 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -906,6 +903,8 @@ pm.test("Response has correct structure", function () {
         </div>
       ) : tabs.find(t => t.id === activeTabId)?.type === 'workspace-settings' ? (
         <WorkspaceSettingsTabContent />
+      ) : tabs.find(t => t.id === activeTabId)?.type === 'collection' ? (
+        <CollectionViewer collection={tabs.find(t => t.id === activeTabId)?.collectionData} />
       ) : (
         <>
           {/* Request Name Input */}
