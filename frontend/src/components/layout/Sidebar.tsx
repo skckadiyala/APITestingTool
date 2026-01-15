@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
@@ -633,7 +633,7 @@ export default function Sidebar({ mainContentRef, onCollectionSelect, selectedCo
   );
 }
 
-function CollectionItem({
+const CollectionItem = memo(function CollectionItem({
   collection, 
   mainContentRef,
   onExport,
@@ -661,9 +661,16 @@ function CollectionItem({
   const [showMenu, setShowMenu] = useState(false);
   const [showFolderDialog, setShowFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(collection.name);
   
-  const { createFolder, deleteCollection, duplicateCollection, loadCollections, selectRequest } = useCollectionStore();
+  const { createFolder, deleteCollection, duplicateCollection, loadCollections, selectRequest, updateCollection } = useCollectionStore();
   const { loadRequestInTab } = useTabStore();
+
+  // Update editValue when collection name changes
+  useEffect(() => {
+    setEditValue(collection.name);
+  }, [collection.name]);
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -686,6 +693,42 @@ function CollectionItem({
     setShowMenu(false);
   };
 
+  const startEditing = () => {
+    setIsEditing(true);
+    setEditValue(collection.name);
+    setShowMenu(false);
+  };
+
+  const handleEditSubmit = async () => {
+    const trimmedValue = editValue.trim();
+    
+    // Always exit editing mode
+    setIsEditing(false);
+    
+    // If empty or unchanged, reset to original
+    if (!trimmedValue || trimmedValue === collection.name) {
+      setEditValue(collection.name);
+      return;
+    }
+    
+    // Update collection - store handles optimistic update
+    await updateCollection(collection.id, trimmedValue);
+  };
+
+  const handleEditCancel = () => {
+    setIsEditing(false);
+    setEditValue(collection.name);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleEditSubmit();
+    } else if (e.key === 'Escape') {
+      handleEditCancel();
+    }
+  };
+
   return (
     <>
       <div>
@@ -703,16 +746,29 @@ function CollectionItem({
           <svg className="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
-          <span 
-            className={`text-sm text-left flex-1 cursor-pointer ${
-              isSelected 
-                ? 'text-primary-600 dark:text-primary-400 font-medium' 
-                : 'text-gray-900 dark:text-gray-100'
-            }`}
-            onClick={() => onCollectionSelect?.(collection)}
-          >
-            {collection.name}
-          </span>
+          {isEditing ? (
+            <input
+              type="text"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={handleEditSubmit}
+              onKeyDown={handleKeyDown}
+              className="flex-1 text-sm px-1 py-0.5 border border-primary-500 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              autoFocus
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span 
+              className={`text-sm text-left flex-1 cursor-pointer ${
+                isSelected 
+                  ? 'text-primary-600 dark:text-primary-400 font-medium' 
+                  : 'text-gray-900 dark:text-gray-100'
+              }`}
+              onClick={() => onCollectionSelect?.(collection)}
+            >
+              {collection.name}
+            </span>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -778,11 +834,7 @@ function CollectionItem({
               </button>
               <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
               <button
-                onClick={() => {
-                  // TODO: Implement Rename functionality
-                  alert('Rename functionality coming soon!');
-                  setShowMenu(false);
-                }}
+                onClick={startEditing}
                 className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -908,12 +960,11 @@ function CollectionItem({
           </div>
         </div>
       )}
-
     </>
   );
-}
+});
 
-function FolderItem({ 
+const FolderItem = memo(function FolderItem({ 
   folder, 
   mainContentRef, 
   onDeselectCollection,
@@ -1003,9 +1054,9 @@ function FolderItem({
       )}
     </div>
   );
-}
+});
 
-function RequestItem({ request, collectionId, onDeselectCollection }: { request: CollectionRequest; collectionId: string; onDeselectCollection: () => void }) {
+const RequestItem = memo(function RequestItem({ request, collectionId, onDeselectCollection }: { request: CollectionRequest; collectionId: string; onDeselectCollection: () => void }) {
   const { deleteRequest, selectRequest, selectedRequest, moveRequest, collections } = useCollectionStore();
   const { loadRequestInTab } = useTabStore();
   const [showMoveDialog, setShowMoveDialog] = useState(false);
@@ -1123,4 +1174,4 @@ function RequestItem({ request, collectionId, onDeselectCollection }: { request:
       />
     </>
   );
-}
+});

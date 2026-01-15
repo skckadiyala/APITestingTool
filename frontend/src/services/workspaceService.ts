@@ -1,4 +1,5 @@
 import api from './api';
+import { WorkspaceRole } from '../types/workspace.types';
 
 export interface Workspace {
   id: string;
@@ -10,6 +11,8 @@ export interface Workspace {
   settings?: any;
   collectionsCount?: number;
   environmentsCount?: number;
+  membersCount?: number;
+  userRole?: WorkspaceRole;
 }
 
 export interface WorkspaceDetails extends Workspace {

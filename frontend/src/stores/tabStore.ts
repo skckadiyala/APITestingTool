@@ -4,6 +4,7 @@ import type { CollectionRequest } from '../services/collectionService';
 export interface Tab {
   id: string;
   name: string;
+  type: 'request' | 'workspace-settings';
   isDirty: boolean;
   isUntitled: boolean;
   // Request data
@@ -30,6 +31,7 @@ interface TabState {
   setActiveTab: (tabId: string) => void;
   updateTab: (tabId: string, updates: Partial<Tab>) => void;
   loadRequestInTab: (request: CollectionRequest) => void;
+  openWorkspaceSettings: () => void;
   clearAllTabs: () => void;
 }
 
@@ -43,6 +45,7 @@ export const useTabStore = create<TabState>((set, get) => ({
     const newTab: Tab = {
       id: `tab-${Date.now()}-${tabCounter++}`,
       name: tab.name || `New Request ${tabCounter}`,
+      type: 'request',
       isDirty: false,
       isUntitled: true,
       method: tab.method || 'GET',
@@ -115,6 +118,7 @@ export const useTabStore = create<TabState>((set, get) => ({
             ? {
                 ...tab,
                 name: request.name,
+                type: 'request' as const,
                 method: request.method,
                 url: request.url,
                 params: request.params || [],
@@ -136,6 +140,7 @@ export const useTabStore = create<TabState>((set, get) => ({
       const newTab: Tab = {
         id: `tab-${Date.now()}-${tabCounter++}`,
         name: request.name,
+        type: 'request',
         isDirty: false,
         isUntitled: false,
         method: request.method,
@@ -155,6 +160,33 @@ export const useTabStore = create<TabState>((set, get) => ({
         activeTabId: newTab.id,
       }));
     }
+  },
+
+  openWorkspaceSettings: () => {
+    const { tabs } = get();
+    
+    // Check if workspace settings tab is already open
+    const existingTab = tabs.find((t) => t.type === 'workspace-settings');
+    if (existingTab) {
+      set({ activeTabId: existingTab.id });
+      return;
+    }
+
+    // Create a new workspace settings tab
+    const newTab: Tab = {
+      id: `tab-${Date.now()}-${tabCounter++}`,
+      name: 'Workspace',
+      type: 'workspace-settings',
+      isDirty: false,
+      isUntitled: false,
+      method: '',
+      url: '',
+    };
+
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTabId: newTab.id,
+    }));
   },
 
   clearAllTabs: () => {

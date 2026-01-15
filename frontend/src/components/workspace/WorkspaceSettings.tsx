@@ -3,6 +3,7 @@ import workspaceMemberService from '../../services/workspaceMemberService';
 import type { WorkspaceMember, UserSearchResult } from '../../types/workspace.types';
 import { WorkspaceRole } from '../../types/workspace.types';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
+import { useAuthStore } from '../../stores/authStore';
 import toast from 'react-hot-toast';
 
 interface WorkspaceSettingsProps {
@@ -22,6 +23,7 @@ export default function WorkspaceSettings({ workspaceId, onClose }: WorkspaceSet
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const { currentWorkspace, updateWorkspace, deleteWorkspace } = useWorkspaceStore();
+  const { user } = useAuthStore();
   const [workspaceName, setWorkspaceName] = useState(currentWorkspace?.name || '');
   const [workspaceDescription, setWorkspaceDescription] = useState(currentWorkspace?.description || '');
 
@@ -158,7 +160,7 @@ export default function WorkspaceSettings({ workspaceId, onClose }: WorkspaceSet
     return '??';
   };
 
-  const currentUserId = localStorage.getItem('userId'); // Or get from auth store
+  const currentUserId = user?.id;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

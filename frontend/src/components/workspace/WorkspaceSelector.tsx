@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useWorkspaceSwitch } from '../../hooks/useWorkspaceSwitch';
+import { useAuthStore } from '../../stores/authStore';
+import { useTabStore } from '../../stores/tabStore';
 import { WorkspaceRole } from '../../types/workspace.types';
-import WorkspaceSettings from './WorkspaceSettings';
 
 interface WorkspaceSelectorProps {
   onCreateClick: () => void;
@@ -12,9 +13,10 @@ interface WorkspaceSelectorProps {
 export default function WorkspaceSelector({ onCreateClick, onManageClick }: WorkspaceSelectorProps) {
   const { workspaces, currentWorkspace, isLoading } = useWorkspaceStore();
   const { switchWorkspace, isSwitching } = useWorkspaceSwitch();
+  const { user } = useAuthStore();
+  const { openWorkspaceSettings } = useTabStore();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [showSettings, setShowSettings] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -125,7 +127,7 @@ export default function WorkspaceSelector({ onCreateClick, onManageClick }: Work
   };
 
   const getWorkspaceIcon = (workspace: any) => {
-    const isOwner = workspace.userRole === WorkspaceRole.OWNER || workspace.ownerId === localStorage.getItem('userId');
+    const isOwner = workspace.userRole === WorkspaceRole.OWNER || workspace.ownerId === user?.id;
     
     if (isOwner) {
       // Folder icon for owned workspaces
@@ -242,7 +244,10 @@ export default function WorkspaceSelector({ onCreateClick, onManageClick }: Work
         {/* Settings Button */}
         {currentWorkspace && canManageWorkspace(currentWorkspace.userRole) && (
           <button
-            onClick={() => setShowSettings(true)}
+            onClick={() => {
+              openWorkspaceSettings();
+              setIsOpen(false);
+            }}
             className="p-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
             title="Workspace Settings"
           >
@@ -350,14 +355,6 @@ export default function WorkspaceSelector({ onCreateClick, onManageClick }: Work
             </button>
           </div>
         </div>
-      )}
-      
-      {/* Workspace Settings Dialog */}
-      {showSettings && currentWorkspace && (
-        <WorkspaceSettings
-          workspaceId={currentWorkspace.id}
-          onClose={() => setShowSettings(false)}
-        />
       )}
     </div>
   );

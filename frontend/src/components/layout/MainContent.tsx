@@ -5,6 +5,7 @@ import RequestTabs from '../request/RequestTabs';
 import RequestTabBar from '../request/RequestTabBar';
 import ResponseViewer from '../response/ResponseViewer';
 import CollectionViewer from '../collections/CollectionViewer';
+import WorkspaceSettingsTabContent from '../workspace/WorkspaceSettingsTabContent';
 import { type KeyValuePair } from '../request/KeyValueEditor';
 import { type BodyType } from '../request/BodyEditor';
 import { requestService, type ExecutionResult } from '../../services/requestService';
@@ -903,6 +904,8 @@ pm.test("Response has correct structure", function () {
             <p className="text-sm mt-2">Create a new request or select one from a collection</p>
           </div>
         </div>
+      ) : tabs.find(t => t.id === activeTabId)?.type === 'workspace-settings' ? (
+        <WorkspaceSettingsTabContent />
       ) : (
         <>
           {/* Request Name Input */}

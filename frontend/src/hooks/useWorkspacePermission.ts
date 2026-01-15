@@ -8,7 +8,7 @@ export const useWorkspacePermission = (workspaceId?: string) => {
   
   const isOwner = userRole === WorkspaceRole.OWNER;
   const isEditor = userRole === WorkspaceRole.EDITOR || isOwner;
-  const isViewer = userRole === WorkspaceRole.VIEWER || isEditor;
+  const isViewer = userRole === WorkspaceRole.VIEWER;
   
   const canEdit = isEditor;
   const canDelete = isOwner;
