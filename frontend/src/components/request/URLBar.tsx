@@ -40,7 +40,7 @@ export default function URLBar({
   isLoading = false,
   isSaved = false,
   isExistingRequest = false,
- // isDirty = false,
+  isDirty = false,
   validateSSL = true,
   onValidateSSLChange,
 }: URLBarProps) {
@@ -236,9 +236,13 @@ export default function URLBar({
         {canEdit && (
           <button
             onClick={onSave}
-            disabled={!url}
+            disabled={!url || (isExistingRequest && !isDirty)}
             className="px-3 py-1.5 text-xs border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 font-medium"
-            title={isExistingRequest ? 'Save changes to this request' : 'Save as new request to collection'}
+            title={
+              isExistingRequest 
+                ? (isDirty ? 'Save changes to this request' : 'No changes to save')
+                : 'Save as new request to collection'
+            }
           >
             {isSaved ? (
               <>
