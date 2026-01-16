@@ -11,7 +11,7 @@ export interface Tab {
   method: string;
   url: string;
   params?: Array<{ key: string; value: string; enabled?: boolean }>;
-  headers?: Array<{ key: string; value: string }>;
+  headers?: Array<{ key: string; value: string; enabled?: boolean }>;
   body?: { type: string; content: any };
   auth?: { type: string };
   testScript?: string;
