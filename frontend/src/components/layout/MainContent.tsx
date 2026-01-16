@@ -6,6 +6,8 @@ import RequestTabBar from '../request/RequestTabBar';
 import ResponseViewer from '../response/ResponseViewer';
 import CollectionViewer from '../collections/CollectionViewer';
 import WorkspaceSettingsTabContent from '../workspace/WorkspaceSettingsTabContent';
+import ProfileSettingsTabContent from '../profile/ProfileSettingsTabContent';
+import EnvironmentSettingsTabContent from '../environment/EnvironmentSettingsTabContent';
 import { type KeyValuePair } from '../request/KeyValueEditor';
 import { type BodyType } from '../request/BodyEditor';
 import { requestService, type ExecutionResult } from '../../services/requestService';
@@ -904,6 +906,10 @@ pm.test("Response has correct structure", function () {
         </div>
       ) : tabs.find(t => t.id === activeTabId)?.type === 'workspace-settings' ? (
         <WorkspaceSettingsTabContent />
+      ) : tabs.find(t => t.id === activeTabId)?.type === 'profile-settings' ? (
+        <ProfileSettingsTabContent />
+      ) : tabs.find(t => t.id === activeTabId)?.type === 'environment-settings' ? (
+        <EnvironmentSettingsTabContent />
       ) : tabs.find(t => t.id === activeTabId)?.type === 'collection' ? (
         <CollectionViewer collection={tabs.find(t => t.id === activeTabId)?.collectionData} />
       ) : (

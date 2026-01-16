@@ -4,7 +4,7 @@ import type { CollectionRequest } from '../services/collectionService';
 export interface Tab {
   id: string;
   name: string;
-  type: 'request' | 'workspace-settings' | 'collection';
+  type: 'request' | 'workspace-settings' | 'collection' | 'profile-settings' | 'environment-settings';
   isDirty: boolean;
   isUntitled: boolean;
   // Request data
@@ -35,6 +35,8 @@ interface TabState {
   loadRequestInTab: (request: CollectionRequest) => void;
   openWorkspaceSettings: () => void;
   openCollectionInTab: (collection: any) => void;
+  openProfileSettings: () => void;
+  openEnvironmentSettings: () => void;
   clearAllTabs: () => void;
 }
 
@@ -213,6 +215,60 @@ export const useTabStore = create<TabState>((set, get) => ({
       url: '',
       collectionId: collection.id,
       collectionData: collection,
+    };
+
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTabId: newTab.id,
+    }));
+  },
+
+  openProfileSettings: () => {
+    const { tabs } = get();
+    
+    // Check if profile settings tab is already open
+    const existingTab = tabs.find((t) => t.type === 'profile-settings');
+    if (existingTab) {
+      set({ activeTabId: existingTab.id });
+      return;
+    }
+
+    // Create a new profile settings tab
+    const newTab: Tab = {
+      id: `tab-${Date.now()}-${tabCounter++}`,
+      name: 'Profile',
+      type: 'profile-settings',
+      isDirty: false,
+      isUntitled: false,
+      method: '',
+      url: '',
+    };
+
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTabId: newTab.id,
+    }));
+  },
+
+  openEnvironmentSettings: () => {
+    const { tabs } = get();
+    
+    // Check if environment settings tab is already open
+    const existingTab = tabs.find((t) => t.type === 'environment-settings');
+    if (existingTab) {
+      set({ activeTabId: existingTab.id });
+      return;
+    }
+
+    // Create a new environment settings tab
+    const newTab: Tab = {
+      id: `tab-${Date.now()}-${tabCounter++}`,
+      name: 'Environments',
+      type: 'environment-settings',
+      isDirty: false,
+      isUntitled: false,
+      method: '',
+      url: '',
     };
 
     set((state) => ({
