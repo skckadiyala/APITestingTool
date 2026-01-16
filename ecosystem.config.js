@@ -22,8 +22,8 @@ module.exports = {
     {
       name: 'api-testing-frontend',
       cwd: './frontend',
-      script: 'node',
-      args: 'C:\\Users\\sumakad\\AppData\\Roaming\\npm\\node_modules\\serve\\build\\main.js dist -l 5173',
+      script: 'C:\\Users\\sumakad\\AppData\\Roaming\\npm\\node_modules\\serve\\build\\main.js',
+      args: 'dist -l 5173',
       env: {
         PORT: 5173
       },
