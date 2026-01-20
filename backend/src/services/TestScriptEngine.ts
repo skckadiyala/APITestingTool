@@ -17,6 +17,7 @@ export interface TestExecutionResult {
   consoleOutput: string[];
   environmentUpdates?: Record<string, any>;
   collectionUpdates?: Record<string, any>;
+  globalUpdates?: Record<string, any>;
 }
 
 export class TestScriptEngine {
@@ -27,17 +28,19 @@ export class TestScriptEngine {
     script: string,
     result: ExecutionResult,
     currentEnvironmentVariables?: Record<string, any>,
-    currentCollectionVariables?: Record<string, any>
+    currentCollectionVariables?: Record<string, any>,
+    currentGlobalVariables?: Record<string, any>
   ): Promise<TestExecutionResult> {
     const startTime = Date.now();
     const tests: TestResult[] = [];
     const consoleOutput: string[] = [];
     const environmentUpdates: Record<string, any> = {};
     const collectionUpdates: Record<string, any> = {};
+    const globalUpdates: Record<string, any> = {};
 
     try {
       // Create a sandboxed environment with pm API
-      const pm = this.createPmAPI(result, tests, consoleOutput, environmentUpdates, collectionUpdates, currentEnvironmentVariables || {}, currentCollectionVariables || {});
+      const pm = this.createPmAPI(result, tests, consoleOutput, environmentUpdates, collectionUpdates, globalUpdates, currentEnvironmentVariables || {}, currentCollectionVariables || {}, currentGlobalVariables || {});
 
       // Create a safe function execution context
       const scriptFunction = new Function('pm', 'console', script);
@@ -66,6 +69,7 @@ export class TestScriptEngine {
       consoleOutput,
       environmentUpdates: Object.keys(environmentUpdates).length > 0 ? environmentUpdates : undefined,
       collectionUpdates: Object.keys(collectionUpdates).length > 0 ? collectionUpdates : undefined,
+      globalUpdates: Object.keys(globalUpdates).length > 0 ? globalUpdates : undefined,
     };
   }
 
@@ -78,8 +82,10 @@ export class TestScriptEngine {
     consoleOutput: string[],
     environmentUpdates: Record<string, any>,
     collectionUpdates: Record<string, any>,
+    globalUpdates: Record<string, any>,
     currentEnvironmentVariables: Record<string, any>,
-    currentCollectionVariables: Record<string, any>
+    currentCollectionVariables: Record<string, any>,
+    currentGlobalVariables: Record<string, any>
   ) {
     const response = result.response;
 
@@ -307,11 +313,23 @@ export class TestScriptEngine {
         },
       },
 
-      // Global variables (placeholder)
+      // Global variables
       globals: {
-        get: (_key: string) => undefined,
-        set: (key: string, _value: any) => {
-          consoleOutput.push(`Global variable '${key}' set (not persisted yet)`);
+        get: (key: string) => {
+          // Check if there's a pending update first
+          if (key in globalUpdates) {
+            return globalUpdates[key];
+          }
+          // Otherwise return current value
+          return currentGlobalVariables[key];
+        },
+        set: (key: string, value: any) => {
+          globalUpdates[key] = value;
+          consoleOutput.push(`Global variable '${key}' set to '${value}'`);
+        },
+        unset: (key: string) => {
+          globalUpdates[key] = undefined;
+          consoleOutput.push(`Global variable '${key}' unset`);
         },
       },
     };

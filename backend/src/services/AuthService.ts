@@ -1,4 +1,4 @@
-import { PrismaClient, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import {
   generateAccessToken,
@@ -11,7 +11,7 @@ import {
 import { sendPasswordResetEmail, sendWelcomeEmail } from './EmailService';
 import { WorkspaceService } from './WorkspaceService';
 
-const prisma = new PrismaClient();
+import { prisma } from '../config/prisma';
 
 export interface RegisterData {
   email: string;

@@ -5,6 +5,7 @@ import RequestTabs from '../request/RequestTabs';
 import RequestTabBar from '../request/RequestTabBar';
 import ResponseViewer from '../response/ResponseViewer';
 import CollectionViewer from '../collections/CollectionViewer';
+import CollectionRunnerTab from '../collections/CollectionRunnerTab';
 import WorkspaceSettingsTabContent from '../workspace/WorkspaceSettingsTabContent';
 import ProfileSettingsTabContent from '../profile/ProfileSettingsTabContent';
 import EnvironmentSettingsTabContent from '../environment/EnvironmentSettingsTabContent';
@@ -15,6 +16,7 @@ import { fetchHistoryDetail, type HistoryEntry } from '../../services/historySer
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
+import { useWorkspaceStore } from '../../stores/workspaceStore';
 
 
 type TabType = 'params' | 'headers' | 'body' | 'auth' | 'pre-request' | 'tests';
@@ -47,6 +49,7 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
   const { tabs, activeTabId, updateTab } = useTabStore();
   const currentTab = tabs.find(t => t.id === activeTabId);
   const { activeEnvironmentId, getActiveEnvironment, loadEnvironments } = useEnvironmentStore();
+  const { currentWorkspace } = useWorkspaceStore();
   
   // Request state
   const [method, setMethod] = useState('GET');
@@ -71,7 +74,6 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
   const [formData, setFormData] = useState<Array<{ id: string; key: string; value: string; type: 'text' | 'file'; enabled: boolean }>>([]);
   
   const [authType, setAuthType] = useState<AuthType>('noauth');
-  const [validateSSL, setValidateSSL] = useState(true);
   const [preRequestScript, setPreRequestScript] = useState(`// Pre-request script
 // Execute code before sending the request
 
@@ -172,6 +174,20 @@ pm.test("Response has correct structure", function () {
       return;
     }
     
+    // Helper function to encode URI component while preserving {{variable}} patterns
+    const encodePreservingVariables = (str: string): string => {
+      // Split by variable pattern, encode non-variable parts
+      const parts = str.split(/(\{\{[^}]+\}\})/g);
+      return parts.map(part => {
+        // Keep variable patterns as-is (odd indices in split result)
+        if (part.startsWith('{{') && part.endsWith('}}')) {
+          return part;
+        }
+        // Encode other parts
+        return encodeURIComponent(part);
+      }).join('');
+    };
+    
     // Update URL to reflect query parameters
     const enabledParams = newParams.filter(p => p.enabled && p.key.trim() !== '');
     const baseUrl = url.split('?')[0]; // Get URL without query params
@@ -179,7 +195,7 @@ pm.test("Response has correct structure", function () {
     if (enabledParams.length > 0) {
       // Build query string manually to preserve {{variables}}
       const queryString = enabledParams
-        .map(param => `${encodeURIComponent(param.key)}=${encodeURIComponent(param.value)}`)
+        .map(param => `${encodePreservingVariables(param.key)}=${encodePreservingVariables(param.value)}`)
         .join('&');
       
       const newUrl = `${baseUrl}?${queryString}`;
@@ -633,7 +649,7 @@ pm.test("Response has correct structure", function () {
         timeout: 30000,
         followRedirects: true,
         maxRedirects: 5,
-        validateSSL: validateSSL,
+        validateSSL: currentWorkspace?.settings?.validateSSL ?? false,
         testScript: testScript || undefined,
         preRequestScript: preRequestScript || undefined,
       }, 'demo-user', undefined, activeEnvironmentId, collectionId); // Pass environmentId and collectionId for variable resolution
@@ -961,6 +977,11 @@ pm.test("Response has correct structure", function () {
         <EnvironmentSettingsTabContent />
       ) : tabs.find(t => t.id === activeTabId)?.type === 'collection' ? (
         <CollectionViewer collection={tabs.find(t => t.id === activeTabId)?.collectionData} />
+      ) : tabs.find(t => t.id === activeTabId)?.type === 'collection-runner' ? (
+        <CollectionRunnerTab 
+          collectionId={tabs.find(t => t.id === activeTabId)?.collectionId || ''} 
+          collectionName={tabs.find(t => t.id === activeTabId)?.collectionData?.name || 'Collection'} 
+        />
       ) : (
         <>
           {/* Request Name Input */}
@@ -985,8 +1006,6 @@ pm.test("Response has correct structure", function () {
             isSaved={isSaved}
             isExistingRequest={!!tabs.find(t => t.id === activeTabId)?.requestId}
             isDirty={!!tabs.find(t => t.id === activeTabId)?.isDirty}
-            validateSSL={validateSSL}
-            onValidateSSLChange={setValidateSSL}
           />
 
           <div className="flex-1 overflow-hidden">

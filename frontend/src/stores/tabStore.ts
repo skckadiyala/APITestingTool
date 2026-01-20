@@ -1,10 +1,11 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { CollectionRequest } from '../services/collectionService';
 
 export interface Tab {
   id: string;
   name: string;
-  type: 'request' | 'workspace-settings' | 'collection' | 'profile-settings' | 'environment-settings';
+  type: 'request' | 'workspace-settings' | 'collection' | 'profile-settings' | 'environment-settings' | 'collection-runner';
   isDirty: boolean;
   isUntitled: boolean;
   // Request data
@@ -21,6 +22,15 @@ export interface Tab {
   collectionId?: string;
   // Collection tab specific
   collectionData?: any;
+  // Collection runner specific
+  runnerState?: {
+    isRunning: boolean;
+    hasResults: boolean;
+    runResults: any;
+    selectedIteration: number;
+    selectedRequest: any;
+    statusFilter: 'all' | 'passed' | 'failed';
+  };
 }
 
 interface TabState {
@@ -37,12 +47,15 @@ interface TabState {
   openCollectionInTab: (collection: any) => void;
   openProfileSettings: () => void;
   openEnvironmentSettings: () => void;
+  openCollectionRunner: (collectionId: string, collectionName: string) => void;
   clearAllTabs: () => void;
 }
 
 let tabCounter = 1;
 
-export const useTabStore = create<TabState>((set, get) => ({
+export const useTabStore = create<TabState>()(
+  persist(
+    (set, get) => ({
   tabs: [],
   activeTabId: null,
 
@@ -277,7 +290,35 @@ export const useTabStore = create<TabState>((set, get) => ({
     }));
   },
 
+  openCollectionRunner: (collectionId: string, collectionName: string) => {
+    const { tabs } = get();
+    
+    // Always create a new collection runner tab (allows multiple runs)
+    const newTab: Tab = {
+      id: `tab-${Date.now()}-${tabCounter++}`,
+      name: `Run: ${collectionName}`,
+      type: 'collection-runner',
+      isDirty: false,
+      isUntitled: false,
+      method: '',
+      url: '',
+      collectionId: collectionId,
+      collectionData: { id: collectionId, name: collectionName },
+    };
+
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTabId: newTab.id,
+    }));
+  },
+
   clearAllTabs: () => {
     set({ tabs: [], activeTabId: null });
   },
-}));
+}),
+    {
+      name: 'tab-storage',
+      version: 1,
+    }
+  )
+);

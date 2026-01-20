@@ -1,7 +1,7 @@
-import { PrismaClient, CollectionType } from '@prisma/client';
+import { CollectionType } from '@prisma/client';
 import crypto from 'crypto';
 
-const prisma = new PrismaClient();
+import { prisma } from '../config/prisma';
 
 export interface CreateCollectionDto {
   name: string;

@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { RequestBody } from '../models/RequestBody';
 import { ResponseBody } from '../models/ResponseBody';
 import { type ExecutionResult } from '../types/request.types';
 
-const prisma = new PrismaClient();
+import { prisma } from '../config/prisma';
 
 export class HistoryService {
   /**

@@ -16,17 +16,11 @@ export default function Layout() {
   // const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const mainContentRef = useRef<any>(null);
   const [consoleLogs, setConsoleLogs] = useState<Array<{ type: 'request' | 'response' | 'error' | 'info'; message: string; timestamp: number }>>([]);
-  const { workspaces, currentWorkspace, isLoading, fetchWorkspaces } = useWorkspaceStore();
+  const { workspaces, currentWorkspace, isLoading } = useWorkspaceStore();
   const { isSwitching } = useWorkspaceSwitch();
 
-  // Fetch workspaces on component mount (only once)
-  useEffect(() => {
-    // Don't fetch if already loading or if workspaces already exist
-    if (!isLoading && workspaces.length === 0) {
-      fetchWorkspaces();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array - only run once on mount
+  // Note: fetchWorkspaces is already called by ProtectedRoute component
+  // No need to call it again here to avoid duplicate requests
 
   // Set workspace ID in collection store when current workspace changes
   useEffect(() => {

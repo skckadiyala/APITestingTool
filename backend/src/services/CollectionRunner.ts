@@ -1,8 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import { RequestExecutor } from './RequestExecutor';
+import { TestScriptEngine } from './TestScriptEngine';
+import { VariableService } from './VariableService';
 import type { RequestConfig } from '../types/request.types';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/prisma';
 
 export interface RunOptions {
   environmentId?: string;
@@ -54,10 +54,14 @@ export interface CollectionRunResult {
 
 export class CollectionRunner {
   private executor: RequestExecutor;
+  private testEngine: TestScriptEngine;
+  private variableService: VariableService;
   private cancelled: boolean = false;
 
   constructor() {
     this.executor = new RequestExecutor();
+    this.testEngine = new TestScriptEngine();
+    this.variableService = new VariableService(prisma);
   }
 
   /**
@@ -80,13 +84,40 @@ export class CollectionRunner {
     } = options;
 
     // Get collection
-    const collection = await prisma.collection.findUnique({
+    let collection = await prisma.collection.findUnique({
       where: { id: collectionId },
+      include: { workspace: true },
     });
 
     if (!collection) {
       throw new Error('Collection not found');
     }
+
+    // If running a folder, find the root collection for pre-request scripts
+    let rootCollection = collection;
+    if (collection.type === 'FOLDER') {
+      let currentId: string | undefined = collection.parentFolderId || undefined;
+      
+      while (currentId) {
+        const parent = await prisma.collection.findUnique({
+          where: { id: currentId },
+          include: { workspace: true },
+        });
+        
+        if (!parent) break;
+        
+        if (parent.type === 'COLLECTION') {
+          rootCollection = parent;
+          break;
+        }
+        
+        currentId = parent.parentFolderId || undefined;
+      }
+    }
+
+    // Get workspace settings for SSL verification
+    const workspaceSettings = (collection.workspace.settings as any) || {};
+    const validateSSL = workspaceSettings.validateSSL !== undefined ? workspaceSettings.validateSSL : false;
 
     // Get all requests to execute
     const requests = await this.getRequestsToRun(collectionId, folderId);
@@ -149,6 +180,75 @@ export class CollectionRunner {
         iterationResult.dataRow = dataRows[i];
       }
 
+      // Execute collection-level pre-request script before iteration (use rootCollection)
+      if (rootCollection.preRequestScript && rootCollection.preRequestScript.trim()) {
+        try {
+          const tempResult: any = {
+            success: true,
+            request: { method: 'GET', url: '', headers: {}, body: { type: 'none' } },
+            response: undefined,
+            executedAt: new Date(),
+          };
+          
+          // Get current environment and collection variables
+          let currentEnvVariables: Record<string, any> = {};
+          if (environmentId) {
+            const environment = await prisma.environment.findUnique({
+              where: { id: environmentId },
+            });
+            if (environment && environment.variables) {
+              const variables = environment.variables as any[];
+              currentEnvVariables = variables.reduce((acc, v) => {
+                if (v.enabled !== false) acc[v.key] = v.value;
+                return acc;
+              }, {} as Record<string, any>);
+            }
+          }
+          
+          let currentCollectionVariables: Record<string, any> = {};
+          if (rootCollection.variables) {
+            const variables = rootCollection.variables as any[];
+            currentCollectionVariables = variables.reduce((acc, v) => {
+              if (v.enabled !== false) acc[v.key] = v.value;
+              return acc;
+            }, {} as Record<string, any>);
+          }
+          
+          let currentGlobalVariables: Record<string, any> = {};
+          const workspaceSettings = (rootCollection.workspace.settings as any) || {};
+          if (workspaceSettings.globalVariables && Array.isArray(workspaceSettings.globalVariables)) {
+            currentGlobalVariables = workspaceSettings.globalVariables.reduce((acc: Record<string, any>, v: any) => {
+              if (v.enabled !== false) acc[v.key] = v.value;
+              return acc;
+            }, {});
+          }
+          
+          const preRequestResults = await this.testEngine.executeTests(
+            rootCollection.preRequestScript,
+            tempResult,
+            currentEnvVariables,
+            currentCollectionVariables,
+            currentGlobalVariables
+          );
+
+          // Persist variable updates immediately so they're available for requests
+          if (environmentId && preRequestResults.environmentUpdates) {
+            await this.variableService.updateEnvironmentVariables(environmentId, preRequestResults.environmentUpdates);
+          }
+
+          if (preRequestResults.collectionUpdates) {
+            await this.variableService.updateCollectionVariables(rootCollection.id, preRequestResults.collectionUpdates);
+          }
+
+          if (preRequestResults.globalUpdates) {
+            await this.variableService.updateGlobalVariables(rootCollection.workspace.id, preRequestResults.globalUpdates);
+          }
+        } catch (error: any) {
+          console.error('Collection pre-request script execution failed:', error);
+          console.error('Error details:', error.stack);
+        }
+      }
+
       // Execute requests in order
       for (const request of requests) {
         if (this.cancelled) {
@@ -160,6 +260,7 @@ export class CollectionRunner {
           request,
           collectionId,
           environmentId,
+          validateSSL,
           iterationResult.dataRow
         );
 
@@ -246,7 +347,8 @@ export class CollectionRunner {
   private async executeRequest(
     request: any,
     collectionId: string,
-    environmentId?: string,
+    environmentId: string | undefined,
+    validateSSL: boolean,
     dataRow?: any
   ): Promise<RunResult> {
     const startTime = Date.now();
@@ -262,6 +364,7 @@ export class CollectionRunner {
         auth: request.auth || { type: 'none' },
         testScript: request.testScript || '',
         preRequestScript: request.preRequestScript || '',
+        validateSSL: validateSSL,
       };
 
       // If data row is provided, inject variables into config
@@ -289,8 +392,8 @@ export class CollectionRunner {
       return {
         requestId: request.id,
         requestName: request.name,
-        method: request.method,
-        url: request.url,
+        method: result.request.method,
+        url: result.request.url,
         status,
         statusCode: result.response?.status,
         responseTime,

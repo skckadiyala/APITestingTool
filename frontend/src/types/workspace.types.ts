@@ -31,11 +31,16 @@ export interface UserSearchResult {
   name?: string;
 }
 
+export interface WorkspaceSettings {
+  validateSSL?: boolean;
+}
+
 export interface Workspace {
   id: string;
   name: string;
   description?: string;
   ownerId: string;
+  settings?: WorkspaceSettings;
   createdAt: string;
   updatedAt: string;
   collectionsCount: number;
