@@ -241,9 +241,14 @@ export class CollectionRunner {
           }
 
           if (preRequestResults.globalUpdates) {
-            await this.variableService.updateGlobalVariables(rootCollection.workspace.id, preRequestResults.globalUpdates);
+            if (rootCollection.workspace?.id) {
+              await this.variableService.updateGlobalVariables(rootCollection.workspace.id, preRequestResults.globalUpdates);
+            } else {
+              console.error('No workspace ID available for global variable update');
+            }
           }
         } catch (error: any) {
+          console.error('=== COLLECTION PRE-REQUEST SCRIPT ERROR ===');
           console.error('Collection pre-request script execution failed:', error);
           console.error('Error details:', error.stack);
         }

@@ -293,7 +293,8 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
 
     return collections
       .map(filterRecursive)
-      .filter((c): c is Collection => c !== null);
+      .filter((c): c is Collection => c !== null)
+      .sort((a, b) => a.name.localeCompare(b.name)); // Sort collections alphabetically in ascending order
   };
 
   const filteredCollections = filterCollections(collections);
