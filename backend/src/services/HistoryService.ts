@@ -239,6 +239,7 @@ export class HistoryService {
 
   /**
    * Clear all history for a user
+   * Optimized to use bulk delete operations for MongoDB
    */
   async clearHistory(userId?: string) {
     const where: any = {};
@@ -248,12 +249,20 @@ export class HistoryService {
       where,
     });
 
-    // Delete all MongoDB documents
+    // Bulk delete in MongoDB - much faster than individual deletes
+    const requestBodyIds = history.map(h => h.requestBodyId).filter(Boolean);
+    const responseBodyIds = history
+      .filter(h => h.responseBodyId)
+      .map(h => h.responseBodyId!)
+      .filter(Boolean);
+
     await Promise.all([
-      ...history.map(h => RequestBody.findByIdAndDelete(h.requestBodyId)),
-      ...history
-        .filter(h => h.responseBodyId)
-        .map(h => ResponseBody.findByIdAndDelete(h.responseBodyId!)),
+      requestBodyIds.length > 0 
+        ? RequestBody.deleteMany({ _id: { $in: requestBodyIds } })
+        : Promise.resolve(),
+      responseBodyIds.length > 0
+        ? ResponseBody.deleteMany({ _id: { $in: responseBodyIds } })
+        : Promise.resolve(),
     ]);
 
     // Delete all PostgreSQL records

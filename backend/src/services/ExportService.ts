@@ -1,5 +1,6 @@
 import * as yaml from 'js-yaml';
 import archiver from 'archiver';
+import { URLParser } from '../utils/urlParser';
 
 import { prisma } from '../config/prisma';
 
@@ -32,57 +33,8 @@ export class ExportService {
       // Add requests
       if (folder.requests) {
         folder.requests.forEach((request: any) => {
-          // Handle URLs with variables (e.g., {{base_url}})
-          let urlObj: any = {
-            raw: request.url
-          };
-
-          // Parse URL manually to handle variables
-          let urlToParse = request.url;
-          
-          // Remove query string for parsing
-          const queryStartIndex = urlToParse.indexOf('?');
-          if (queryStartIndex !== -1) {
-            urlToParse = urlToParse.substring(0, queryStartIndex);
-          }
-
-          // Try to parse URL, or manually extract host and path
-          try {
-            const parsedUrl = new URL(urlToParse);
-            urlObj.protocol = parsedUrl.protocol.replace(':', '');
-            urlObj.host = parsedUrl.hostname.split('.');
-            urlObj.path = parsedUrl.pathname.split('/').filter(Boolean);
-          } catch (error) {
-            // URL contains variables, manually extract host and path
-            // Remove protocol if present
-            let urlWithoutProtocol = urlToParse.replace(/^https?:\/\//, '');
-            
-            // Split by first /
-            const firstSlashIndex = urlWithoutProtocol.indexOf('/');
-            
-            if (firstSlashIndex !== -1) {
-              // Extract host part (e.g., {{base_url}})
-              const hostPart = urlWithoutProtocol.substring(0, firstSlashIndex);
-              urlObj.host = [hostPart];
-              
-              // Extract path parts (e.g., {{assets_version}}/assets/software/brand-filter)
-              const pathPart = urlWithoutProtocol.substring(firstSlashIndex + 1);
-              urlObj.path = pathPart.split('/').filter(Boolean);
-            } else {
-              // No path, just host
-              urlObj.host = [urlWithoutProtocol];
-              urlObj.path = [];
-            }
-          }
-
-          // Add query parameters if present
-          if (request.params && Array.isArray(request.params) && request.params.length > 0) {
-            urlObj.query = request.params.map((p: any) => ({
-              key: p.key,
-              value: p.value,
-              disabled: p.enabled === false
-            }));
-          }
+          // Use URLParser utility to build Postman URL object
+          const urlObj = URLParser.buildPostmanUrl(request.url, request.params);
 
           // Convert body back to Postman format
           let postmanBody: any = {};

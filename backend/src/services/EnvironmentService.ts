@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma';
+import crypto from 'crypto';
 
 interface EnvironmentVariable {
   key: string;
@@ -210,10 +211,10 @@ class EnvironmentService {
 
     // Find all {{variableName}} patterns
     const variablePattern = /\{\{([^}]+)\}\}/g;
-    
+
     return text.replace(variablePattern, (match, variableName) => {
       const trimmedName = variableName.trim();
-      
+
       // Check for built-in dynamic variables
       if (trimmedName === '$timestamp') {
         return Date.now().toString();

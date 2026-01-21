@@ -1,5 +1,6 @@
 import { CollectionType } from '@prisma/client';
 import crypto from 'crypto';
+import { NotFoundError } from '../utils/errors';
 
 import { prisma } from '../config/prisma';
 
@@ -61,6 +62,39 @@ export interface ReorderItemDto {
 }
 
 class CollectionService {
+  // Maximum nesting depth to prevent performance issues and potential attacks
+  private readonly MAX_NESTING_DEPTH = 10;
+
+  /**
+   * Build nested include structure dynamically based on depth
+   * This prevents N+1 queries by using Prisma's built-in JOIN capabilities
+   */
+  private buildNestedInclude(depth: number): any {
+    if (depth <= 0) {
+      return {
+        requests: {
+          orderBy: {
+            orderIndex: 'asc' as const,
+          },
+        },
+      };
+    }
+
+    return {
+      requests: {
+        orderBy: {
+          orderIndex: 'asc' as const,
+        },
+      },
+      childFolders: {
+        orderBy: {
+          orderIndex: 'asc' as const,
+        },
+        include: this.buildNestedInclude(depth - 1),
+      },
+    };
+  }
+
   /**
    * Create a new collection
    * Note: Workspace permission checks are handled by route middleware (requireWorkspaceEditor)
@@ -102,43 +136,18 @@ class CollectionService {
   /**
    * Get all collections in a workspace
    * Note: Workspace permission checks are handled by route middleware (requireWorkspaceViewer)
+   * @param workspaceId - The workspace ID
+   * @param maxDepth - Maximum nesting depth (default: 5, max: 10)
+   * @returns Array of collections with nested folders and requests
    */
-  async getCollections(workspaceId: string) {
-    // Recursive function to get nested structure
-    const getNestedStructure = async (collectionId: string): Promise<any> => {
-      const collection = await prisma.collection.findUnique({
-        where: { id: collectionId },
-        include: {
-          requests: {
-            orderBy: {
-              orderIndex: 'asc',
-            },
-          },
-          childFolders: {
-            orderBy: {
-              orderIndex: 'asc',
-            },
-          },
-        },
-      });
+  async getCollections(workspaceId: string, maxDepth: number = 5) {
+    // Enforce maximum depth to prevent performance issues
+    const safeDepth = Math.min(maxDepth, this.MAX_NESTING_DEPTH);
 
-      if (!collection) return null;
+    const startTime = Date.now();
 
-      // Recursively get child folders
-      const childFoldersWithNested = await Promise.all(
-        collection.childFolders.map(async (folder) => {
-          return await getNestedStructure(folder.id);
-        })
-      );
-
-      return {
-        ...collection,
-        childFolders: childFoldersWithNested,
-      };
-    };
-
-    // Get top-level collections (no parent folder)
-    const topLevelCollections = await prisma.collection.findMany({
+    // Single query with nested includes - replaces N+1 recursive queries
+    const collections = await prisma.collection.findMany({
       where: {
         workspaceId,
         parentFolderId: null,
@@ -147,25 +156,37 @@ class CollectionService {
       orderBy: {
         orderIndex: 'asc',
       },
+      include: this.buildNestedInclude(safeDepth),
     });
 
-    // Get nested structure for each collection
-    const result = await Promise.all(
-      topLevelCollections.map(async (collection) => {
-        return await getNestedStructure(collection.id);
-      })
-    );
+    const duration = Date.now() - startTime;
 
-    return result;
+    // Log performance metrics
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[PERF] getCollections for workspace ${workspaceId}: ${duration}ms (depth: ${safeDepth})`);
+    }
+
+    // Warn if query is slow
+    if (duration > 1000) {
+      console.warn(`[PERF] Slow query detected: getCollections took ${duration}ms`);
+    }
+
+    return collections;
   }
 
   /**
    * Get a collection by ID with all nested folders and requests
    * Note: Workspace permission checks are handled by route middleware (requireWorkspaceViewer)
+   * @param id - The collection ID
+   * @param includeNested - Whether to include nested folders (default: true)
+   * @param maxDepth - Maximum nesting depth (default: 5, max: 10)
+   * @returns Collection with nested folders and requests
    */
-  async getCollectionById(id: string, includeNested = true) {
+  async getCollectionById(id: string, includeNested = true, maxDepth: number = 5) {
+    const startTime = Date.now();
+
     if (!includeNested) {
-      return await prisma.collection.findUnique({
+      const collection = await prisma.collection.findUnique({
         where: { id },
         include: {
           childFolders: {
@@ -180,42 +201,37 @@ class CollectionService {
           },
         },
       });
+
+      const duration = Date.now() - startTime;
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[PERF] getCollectionById (shallow) for ${id}: ${duration}ms`);
+      }
+
+      return collection;
     }
 
-    // Recursive function to get nested structure
-    const getNestedCollection = async (collectionId: string): Promise<any> => {
-      const collection = await prisma.collection.findUnique({
-        where: { id: collectionId },
-        include: {
-          requests: {
-            orderBy: {
-              orderIndex: 'asc',
-            },
-          },
-          childFolders: {
-            orderBy: {
-              orderIndex: 'asc',
-            },
-          },
-        },
-      });
+    // Enforce maximum depth to prevent performance issues
+    const safeDepth = Math.min(maxDepth, this.MAX_NESTING_DEPTH);
 
-      if (!collection) return null;
+    // Single query with nested includes - replaces N+1 recursive queries
+    const collection = await prisma.collection.findUnique({
+      where: { id },
+      include: this.buildNestedInclude(safeDepth),
+    });
 
-      // Recursively get child folders
-      const childFoldersWithNested = await Promise.all(
-        collection.childFolders.map(async (folder) => {
-          return await getNestedCollection(folder.id);
-        })
-      );
+    const duration = Date.now() - startTime;
 
-      return {
-        ...collection,
-        childFolders: childFoldersWithNested,
-      };
-    };
+    // Log performance metrics
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[PERF] getCollectionById for ${id}: ${duration}ms (depth: ${safeDepth})`);
+    }
 
-    return await getNestedCollection(id);
+    // Warn if query is slow
+    if (duration > 500) {
+      console.warn(`[PERF] Slow query detected: getCollectionById took ${duration}ms`);
+    }
+
+    return collection;
   }
 
   /**
@@ -261,7 +277,7 @@ class CollectionService {
     });
 
     if (!parentCollection) {
-      throw new Error('Parent collection not found');
+      throw new NotFoundError('Parent collection not found');
     }
 
     // Get max order index for folders in this collection
@@ -306,7 +322,7 @@ class CollectionService {
     });
 
     if (!collection) {
-      throw new Error('Collection not found');
+      throw new NotFoundError('Collection not found');
     }
 
     // Get max order index for requests in this collection
@@ -343,7 +359,7 @@ class CollectionService {
     });
 
     if (!request) {
-      throw new Error('Request not found');
+      throw new NotFoundError('Request not found');
     }
 
     return await prisma.request.update({
@@ -362,7 +378,7 @@ class CollectionService {
     });
 
     if (!targetCollection) {
-      throw new Error('Target collection not found');
+      throw new NotFoundError('Target collection not found');
     }
 
     // If order index not provided, add to end

@@ -10,6 +10,7 @@ import {
 } from '../utils/jwt';
 import { sendPasswordResetEmail, sendWelcomeEmail } from './EmailService';
 import { WorkspaceService } from './WorkspaceService';
+import { ValidationError, ConflictError, UnauthorizedError } from '../utils/errors';
 
 import { prisma } from '../config/prisma';
 
@@ -46,12 +47,12 @@ export class AuthService {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(data.email)) {
-      throw new Error('Invalid email format');
+      throw new ValidationError('Invalid email format');
     }
 
     // Validate password strength
     if (data.password.length < 8) {
-      throw new Error('Password must be at least 8 characters long');
+      throw new ValidationError('Password must be at least 8 characters long');
     }
 
     // Check if user already exists
@@ -60,7 +61,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new Error('User with this email already exists');
+      throw new ConflictError('User with this email already exists');
     }
 
     // Hash password
@@ -134,13 +135,13 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new Error('Invalid email or password');
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(data.password, user.passwordHash);
     if (!isValidPassword) {
-      throw new Error('Invalid email or password');
+      throw new UnauthorizedError('Invalid email or password');
     }
 
     // Generate tokens
