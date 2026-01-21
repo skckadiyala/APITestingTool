@@ -1,7 +1,7 @@
-import { PrismaClient, Workspace, Prisma, WorkspaceRole } from '@prisma/client';
+import { Workspace, Prisma, WorkspaceRole } from '@prisma/client';
 import WorkspaceMemberService from './WorkspaceMemberService';
 
-const prisma = new PrismaClient();
+import { prisma } from '../config/prisma';
 
 export class WorkspaceService {
   /**

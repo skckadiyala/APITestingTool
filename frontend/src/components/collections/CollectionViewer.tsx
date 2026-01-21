@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { type Collection } from '../../services/collectionService';
 import collectionService from '../../services/collectionService';
 import Editor from '@monaco-editor/react';
@@ -61,6 +61,52 @@ pm.test("Collection: Response time is acceptable", function () {
   );
 
   const [isSaving, setIsSaving] = useState(false);
+
+  // Reset state when collection changes (e.g., switching between tabs)
+  useEffect(() => {
+    if (!collection) return;
+
+    const collectionAuth = collection.auth || {};
+    const authTypeFromCollection = collectionAuth.type || 'noauth';
+
+    setAuthType(authTypeFromCollection);
+    setBearerToken(collectionAuth.bearer?.[0]?.value || '');
+    setBasicUsername(collectionAuth.basic?.username || '');
+    setBasicPassword(collectionAuth.basic?.password || '');
+    setApiKeyKey(collectionAuth.apikey?.key || '');
+    setApiKeyValue(collectionAuth.apikey?.value || '');
+    setApiKeyAddTo(collectionAuth.apikey?.in || 'header');
+
+    setPreRequestScript(
+      collection.preRequestScript || 
+      `// Collection-level Pre-request Script
+// This script runs before every request in this collection
+
+pm.environment.set("collectionTimestamp", Date.now());
+console.log("Running collection pre-request script");`
+    );
+
+    setTestScript(
+      collection.testScript || 
+      `// Collection-level Test Script
+// This script runs after every request in this collection
+
+pm.test("Collection: Response time is acceptable", function () {
+  pm.expect(pm.response.responseTime).to.be.below(2000);
+});`
+    );
+
+    setVariables(
+      collection.variables && collection.variables.length > 0
+        ? collection.variables.map((v: any, idx: number) => ({
+            id: String(idx + 1),
+            key: v.key || '',
+            value: String(v.value || ''),
+            enabled: v.enabled !== false
+          }))
+        : [{ id: '1', key: '', value: '', enabled: true }]
+    );
+  }, [collection?.id]); // Re-run when collection ID changes
 
   const handleSave = async () => {
     setIsSaving(true);

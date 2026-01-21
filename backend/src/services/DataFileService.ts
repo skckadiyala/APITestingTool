@@ -1,4 +1,4 @@
-import { PrismaClient, FileType } from '@prisma/client';
+import { FileType } from '@prisma/client';
 import { promises as fs } from 'fs';
 import path from 'path';
 import {
@@ -9,7 +9,7 @@ import {
   ParsedDataRow
 } from '../utils/fileParser';
 
-const prisma = new PrismaClient();
+import { prisma } from '../config/prisma';
 
 export interface CreateDataFileDTO {
   originalName: string;

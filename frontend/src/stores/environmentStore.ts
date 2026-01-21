@@ -9,6 +9,8 @@ interface EnvironmentState {
   currentWorkspaceId: string;
   loading: boolean;
   error: string | null;
+  selectedView: 'globals' | 'environment' | null; // Track selected view
+  selectedEnvironmentId: string | null; // Track selected environment
 
   // Actions
   loadEnvironments: (workspaceId: string) => Promise<void>;
@@ -18,6 +20,7 @@ interface EnvironmentState {
   duplicateEnvironment: (id: string) => Promise<void>;
   setActiveEnvironment: (id: string | null) => void;
   getActiveEnvironment: () => Environment | null;
+  setSelectedView: (view: 'globals' | 'environment' | null, environmentId?: string | null) => void;
 }
 
 export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
@@ -26,6 +29,8 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   currentWorkspaceId: '',
   loading: false,
   error: null,
+  selectedView: null,
+  selectedEnvironmentId: null,
 
   loadEnvironments: async (workspaceId: string) => {
     // Prevent concurrent loads
@@ -124,5 +129,9 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   getActiveEnvironment: () => {
     const { environments, activeEnvironmentId } = get();
     return environments.find((env) => env.id === activeEnvironmentId) || null;
+  },
+
+  setSelectedView: (view: 'globals' | 'environment' | null, environmentId: string | null = null) => {
+    set({ selectedView: view, selectedEnvironmentId: environmentId });
   },
 }));

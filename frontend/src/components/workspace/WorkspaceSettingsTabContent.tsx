@@ -22,6 +22,7 @@ export default function WorkspaceSettingsTabContent() {
   const { user } = useAuthStore();
   const [workspaceName, setWorkspaceName] = useState(currentWorkspace?.name || '');
   const [workspaceDescription, setWorkspaceDescription] = useState(currentWorkspace?.description || '');
+  const [validateSSL, setValidateSSL] = useState(currentWorkspace?.settings?.validateSSL ?? false);
 
   const userRole = currentWorkspace?.userRole;
   const isOwner = userRole === WorkspaceRole.OWNER;
@@ -31,6 +32,7 @@ export default function WorkspaceSettingsTabContent() {
     if (currentWorkspace) {
       setWorkspaceName(currentWorkspace.name);
       setWorkspaceDescription(currentWorkspace.description || '');
+      setValidateSSL(currentWorkspace.settings?.validateSSL ?? false);
     }
   }, [currentWorkspace]);
 
@@ -130,7 +132,7 @@ export default function WorkspaceSettingsTabContent() {
   const handleUpdateWorkspace = async () => {
     if (!currentWorkspace) return;
     try {
-      await updateWorkspace(currentWorkspace.id, workspaceName, workspaceDescription);
+      await updateWorkspace(currentWorkspace.id, workspaceName, workspaceDescription, { validateSSL });
       toast.success('Workspace updated successfully');
     } catch (error: any) {
       toast.error('Failed to update workspace');
@@ -265,8 +267,55 @@ export default function WorkspaceSettingsTabContent() {
 
         {activeTab === 'settings' && (
           <div className="space-y-6 max-w-3xl">
-            {/* Add Member Button (Owner Only) */}
-            {isOwner && (
+            {/* Request Settings */}
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-4">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Request Settings</h3>
+              
+              {/* SSL Certificate Verification */}
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
+                    SSL Certificate Verification
+                  </label>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Verify SSL certificates for HTTPS requests. Disable for self-signed certificates.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setValidateSSL(!validateSSL)}
+                  disabled={!canEdit}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    validateSSL ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      validateSSL ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              
+              {/* Save Button */}
+              {canEdit && (
+                <button
+                  onClick={handleUpdateWorkspace}
+                  className="px-3 py-1.5 text-xs bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors flex items-center gap-1.5"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Save Settings
+                </button>
+              )}
+            </div>
+            
+            {/* Member Management */}
+            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 space-y-4">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Team Members</h3>
+              
+              {/* Add Member Button (Owner Only) */}
+              {isOwner && (
               <button
                 onClick={() => {
                   setShowAddMemberDialog(true);
@@ -345,6 +394,7 @@ export default function WorkspaceSettingsTabContent() {
             <p className="text-xs text-gray-500 dark:text-gray-400 italic">
               Note: The workspace owner has full control and cannot be changed or removed.
             </p>
+            </div>
 
             {/* Danger Zone */}
             {isOwner && (

@@ -6,6 +6,9 @@ import workspaceMemberService from '../services/workspaceMemberService';
 import type { Workspace } from '../services/workspaceService';
 import type { WorkspaceMember, UserSearchResult, WorkspaceRole } from '../types/workspace.types';
 
+// Global flag to prevent concurrent fetches across all instances
+let isFetchingWorkspaces = false;
+
 interface WorkspaceState {
   workspaces: Workspace[];
   currentWorkspace: Workspace | null;
@@ -17,7 +20,7 @@ interface WorkspaceState {
   fetchWorkspaces: () => Promise<void>;
   setCurrentWorkspace: (workspaceId: string) => void;
   createWorkspace: (name: string) => Promise<Workspace | null>;
-  updateWorkspace: (id: string, name: string, description?: string) => Promise<void>;
+  updateWorkspace: (id: string, name: string, description?: string, settings?: any) => Promise<void>;
   deleteWorkspace: (id: string) => Promise<void>;
   duplicateWorkspace: (id: string) => Promise<void>;
   clearWorkspaces: () => void;
@@ -28,6 +31,10 @@ interface WorkspaceState {
   updateMemberRole: (workspaceId: string, memberId: string, role: WorkspaceRole) => Promise<void>;
   removeMember: (workspaceId: string, memberId: string) => Promise<void>;
   searchUsers: (searchTerm: string) => Promise<UserSearchResult[]>;
+  
+  // Global variables management
+  getGlobalVariables: () => any[];
+  updateGlobalVariables: (variables: any[]) => Promise<void>;
 }
 
 export const useWorkspaceStore = create<WorkspaceState>()(
@@ -44,12 +51,18 @@ export const useWorkspaceStore = create<WorkspaceState>()(
        * Includes both owned and member workspaces with userRole
        */
       fetchWorkspaces: async () => {
-        // Prevent concurrent fetches
+        // Prevent concurrent fetches using global flag
+        if (isFetchingWorkspaces) {
+          console.log('Workspace fetch already in progress, skipping...');
+          return;
+        }
+        
         const state = get();
         if (state.isLoading) {
           return;
         }
         
+        isFetchingWorkspaces = true;
         set({ isLoading: true, error: null });
         try {
           // Fetch both owned and member workspaces (backend already returns merged list)
@@ -93,7 +106,19 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           set({ workspaces, currentWorkspace, isLoading: false });
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
-          toast.error(error.message || 'Failed to fetch workspaces');
+          
+          // If error is 401 (unauthorized), clear auth and redirect to login
+          if (error.response?.status === 401) {
+            console.error('Authentication failed when fetching workspaces');
+            // The API interceptor should handle this, but just in case
+            const { useAuthStore } = await import('./authStore');
+            useAuthStore.getState().clearAuth();
+            window.location.href = '/login';
+          } else {
+            toast.error(error.message || 'Failed to fetch workspaces');
+          }
+        } finally {
+          isFetchingWorkspaces = false;
         }
       },
 
@@ -143,12 +168,13 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       /**
        * Update workspace
        */
-      updateWorkspace: async (id: string, name: string, description?: string) => {
+      updateWorkspace: async (id: string, name: string, description?: string, settings?: any) => {
         set({ isLoading: true, error: null });
         try {
           const updatedWorkspace = await workspaceService.updateWorkspace(id, {
             name,
             description,
+            settings,
           });
 
           const state = get();
@@ -327,6 +353,58 @@ export const useWorkspaceStore = create<WorkspaceState>()(
         } catch (error: any) {
           toast.error('Failed to search users');
           return [];
+        }
+      },
+
+      /**
+       * Get global variables from current workspace
+       */
+      getGlobalVariables: () => {
+        const state = get();
+        if (!state.currentWorkspace || !state.currentWorkspace.settings) {
+          return [];
+        }
+        const settings = state.currentWorkspace.settings as any;
+        return settings.globalVariables || [];
+      },
+
+      /**
+       * Update global variables in current workspace
+       */
+      updateGlobalVariables: async (variables: any[]) => {
+        const state = get();
+        if (!state.currentWorkspace) {
+          toast.error('No workspace selected');
+          return;
+        }
+
+        try {
+          const currentSettings = (state.currentWorkspace.settings as any) || {};
+          const newSettings = {
+            ...currentSettings,
+            globalVariables: variables,
+          };
+
+          await workspaceService.updateWorkspace(state.currentWorkspace.id, {
+            name: state.currentWorkspace.name,
+            description: state.currentWorkspace.description || undefined,
+            settings: newSettings,
+          });
+
+          // Update local state
+          const updatedWorkspace = {
+            ...state.currentWorkspace,
+            settings: newSettings,
+          };
+
+          const workspaces = state.workspaces.map((w) =>
+            w.id === state.currentWorkspace!.id ? updatedWorkspace : w
+          );
+
+          set({ workspaces, currentWorkspace: updatedWorkspace });
+          toast.success('Global variables updated successfully');
+        } catch (error: any) {
+          toast.error(error.message || 'Failed to update global variables');
         }
       },
     }),

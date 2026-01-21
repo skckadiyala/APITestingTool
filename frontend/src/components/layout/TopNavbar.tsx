@@ -2,24 +2,20 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from '../../hooks/useDarkMode';
 import { useAuthStore } from '../../stores/authStore';
+import { useTabStore } from '../../stores/tabStore';
 import { authService } from '../../services/authService';
 import EnvironmentSelector from '../environment/EnvironmentSelector';
-import EnvironmentEditorModal from '../environment/EnvironmentEditorModal';
 import WorkspaceSelector from '../workspace/WorkspaceSelector';
 import CreateWorkspaceDialog from '../workspace/CreateWorkspaceDialog';
-import WorkspaceManagementModal from '../workspace/WorkspaceManagementModal';
-import ProfileSettingsModal from '../profile/ProfileSettingsModal';
 import toast from 'react-hot-toast';
 
 export default function TopNavbar() {
   const navigate = useNavigate();
   const { isDark, toggleDarkMode } = useDarkMode();
   const { user, refreshToken, clearAuth } = useAuthStore();
-  const [isEnvironmentEditorOpen, setIsEnvironmentEditorOpen] = useState(false);
+  const { openProfileSettings, openEnvironmentSettings } = useTabStore();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCreateWorkspaceOpen, setIsCreateWorkspaceOpen] = useState(false);
-  const [isManageWorkspacesOpen, setIsManageWorkspacesOpen] = useState(false);
-  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   // Close user menu when clicking outside
   useEffect(() => {
@@ -74,7 +70,7 @@ export default function TopNavbar() {
         <div className="ml-4 hidden md:block">
           <WorkspaceSelector
             onCreateClick={() => setIsCreateWorkspaceOpen(true)}
-            onManageClick={() => setIsManageWorkspacesOpen(true)}
+            onManageClick={() => openProfileSettings()}
           />
         </div>
       </div>
@@ -82,7 +78,7 @@ export default function TopNavbar() {
       {/* Right Side Actions */}
       <div className="flex items-center gap-3">
         {/* Environment Selector */}
-        <EnvironmentSelector onManageClick={() => setIsEnvironmentEditorOpen(true)} />
+        <EnvironmentSelector onManageClick={() => openEnvironmentSettings()} />
 
         {/* Dark Mode Toggle */}
         <button
@@ -135,7 +131,7 @@ export default function TopNavbar() {
               <button
                 onClick={() => {
                   setIsUserMenuOpen(false);
-                  setIsProfileSettingsOpen(true);
+                  openProfileSettings();
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
               >
@@ -166,21 +162,6 @@ export default function TopNavbar() {
       <CreateWorkspaceDialog
         isOpen={isCreateWorkspaceOpen}
         onClose={() => setIsCreateWorkspaceOpen(false)}
-      />
-
-      <WorkspaceManagementModal
-        isOpen={isManageWorkspacesOpen}
-        onClose={() => setIsManageWorkspacesOpen(false)}
-      />
-
-      <ProfileSettingsModal
-        isOpen={isProfileSettingsOpen}
-        onClose={() => setIsProfileSettingsOpen(false)}
-      />
-
-      <EnvironmentEditorModal
-        isOpen={isEnvironmentEditorOpen}
-        onClose={() => setIsEnvironmentEditorOpen(false)}
       />
     </nav>
   );

@@ -1,5 +1,4 @@
 import React from 'react';
-import ResponseStatusBar from './ResponseStatusBar';
 import ResponseTabs from './ResponseTabs';
 
 interface ResponseViewerProps {
@@ -24,8 +23,15 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response, testResults, 
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-800">
-      <ResponseStatusBar status={status} statusText={statusText} time={time} size={size} />
-      <ResponseTabs response={response} testResults={testResults} consoleLogs={consoleLogs} />
+      <ResponseTabs 
+        response={response} 
+        testResults={testResults} 
+        consoleLogs={consoleLogs}
+        status={status}
+        statusText={statusText}
+        time={time}
+        size={size}
+      />
     </div>
   );
 };

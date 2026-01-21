@@ -8,15 +8,16 @@ import {
   KeyValuePair,
 } from '../types/request.types';
 import { TestScriptEngine } from './TestScriptEngine';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { VariableService } from './VariableService';
+import { prisma } from '../config/prisma';
 
 export class RequestExecutor {
   private testEngine: TestScriptEngine;
+  private variableService: VariableService;
 
   constructor() {
     this.testEngine = new TestScriptEngine();
+    this.variableService = new VariableService(prisma);
   }
 
   /**
@@ -30,6 +31,41 @@ export class RequestExecutor {
     config.params = config.params || [];
     config.auth = config.auth || { type: 'none' };
     config.body = config.body || { type: 'none' };
+
+    // Get workspace ID from collection or environment
+    let workspaceId: string | null = null;
+    if (collectionId) {
+      const collection = await prisma.collection.findUnique({
+        where: { id: collectionId },
+        select: { workspaceId: true },
+      });
+      workspaceId = collection?.workspaceId || null;
+    } else if (environmentId) {
+      const environment = await prisma.environment.findUnique({
+        where: { id: environmentId },
+        select: { workspaceId: true },
+      });
+      workspaceId = environment?.workspaceId || null;
+    }
+
+    // Get global variables from workspace
+    let currentGlobalVariables: Record<string, any> = {};
+    if (workspaceId) {
+      const workspace = await prisma.workspace.findUnique({
+        where: { id: workspaceId },
+      });
+      if (workspace && workspace.settings) {
+        const settings = workspace.settings as any;
+        if (settings.globalVariables && Array.isArray(settings.globalVariables)) {
+          currentGlobalVariables = settings.globalVariables.reduce((acc: Record<string, any>, v: any) => {
+            if (v.enabled !== false) {
+              acc[v.key] = v.value;
+            }
+            return acc;
+          }, {});
+        }
+      }
+    }
 
     // Get current environment variables if environmentId is provided
     let currentEnvVariables: Record<string, any> = {};
@@ -116,12 +152,13 @@ export class RequestExecutor {
           config.preRequestScript,
           tempResult,
           currentEnvVariables,
-          currentCollectionVariables
+          currentCollectionVariables,
+          currentGlobalVariables
         );
 
         // Apply environment variable updates from pre-request script
         if (environmentId && preRequestResults.environmentUpdates) {
-          await this.updateEnvironmentVariables(environmentId, preRequestResults.environmentUpdates);
+          await this.variableService.updateEnvironmentVariables(environmentId, preRequestResults.environmentUpdates);
           // Update current variables for request resolution
           Object.assign(currentEnvVariables, preRequestResults.environmentUpdates);
           // Re-resolve variables with updated environment
@@ -130,18 +167,21 @@ export class RequestExecutor {
 
         // Apply collection variable updates from pre-request script
         if (collectionId && preRequestResults.collectionUpdates) {
-          await this.updateCollectionVariables(collectionId, preRequestResults.collectionUpdates);
+          await this.variableService.updateCollectionVariables(collectionId, preRequestResults.collectionUpdates);
           // Update current variables
           Object.assign(currentCollectionVariables, preRequestResults.collectionUpdates);
           // Re-resolve variables with updated collection
           config = await this.resolveVariables(config, environmentId, collectionId);
         }
 
-        console.log('Pre-request script executed:', {
-          environmentUpdates: preRequestResults.environmentUpdates,
-          collectionUpdates: preRequestResults.collectionUpdates,
-          consoleOutput: preRequestResults.consoleOutput,
-        });
+        // Apply global variable updates from pre-request script
+        if (workspaceId && preRequestResults.globalUpdates) {
+          await this.variableService.updateGlobalVariables(workspaceId, preRequestResults.globalUpdates);
+          // Update current variables
+          Object.assign(currentGlobalVariables, preRequestResults.globalUpdates);
+          // Re-resolve variables with updated globals
+          config = await this.resolveVariables(config, environmentId, collectionId);
+        }
       } catch (error: any) {
         console.error('Pre-request script execution failed:', error);
       }
@@ -162,17 +202,22 @@ export class RequestExecutor {
       // Execute test scripts if provided
       if (config.testScript && config.testScript.trim()) {
         try {
-          const testResults = await this.testEngine.executeTests(config.testScript, result, currentEnvVariables, currentCollectionVariables);
+          const testResults = await this.testEngine.executeTests(config.testScript, result, currentEnvVariables, currentCollectionVariables, currentGlobalVariables);
           result.testResults = testResults;
 
           // Persist environment variable updates
           if (environmentId && testResults.environmentUpdates) {
-            await this.updateEnvironmentVariables(environmentId, testResults.environmentUpdates);
+            await this.variableService.updateEnvironmentVariables(environmentId, testResults.environmentUpdates);
           }
 
           // Persist collection variable updates
           if (collectionId && testResults.collectionUpdates) {
-            await this.updateCollectionVariables(collectionId, testResults.collectionUpdates);
+            await this.variableService.updateCollectionVariables(collectionId, testResults.collectionUpdates);
+          }
+
+          // Persist global variable updates
+          if (workspaceId && testResults.globalUpdates) {
+            await this.variableService.updateGlobalVariables(workspaceId, testResults.globalUpdates);
           }
         } catch (error: any) {
           console.error('Test script execution failed:', error);
@@ -200,17 +245,22 @@ export class RequestExecutor {
       // Execute test scripts even on error (to allow tests to check error conditions)
       if (config.testScript && config.testScript.trim()) {
         try {
-          const testResults = await this.testEngine.executeTests(config.testScript, result, currentEnvVariables, currentCollectionVariables);
+          const testResults = await this.testEngine.executeTests(config.testScript, result, currentEnvVariables, currentCollectionVariables, currentGlobalVariables);
           result.testResults = testResults;
 
           // Persist environment variable updates
           if (environmentId && testResults.environmentUpdates) {
-            await this.updateEnvironmentVariables(environmentId, testResults.environmentUpdates);
+            await this.variableService.updateEnvironmentVariables(environmentId, testResults.environmentUpdates);
           }
 
           // Persist collection variable updates
           if (collectionId && testResults.collectionUpdates) {
-            await this.updateCollectionVariables(collectionId, testResults.collectionUpdates);
+            await this.variableService.updateCollectionVariables(collectionId, testResults.collectionUpdates);
+          }
+
+          // Persist global variable updates
+          if (workspaceId && testResults.globalUpdates) {
+            await this.variableService.updateGlobalVariables(workspaceId, testResults.globalUpdates);
           }
         } catch (testError: any) {
           console.error('Test script execution failed:', testError);
@@ -291,7 +341,12 @@ export class RequestExecutor {
     const enabledParams = params.filter(p => p.enabled !== false); // Treat missing 'enabled' as true
     if (enabledParams.length === 0) return normalizedUrl;
 
-    const url = new URL(normalizedUrl);
+    // Split URL into base and query string to avoid duplicates
+    // The params array is the source of truth for query parameters
+    const urlParts = normalizedUrl.split('?');
+    const baseUrlOnly = urlParts[0];
+    
+    const url = new URL(baseUrlOnly);
     enabledParams.forEach(param => {
       // Only append if the key and value are not empty
       if (param.key && param.key.trim()) {
@@ -580,10 +635,43 @@ export class RequestExecutor {
    */
   private async resolveVariables(config: RequestConfig, environmentId?: string | null, collectionId?: string | null): Promise<RequestConfig> {
     try {
-      // Build variables map with priority: environment > collection
+      // Build variables map with priority: environment > collection > global
       const variablesMap: Record<string, string> = {};
       
-      // First, get collection variables (lower priority)
+      // First, get workspace ID to load global variables (lowest priority)
+      let workspaceId: string | null = null;
+      if (collectionId) {
+        const collection = await prisma.collection.findUnique({
+          where: { id: collectionId },
+          select: { workspaceId: true },
+        });
+        workspaceId = collection?.workspaceId || null;
+      } else if (environmentId) {
+        const environment = await prisma.environment.findUnique({
+          where: { id: environmentId },
+          select: { workspaceId: true },
+        });
+        workspaceId = environment?.workspaceId || null;
+      }
+      
+      // Get global variables (lowest priority)
+      if (workspaceId) {
+        const workspace = await prisma.workspace.findUnique({
+          where: { id: workspaceId },
+        });
+        if (workspace && workspace.settings) {
+          const settings = workspace.settings as any;
+          if (settings.globalVariables && Array.isArray(settings.globalVariables)) {
+            settings.globalVariables.forEach((v: any) => {
+              if (v.enabled !== false && v.key) {
+                variablesMap[v.key] = v.value || '';
+              }
+            });
+          }
+        }
+      }
+      
+      // Then, get collection variables (medium priority - will override global vars)
       if (collectionId) {
         let collection = await prisma.collection.findUnique({
           where: { id: collectionId },
@@ -749,140 +837,6 @@ export class RequestExecutor {
     } catch (error) {
       console.error('Error resolving variables:', error);
       return config; // Return original config if resolution fails
-    }
-  }
-
-  /**
-   * Update environment variables from test script changes
-   */
-  private async updateEnvironmentVariables(
-    environmentId: string,
-    updates: Record<string, any>
-  ): Promise<void> {
-    try {
-      const environment = await prisma.environment.findUnique({
-        where: { id: environmentId },
-      });
-
-      if (!environment) {
-        console.error('Environment not found:', environmentId);
-        return;
-      }
-
-      const variables = (environment.variables as any[]) || [];
-      
-      // Apply updates
-      Object.entries(updates).forEach(([key, value]) => {
-        const existingIndex = variables.findIndex((v: any) => v.key === key);
-        
-        if (value === undefined) {
-          // Unset: remove the variable
-          if (existingIndex !== -1) {
-            variables.splice(existingIndex, 1);
-          }
-        } else {
-          // Set: update or add the variable
-          if (existingIndex !== -1) {
-            variables[existingIndex].value = value;
-          } else {
-            variables.push({
-              key,
-              value,
-              type: 'default',
-              enabled: true,
-            });
-          }
-        }
-      });
-
-      // Save updated variables
-      await prisma.environment.update({
-        where: { id: environmentId },
-        data: { variables: variables as any },
-      });
-
-      console.log(`Environment ${environmentId} updated with:`, Object.keys(updates));
-    } catch (error) {
-      console.error('Error updating environment variables:', error);
-    }
-  }
-
-  private async updateCollectionVariables(
-    collectionId: string,
-    updates: Record<string, any>
-  ): Promise<void> {
-    try {
-      let collection = await prisma.collection.findUnique({
-        where: { id: collectionId },
-      });
-
-      if (!collection) {
-        console.error('Collection not found:', collectionId);
-        return;
-      }
-
-      // If it's a folder, find the root collection
-      if (collection.type === 'FOLDER' && collection.parentFolderId) {
-        let currentId: string | undefined = collection.parentFolderId;
-        let rootCollection: any = null;
-
-        while (currentId) {
-          const parent: any = await prisma.collection.findUnique({
-            where: { id: currentId },
-          });
-
-          if (!parent) break;
-
-          if (parent.type === 'COLLECTION') {
-            rootCollection = parent;
-            break;
-          }
-
-          currentId = parent.parentFolderId || undefined;
-        }
-
-        if (rootCollection) {
-          collection = rootCollection;
-        }
-      }
-
-      const variables = ((collection as any).variables as any[]) || [];
-      
-      // Apply updates
-      Object.entries(updates).forEach(([key, value]) => {
-        const existingIndex = variables.findIndex((v: any) => v.key === key);
-        
-        if (value === undefined) {
-          // Unset: remove the variable
-          if (existingIndex !== -1) {
-            variables.splice(existingIndex, 1);
-          }
-        } else {
-          // Set: update or add the variable
-          if (existingIndex !== -1) {
-            variables[existingIndex].value = value;
-          } else {
-            variables.push({
-              key,
-              value,
-              type: 'default',
-              enabled: true,
-            });
-          }
-        }
-      });
-
-      // Save updated variables to the root collection
-      if (collection) {
-        await prisma.collection.update({
-          where: { id: collection.id },
-          data: { variables: variables } as any,
-        });
-
-        console.log(`Collection ${collection.id} updated with:`, Object.keys(updates));
-      }
-    } catch (error) {
-      console.error('Error updating collection variables:', error);
     }
   }
 }

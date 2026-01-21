@@ -8,6 +8,31 @@ export default function RequestTabBar() {
     closeTab(tabId);
   };
 
+  const getTabIcon = (tab: any) => {
+    if (tab.type === 'workspace-settings') {
+      return (
+        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      );
+    }
+    if (tab.type === 'profile-settings') {
+      return (
+        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      );
+    }
+    if (tab.type === 'collection') {
+      return (
+        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+        </svg>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="flex items-center bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 overflow-x-auto">
       {tabs.map((tab) => (
@@ -23,19 +48,23 @@ export default function RequestTabBar() {
             }
           `}
         >
-          {/* Method Badge */}
-          <span
-            className={`
-              text-xs font-semibold px-1.5 py-0.5 rounded
-              ${tab.method === 'GET' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : ''}
-              ${tab.method === 'POST' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : ''}
-              ${tab.method === 'PUT' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' : ''}
-              ${tab.method === 'PATCH' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : ''}
-              ${tab.method === 'DELETE' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : ''}
-            `}
-          >
-            {tab.method}
-          </span>
+          {/* Icon or Method Badge */}
+          {tab.type === 'request' ? (
+            <span
+              className={`
+                text-xs font-semibold px-1.5 py-0.5 rounded
+                ${tab.method === 'GET' ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' : ''}
+                ${tab.method === 'POST' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' : ''}
+                ${tab.method === 'PUT' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300' : ''}
+                ${tab.method === 'PATCH' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300' : ''}
+                ${tab.method === 'DELETE' ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' : ''}
+              `}
+            >
+              {tab.method}
+            </span>
+          ) : (
+            getTabIcon(tab)
+          )}
 
           {/* Tab Name */}
           <span className="flex-1 truncate text-sm text-gray-900 dark:text-gray-100">

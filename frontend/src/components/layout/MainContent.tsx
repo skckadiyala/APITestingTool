@@ -5,7 +5,10 @@ import RequestTabs from '../request/RequestTabs';
 import RequestTabBar from '../request/RequestTabBar';
 import ResponseViewer from '../response/ResponseViewer';
 import CollectionViewer from '../collections/CollectionViewer';
+import CollectionRunnerTab from '../collections/CollectionRunnerTab';
 import WorkspaceSettingsTabContent from '../workspace/WorkspaceSettingsTabContent';
+import ProfileSettingsTabContent from '../profile/ProfileSettingsTabContent';
+import EnvironmentSettingsTabContent from '../environment/EnvironmentSettingsTabContent';
 import { type KeyValuePair } from '../request/KeyValueEditor';
 import { type BodyType } from '../request/BodyEditor';
 import { requestService, type ExecutionResult } from '../../services/requestService';
@@ -13,6 +16,7 @@ import { fetchHistoryDetail, type HistoryEntry } from '../../services/historySer
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
+import { useWorkspaceStore } from '../../stores/workspaceStore';
 
 
 type TabType = 'params' | 'headers' | 'body' | 'auth' | 'pre-request' | 'tests';
@@ -24,7 +28,7 @@ export interface MainContentRef {
     method: string;
     url: string;
     params?: Array<{ key: string; value: string; enabled?: boolean }>;
-    headers?: Array<{ key: string; value: string }>;
+    headers?: Array<{ key: string; value: string; enabled?: boolean }>;
     body?: { type: string; content: any };
     auth?: { type: string };
     testScript?: string;
@@ -43,7 +47,9 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
   // Stores
   const { collections, addRequestToCollection, updateRequestInCollection } = useCollectionStore();
   const { tabs, activeTabId, updateTab } = useTabStore();
+  const currentTab = tabs.find(t => t.id === activeTabId);
   const { activeEnvironmentId, getActiveEnvironment, loadEnvironments } = useEnvironmentStore();
+  const { currentWorkspace } = useWorkspaceStore();
   
   // Request state
   const [method, setMethod] = useState('GET');
@@ -59,22 +65,15 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
   const [activeTab, setActiveTab] = useState<TabType>('params');
   
   // Request configuration state
-  const [params, setParams] = useState<KeyValuePair[]>([
-    { id: '1', key: 'page', value: '1', enabled: true },
-    { id: '2', key: 'limit', value: '10', enabled: false },
-  ]);
+  const [params, setParams] = useState<KeyValuePair[]>([]);
   
-  const [headers, setHeaders] = useState<KeyValuePair[]>([
-    { id: '1', key: 'Content-Type', value: 'application/json', enabled: true },
-    { id: '2', key: 'Accept', value: 'application/json', enabled: true },
-  ]);
+  const [headers, setHeaders] = useState<KeyValuePair[]>([]);
   
   const [bodyType, setBodyType] = useState<BodyType>('json');
   const [bodyContent, setBodyContent] = useState('');
   const [formData, setFormData] = useState<Array<{ id: string; key: string; value: string; type: 'text' | 'file'; enabled: boolean }>>([]);
   
   const [authType, setAuthType] = useState<AuthType>('noauth');
-  const [validateSSL, setValidateSSL] = useState(true);
   const [preRequestScript, setPreRequestScript] = useState(`// Pre-request script
 // Execute code before sending the request
 
@@ -98,6 +97,51 @@ pm.test("Response has correct structure", function () {
   const [hasResponse, setHasResponse] = useState(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [consoleLogs, setConsoleLogs] = useState<Array<{ type: 'request' | 'response' | 'error' | 'info'; message: string; timestamp: number }>>([]);
+  
+  // Response panel resize state
+  const [responseHeight, setResponseHeight] = useState(320); // Default 320px (h-80)
+  const [isResizing, setIsResizing] = useState(false);
+  const [isResponseCollapsed, setIsResponseCollapsed] = useState(false);
+
+  // Handle response panel resize
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const container = document.querySelector('.flex-1.flex.flex-col.bg-gray-50');
+      if (!container) return;
+      
+      const containerRect = container.getBoundingClientRect();
+      const newHeight = containerRect.bottom - e.clientY;
+      
+      // Min height: 150px, Max height: 80% of container
+      const minHeight = 150;
+      const maxHeight = containerRect.height * 0.8;
+      
+      setResponseHeight(Math.max(minHeight, Math.min(newHeight, maxHeight)));
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
+
+  const handleResizeStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  const toggleResponseCollapse = () => {
+    setIsResponseCollapsed(!isResponseCollapsed);
+  };
 
   // Wrapper functions to update both local and tab state
   const handleMethodChange = (newMethod: string) => {
@@ -124,14 +168,34 @@ pm.test("Response has correct structure", function () {
   const handleParamsChange = (newParams: KeyValuePair[]) => {
     setParams(newParams);
     
+    // Only update URL if we have a current URL to work with
+    // This prevents overwriting the URL when loading from a tab
+    if (!url) {
+      return;
+    }
+    
+    // Helper function to encode URI component while preserving {{variable}} patterns
+    const encodePreservingVariables = (str: string): string => {
+      // Split by variable pattern, encode non-variable parts
+      const parts = str.split(/(\{\{[^}]+\}\})/g);
+      return parts.map(part => {
+        // Keep variable patterns as-is (odd indices in split result)
+        if (part.startsWith('{{') && part.endsWith('}}')) {
+          return part;
+        }
+        // Encode other parts
+        return encodeURIComponent(part);
+      }).join('');
+    };
+    
     // Update URL to reflect query parameters
-    const enabledParams = newParams.filter(p => p.enabled);
+    const enabledParams = newParams.filter(p => p.enabled && p.key.trim() !== '');
     const baseUrl = url.split('?')[0]; // Get URL without query params
     
     if (enabledParams.length > 0) {
       // Build query string manually to preserve {{variables}}
       const queryString = enabledParams
-        .map(param => `${encodeURIComponent(param.key)}=${encodeURIComponent(param.value)}`)
+        .map(param => `${encodePreservingVariables(param.key)}=${encodePreservingVariables(param.value)}`)
         .join('&');
       
       const newUrl = `${baseUrl}?${queryString}`;
@@ -141,7 +205,7 @@ pm.test("Response has correct structure", function () {
         updateTab(activeTabId, { params: newParams, url: newUrl });
       }
     } else {
-      // No enabled params, remove query string from URL
+      // No enabled params, keep base URL
       setUrl(baseUrl);
       if (activeTabId) {
         updateTab(activeTabId, { params: newParams, url: baseUrl });
@@ -261,58 +325,59 @@ pm.test("Response has correct structure", function () {
 
   // Sync active tab data to component state when tab changes
   useEffect(() => {
-    const activeTab = tabs.find((t) => t.id === activeTabId);
-    if (activeTab) {
-      setMethod(activeTab.method);
-      setUrl(activeTab.url);
-      setRequestName(activeTab.name || 'New Request');
-      setParams(activeTab.params?.map((p, idx) => ({
-        id: String(idx + 1),
-        key: p.key,
-        value: p.value,
-        enabled: p.enabled !== false,
-      })) || []);
-      setHeaders(activeTab.headers?.map((h, idx) => ({
-        id: String(idx + 1),
-        key: h.key,
-        value: h.value,
-        enabled: true,
-      })) || []);
-      setBodyType((activeTab.body?.type as BodyType) || 'json');
-      const bodyTypeValue = (activeTab.body?.type as BodyType) || 'json';
-      const content = typeof activeTab.body?.content === 'string' 
-        ? activeTab.body.content 
-        : JSON.stringify(activeTab.body?.content || '', null, 2);
-      setBodyContent(content);
-      
-      // Parse formData for x-www-form-urlencoded and form-data types
-      if ((bodyTypeValue === 'x-www-form-urlencoded' || bodyTypeValue === 'form-data') && content) {
-        try {
-          const parsed = JSON.parse(content);
-          if (Array.isArray(parsed)) {
-            // Ensure each item has an id field
-            const formDataWithIds = parsed.map((item, index) => ({
-              ...item,
-              id: item.id || `${Date.now()}-${index}`,
-              enabled: item.enabled !== false,
-            }));
-            setFormData(formDataWithIds);
-          }
-        } catch {
-          setFormData([]);
+    if (!currentTab) {
+      return;
+    }
+
+    // Set all state from the active tab
+    setMethod(currentTab.method || 'GET');
+    setUrl(currentTab.url || '');
+    setRequestName(currentTab.name || 'New Request');
+    setParams(currentTab.params?.map((p, idx) => ({
+      id: String(idx + 1),
+      key: p.key,
+      value: p.value,
+      enabled: p.enabled !== false,
+    })) || []);
+    setHeaders(currentTab.headers?.map((h, idx) => ({
+      id: String(idx + 1),
+      key: h.key,
+      value: h.value,
+      enabled: h.enabled !== false,
+    })) || []);
+    setBodyType((currentTab.body?.type as BodyType) || 'json');
+    const bodyTypeValue = (currentTab.body?.type as BodyType) || 'json';
+    const content = typeof currentTab.body?.content === 'string' 
+      ? currentTab.body.content 
+      : JSON.stringify(currentTab.body?.content || '', null, 2);
+    setBodyContent(content);
+    
+    // Parse formData for x-www-form-urlencoded and form-data types
+    if ((bodyTypeValue === 'x-www-form-urlencoded' || bodyTypeValue === 'form-data') && content) {
+      try {
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+          const formDataWithIds = parsed.map((item, index) => ({
+            ...item,
+            id: item.id || `${Date.now()}-${index}`,
+            enabled: item.enabled !== false,
+          }));
+          setFormData(formDataWithIds);
         }
-      } else {
+      } catch {
         setFormData([]);
       }
-      
-      setAuthType((activeTab.auth?.type as AuthType) || 'noauth');
-      setTestScript(activeTab.testScript || '');
-      setPreRequestScript(activeTab.preRequestScript || '');
-      setHasResponse(false);
-      setExecutionResult(null);
-      setConsoleLogs([]);
+    } else {
+      setFormData([]);
     }
-  }, [activeTabId]);
+    
+    setAuthType((currentTab.auth?.type as AuthType) || 'noauth');
+    setTestScript(currentTab.testScript || '');
+    setPreRequestScript(currentTab.preRequestScript || '');
+    setHasResponse(false);
+    setExecutionResult(null);
+    setConsoleLogs([]);
+  }, [currentTab?.id, currentTab?.url, currentTab?.method, currentTab?.requestId]);
 
   // Restore request from history
   const restoreFromHistory = async (entry: HistoryEntry) => {
@@ -411,7 +476,7 @@ pm.test("Response has correct structure", function () {
     method: string;
     url: string;
     params?: Array<{ key: string; value: string; enabled?: boolean }>;
-    headers?: Array<{ key: string; value: string }>;
+    headers?: Array<{ key: string; value: string; enabled?: boolean }>;
     body?: { type: string; content: any };
     auth?: { type: string };
     testScript?: string;
@@ -433,10 +498,7 @@ pm.test("Response has correct structure", function () {
       );
       setParams(loadedParams);
     } else {
-      setParams([
-        { id: '1', key: 'page', value: '1', enabled: true },
-        { id: '2', key: 'limit', value: '10', enabled: false },
-      ]);
+      setParams([]);
     }
 
     // Load headers
@@ -446,15 +508,12 @@ pm.test("Response has correct structure", function () {
           id: String(index + 1),
           key: h.key,
           value: h.value,
-          enabled: true,
+          enabled: h.enabled !== false,
         })
       );
       setHeaders(loadedHeaders);
     } else {
-      setHeaders([
-        { id: '1', key: 'Content-Type', value: 'application/json', enabled: true },
-        { id: '2', key: 'Accept', value: 'application/json', enabled: true },
-      ]);
+      setHeaders([]);
     }
 
     // Load body
@@ -590,7 +649,7 @@ pm.test("Response has correct structure", function () {
         timeout: 30000,
         followRedirects: true,
         maxRedirects: 5,
-        validateSSL: validateSSL,
+        validateSSL: currentWorkspace?.settings?.validateSSL ?? false,
         testScript: testScript || undefined,
         preRequestScript: preRequestScript || undefined,
       }, 'demo-user', undefined, activeEnvironmentId, collectionId); // Pass environmentId and collectionId for variable resolution
@@ -782,25 +841,29 @@ pm.test("Response has correct structure", function () {
         bodyContentToSave = JSON.stringify(formData);
       }
 
+      // Filter out params and headers with empty keys
+      const paramsToSave = params.filter(p => p.key.trim() !== '');
+      const headersToSave = headers.filter(h => h.key.trim() !== '');
+
       await updateRequestInCollection(activeTab.requestId, {
         name: requestName,
         method,
         url,
-        params,
-        headers,
+        params: paramsToSave,
+        headers: headersToSave,
         body: bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
         auth: { type: authType },
         testScript: testScript.trim() || undefined,
         preRequestScript: preRequestScript.trim() || undefined,
       });
       
-      // Update the tab with the saved data
+      // Update the tab with the saved data (using filtered data)
       updateTab(activeTab.id, {
         name: requestName,
         method,
         url,
-        params,
-        headers,
+        params: paramsToSave,
+        headers: headersToSave,
         body: bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
         auth: { type: authType },
         testScript: testScript.trim() || undefined,
@@ -848,6 +911,10 @@ pm.test("Response has correct structure", function () {
         bodyContentToSave = JSON.stringify(formData);
       }
 
+      // Filter out params and headers with empty keys
+      const paramsToSave = params.filter(p => p.key.trim() !== '');
+      const headersToSave = headers.filter(h => h.key.trim() !== '');
+
       await addRequestToCollection(
         selectedCollectionId,
         saveRequestName.trim(),
@@ -856,8 +923,8 @@ pm.test("Response has correct structure", function () {
         undefined, // requestBodyId
         testScript.trim() || undefined,
         preRequestScript.trim() || undefined,
-        params,
-        headers,
+        paramsToSave,
+        headersToSave,
         bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
         { type: authType }
       );
@@ -904,8 +971,17 @@ pm.test("Response has correct structure", function () {
         </div>
       ) : tabs.find(t => t.id === activeTabId)?.type === 'workspace-settings' ? (
         <WorkspaceSettingsTabContent />
+      ) : tabs.find(t => t.id === activeTabId)?.type === 'profile-settings' ? (
+        <ProfileSettingsTabContent />
+      ) : tabs.find(t => t.id === activeTabId)?.type === 'environment-settings' ? (
+        <EnvironmentSettingsTabContent />
       ) : tabs.find(t => t.id === activeTabId)?.type === 'collection' ? (
         <CollectionViewer collection={tabs.find(t => t.id === activeTabId)?.collectionData} />
+      ) : tabs.find(t => t.id === activeTabId)?.type === 'collection-runner' ? (
+        <CollectionRunnerTab 
+          collectionId={tabs.find(t => t.id === activeTabId)?.collectionId || ''} 
+          collectionName={tabs.find(t => t.id === activeTabId)?.collectionData?.name || 'Collection'} 
+        />
       ) : (
         <>
           {/* Request Name Input */}
@@ -930,8 +1006,6 @@ pm.test("Response has correct structure", function () {
             isSaved={isSaved}
             isExistingRequest={!!tabs.find(t => t.id === activeTabId)?.requestId}
             isDirty={!!tabs.find(t => t.id === activeTabId)?.isDirty}
-            validateSSL={validateSSL}
-            onValidateSSLChange={setValidateSSL}
           />
 
           <div className="flex-1 overflow-hidden">
@@ -958,13 +1032,74 @@ pm.test("Response has correct structure", function () {
           </div>
 
           {hasResponse && executionResult && (
-            <div className="h-80 border-t-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 flex flex-col">
-              <ResponseViewer 
-                response={executionResult.response}
-                testResults={executionResult.testResults}
-                consoleLogs={consoleLogs}
-              />
-            </div>
+            <>
+              {/* Resizable Divider */}
+              <div
+                className={`relative border-t-2 ${
+                  isResizing 
+                    ? 'border-primary-500' 
+                    : 'border-gray-300 dark:border-gray-600'
+                } group`}
+                style={{ height: isResponseCollapsed ? 'auto' : `${responseHeight}px` }}
+              >
+                {/* Drag Handle */}
+                <div
+                  className={`absolute top-0 left-0 right-0 h-1 -mt-1 cursor-ns-resize z-10 ${
+                    isResizing 
+                      ? 'bg-primary-500' 
+                      : 'bg-transparent hover:bg-primary-400 dark:hover:bg-primary-600'
+                  } transition-colors`}
+                  onMouseDown={handleResizeStart}
+                  title="Drag to resize"
+                />
+                
+                {/* Collapse/Expand Button */}
+                <button
+                  onClick={toggleResponseCollapse}
+                  className="absolute top-2 right-2 z-20 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                  title={isResponseCollapsed ? 'Expand response' : 'Collapse response'}
+                >
+                  <svg
+                    className={`w-4 h-4 transition-transform ${isResponseCollapsed ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Response Content */}
+                {!isResponseCollapsed && (
+                  <div className="h-full bg-white dark:bg-gray-800 flex flex-col">
+                    <ResponseViewer 
+                      response={executionResult.response}
+                      testResults={executionResult.testResults}
+                      consoleLogs={consoleLogs}
+                    />
+                  </div>
+                )}
+                
+                {/* Collapsed State */}
+                {isResponseCollapsed && (
+                  <div className="bg-white dark:bg-gray-800 px-4 py-2 flex items-center justify-between border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                      <span className={`font-medium ${
+                        executionResult.response?.status && executionResult.response.status >= 200 && executionResult.response.status < 300
+                          ? 'text-green-600 dark:text-green-400'
+                          : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {executionResult.response?.status || 'N/A'} {executionResult.response?.statusText || ''}
+                      </span>
+                      <span>•</span>
+                      <span>{executionResult.response?.timing?.total || 0}ms</span>
+                      <span>•</span>
+                      <span>{executionResult.response?.size?.body || 0} bytes</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </>
       )}

@@ -1,6 +1,6 @@
-import { PrismaClient, WorkspaceRole } from '@prisma/client';
+import { WorkspaceRole } from '@prisma/client';
 
-const prisma = new PrismaClient();
+import { prisma } from '../config/prisma';
 
 interface UserSearchResult {
   id: string;

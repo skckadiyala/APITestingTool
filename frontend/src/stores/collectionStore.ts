@@ -58,7 +58,9 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const { collections } = await collectionService.getCollections(workspaceId);
-      set({ collections, loading: false });
+      // Sort collections alphabetically in ascending order
+      const sortedCollections = collections.sort((a, b) => a.name.localeCompare(b.name));
+      set({ collections: sortedCollections, loading: false });
     } catch (error: any) {
       set({ error: error.message || 'Failed to load collections', loading: false });
       toast.error('Failed to load collections');

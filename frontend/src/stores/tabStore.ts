@@ -1,17 +1,18 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { CollectionRequest } from '../services/collectionService';
 
 export interface Tab {
   id: string;
   name: string;
-  type: 'request' | 'workspace-settings' | 'collection';
+  type: 'request' | 'workspace-settings' | 'collection' | 'profile-settings' | 'environment-settings' | 'collection-runner';
   isDirty: boolean;
   isUntitled: boolean;
   // Request data
   method: string;
   url: string;
   params?: Array<{ key: string; value: string; enabled?: boolean }>;
-  headers?: Array<{ key: string; value: string }>;
+  headers?: Array<{ key: string; value: string; enabled?: boolean }>;
   body?: { type: string; content: any };
   auth?: { type: string };
   testScript?: string;
@@ -21,6 +22,15 @@ export interface Tab {
   collectionId?: string;
   // Collection tab specific
   collectionData?: any;
+  // Collection runner specific
+  runnerState?: {
+    isRunning: boolean;
+    hasResults: boolean;
+    runResults: any;
+    selectedIteration: number;
+    selectedRequest: any;
+    statusFilter: 'all' | 'passed' | 'failed';
+  };
 }
 
 interface TabState {
@@ -35,12 +45,17 @@ interface TabState {
   loadRequestInTab: (request: CollectionRequest) => void;
   openWorkspaceSettings: () => void;
   openCollectionInTab: (collection: any) => void;
+  openProfileSettings: () => void;
+  openEnvironmentSettings: () => void;
+  openCollectionRunner: (collectionId: string, collectionName: string) => void;
   clearAllTabs: () => void;
 }
 
 let tabCounter = 1;
 
-export const useTabStore = create<TabState>((set, get) => ({
+export const useTabStore = create<TabState>()(
+  persist(
+    (set, get) => ({
   tabs: [],
   activeTabId: null,
 
@@ -221,7 +236,89 @@ export const useTabStore = create<TabState>((set, get) => ({
     }));
   },
 
+  openProfileSettings: () => {
+    const { tabs } = get();
+    
+    // Check if profile settings tab is already open
+    const existingTab = tabs.find((t) => t.type === 'profile-settings');
+    if (existingTab) {
+      set({ activeTabId: existingTab.id });
+      return;
+    }
+
+    // Create a new profile settings tab
+    const newTab: Tab = {
+      id: `tab-${Date.now()}-${tabCounter++}`,
+      name: 'Profile',
+      type: 'profile-settings',
+      isDirty: false,
+      isUntitled: false,
+      method: '',
+      url: '',
+    };
+
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTabId: newTab.id,
+    }));
+  },
+
+  openEnvironmentSettings: () => {
+    const { tabs } = get();
+    
+    // Check if environment settings tab is already open
+    const existingTab = tabs.find((t) => t.type === 'environment-settings');
+    if (existingTab) {
+      set({ activeTabId: existingTab.id });
+      return;
+    }
+
+    // Create a new environment settings tab
+    const newTab: Tab = {
+      id: `tab-${Date.now()}-${tabCounter++}`,
+      name: 'Environments',
+      type: 'environment-settings',
+      isDirty: false,
+      isUntitled: false,
+      method: '',
+      url: '',
+    };
+
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTabId: newTab.id,
+    }));
+  },
+
+  openCollectionRunner: (collectionId: string, collectionName: string) => {
+   // const { tabs } = get();
+    
+    // Always create a new collection runner tab (allows multiple runs)
+    const newTab: Tab = {
+      id: `tab-${Date.now()}-${tabCounter++}`,
+      name: `Run: ${collectionName}`,
+      type: 'collection-runner',
+      isDirty: false,
+      isUntitled: false,
+      method: '',
+      url: '',
+      collectionId: collectionId,
+      collectionData: { id: collectionId, name: collectionName },
+    };
+
+    set((state) => ({
+      tabs: [...state.tabs, newTab],
+      activeTabId: newTab.id,
+    }));
+  },
+
   clearAllTabs: () => {
     set({ tabs: [], activeTabId: null });
   },
-}));
+}),
+    {
+      name: 'tab-storage',
+      version: 1,
+    }
+  )
+);

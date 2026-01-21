@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import * as yaml from 'js-yaml';
 import archiver from 'archiver';
 
-const prisma = new PrismaClient();
+import { prisma } from '../config/prisma';
 
 export class ExportService {
   /**

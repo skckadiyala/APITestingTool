@@ -8,9 +8,6 @@ import type { MainContentRef } from './MainContent';
 import ExportDialog from '../collections/ExportDialog';
 import ImportDialog from '../collections/ImportDialog';
 import MoveRequestDialog from '../collections/MoveRequestDialog';
-import CollectionRunnerDialog, { type RunOptions } from '../collections/CollectionRunnerDialog';
-import RunnerResults from '../collections/RunnerResults';
-import collectionRunnerService, { type CollectionRunResult } from '../../services/collectionRunnerService';
 import {
   DndContext,
   closestCenter,
@@ -50,12 +47,6 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
   const [exportingCollectionId, setExportingCollectionId] = useState<string>('');
   const [exportingCollectionName, setExportingCollectionName] = useState<string>('');
   const [activeRequest, setActiveRequest] = useState<CollectionRequest | null>(null);
-  const [showRunnerDialog, setShowRunnerDialog] = useState(false);
-  const [runnerCollectionId, setRunnerCollectionId] = useState<string>('');
-  const [runnerCollectionName, setRunnerCollectionName] = useState<string>('');
-  const [showRunnerResults, setShowRunnerResults] = useState(false);
-  const [runResults, setRunResults] = useState<CollectionRunResult | null>(null);
-  const [isRunning, setIsRunning] = useState(false);
   const [expandedCollections, setExpandedCollections] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem('expandedCollections');
     return saved ? JSON.parse(saved) : {};
@@ -68,6 +59,7 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
   
   const { collections, loading, loadCollections, createCollection, currentWorkspaceId, moveRequest, reorderItems } = useCollectionStore();
   const { canEdit } = useWorkspacePermission(currentWorkspaceId);
+  const { openCollectionRunner } = useTabStore();
 
   // Initialize expanded state for new collections and folders
   useEffect(() => {
@@ -301,7 +293,8 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
 
     return collections
       .map(filterRecursive)
-      .filter((c): c is Collection => c !== null);
+      .filter((c): c is Collection => c !== null)
+      .sort((a, b) => a.name.localeCompare(b.name)); // Sort collections alphabetically in ascending order
   };
 
   const filteredCollections = filterCollections(collections);
@@ -316,35 +309,7 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
   };
 
   const handleRunCollection = (collectionId: string, collectionName: string) => {
-    setRunnerCollectionId(collectionId);
-    setRunnerCollectionName(collectionName);
-    setShowRunnerDialog(true);
-  };
-
-  const handleStartRun = async (options: RunOptions) => {
-    setShowRunnerDialog(false);
-    setIsRunning(true);
-    
-    try {
-      const result = await collectionRunnerService.runCollection(runnerCollectionId, options);
-      setRunResults(result);
-      setShowRunnerResults(true);
-    } catch (error) {
-      console.error('Failed to run collection:', error);
-      alert('Failed to run collection. Please try again.');
-    } finally {
-      setIsRunning(false);
-    }
-  };
-
-  const handleExportResults = (format: 'json' | 'html') => {
-    if (!runResults) return;
-    
-    if (format === 'json') {
-      collectionRunnerService.exportResultsAsJSON(runResults);
-    } else {
-      collectionRunnerService.exportResultsAsHTML(runResults);
-    }
+    openCollectionRunner(collectionId, collectionName);
   };
 
   return (
@@ -572,46 +537,6 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
             useWorkspaceStore.getState().fetchWorkspaces(); // Refresh workspace counts
           }}
         />
-      )}
-
-      {/* Collection Runner Dialog */}
-      {showRunnerDialog && (
-        <CollectionRunnerDialog
-          collectionId={runnerCollectionId}
-          collectionName={runnerCollectionName}
-          onClose={() => setShowRunnerDialog(false)}
-          onRun={handleStartRun}
-        />
-      )}
-
-      {/* Runner Results */}
-      {showRunnerResults && runResults && (
-        <RunnerResults
-          result={runResults}
-          onClose={() => {
-            setShowRunnerResults(false);
-            setRunResults(null);
-          }}
-          onExport={handleExportResults}
-        />
-      )}
-
-      {/* Loading Overlay */}
-      {isRunning && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-xl">
-            <div className="flex items-center gap-3">
-              <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <div>
-                <div className="font-medium text-gray-900 dark:text-gray-100">Running Collection</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Executing requests...</div>
-              </div>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Resize Handle */}
