@@ -5,11 +5,12 @@ export interface KeyValuePair {
   value: string;
   enabled: boolean;
   description?: string;
+  type?: 'secret' | 'default';
 }
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 export type BodyType = 'none' | 'json' | 'form-data' | 'xml' | 'raw' | 'binary';
-export type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2';
+export type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2' | 'none';
 
 export interface AuthConfig {
   type: AuthType;

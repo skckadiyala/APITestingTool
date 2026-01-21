@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
 // Construct API URL from environment variables
@@ -30,7 +30,7 @@ let refreshTokenPromise: Promise<string> | null = null;
 
 // Request interceptor - Add auth token to requests
 apiClient.interceptors.request.use(
-  (config: any) => {
+  (config: InternalAxiosRequestConfig) => {
     const { accessToken } = useAuthStore.getState();
     
     if (accessToken && config.headers) {
@@ -41,7 +41,7 @@ apiClient.interceptors.request.use(
     
     return config;
   },
-  (error) => {
+  (error: AxiosError) => {
     return Promise.reject(error);
   }
 );
@@ -49,8 +49,8 @@ apiClient.interceptors.request.use(
 // Response interceptor - Handle token refresh
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error: any) => {
-    const originalRequest = error.config as any;
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // If error is 401 and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {

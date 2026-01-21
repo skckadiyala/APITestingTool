@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CollectionRequest } from '../services/collectionService';
+import type { 
+  RequestBody, 
+  RequestParam, 
+  RequestHeader, 
+  AuthConfig,
+  Collection,
+  RunnerState
+} from '../types';
 
 export interface Tab {
   id: string;
@@ -11,26 +19,19 @@ export interface Tab {
   // Request data
   method: string;
   url: string;
-  params?: Array<{ key: string; value: string; enabled?: boolean }>;
-  headers?: Array<{ key: string; value: string; enabled?: boolean }>;
-  body?: { type: string; content: any };
-  auth?: { type: string };
+  params?: RequestParam[];
+  headers?: RequestHeader[];
+  body?: RequestBody;
+  auth?: AuthConfig;
   testScript?: string;
   preRequestScript?: string;
   // Reference to saved request
   requestId?: string;
   collectionId?: string;
   // Collection tab specific
-  collectionData?: any;
+  collectionData?: Collection;
   // Collection runner specific
-  runnerState?: {
-    isRunning: boolean;
-    hasResults: boolean;
-    runResults: any;
-    selectedIteration: number;
-    selectedRequest: any;
-    statusFilter: 'all' | 'passed' | 'failed';
-  };
+  runnerState?: RunnerState;
 }
 
 interface TabState {
@@ -44,7 +45,7 @@ interface TabState {
   updateTab: (tabId: string, updates: Partial<Tab>) => void;
   loadRequestInTab: (request: CollectionRequest) => void;
   openWorkspaceSettings: () => void;
-  openCollectionInTab: (collection: any) => void;
+  openCollectionInTab: (collection: Collection) => void;
   openProfileSettings: () => void;
   openEnvironmentSettings: () => void;
   openCollectionRunner: (collectionId: string, collectionName: string) => void;
@@ -207,7 +208,7 @@ export const useTabStore = create<TabState>()(
     }));
   },
 
-  openCollectionInTab: (collection: any) => {
+  openCollectionInTab: (collection: Collection) => {
     const { tabs } = get();
     
     // Check if collection tab is already open
@@ -303,7 +304,16 @@ export const useTabStore = create<TabState>()(
       method: '',
       url: '',
       collectionId: collectionId,
-      collectionData: { id: collectionId, name: collectionName },
+      collectionData: { 
+        id: collectionId, 
+        name: collectionName,
+        workspaceId: '',
+        type: 'COLLECTION' as const,
+        orderIndex: 0,
+        isShared: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
     };
 
     set((state) => ({

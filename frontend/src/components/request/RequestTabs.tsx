@@ -4,7 +4,7 @@ import BodyEditor, { type BodyType } from './BodyEditor';
 import Editor from '@monaco-editor/react';
 
 type TabType = 'params' | 'headers' | 'body' | 'auth' | 'pre-request' | 'tests';
-type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2';
+type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2' | 'none';
 
 interface RequestTabsProps {
   activeTab: TabType;

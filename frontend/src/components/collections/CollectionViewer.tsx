@@ -19,7 +19,9 @@ export default function CollectionViewer({ collection, onUpdate }: CollectionVie
   const [activeTab, setActiveTab] = useState<CollectionTab>('authorization');
   
   // Initialize from collection data
-  const collectionAuth = collection.auth || {};
+  // Note: collection.auth may use different structure than TypeScript types
+  // TODO: Migrate to strongly-typed AuthConfig structure
+  const collectionAuth = (collection.auth as any) || {};
   const authTypeFromCollection = collectionAuth.type || 'noauth';
   
   const [authType, setAuthType] = useState<AuthType>(authTypeFromCollection);
@@ -66,7 +68,7 @@ pm.test("Collection: Response time is acceptable", function () {
   useEffect(() => {
     if (!collection) return;
 
-    const collectionAuth = collection.auth || {};
+    const collectionAuth = (collection.auth as any) || {};
     const authTypeFromCollection = collectionAuth.type || 'noauth';
 
     setAuthType(authTypeFromCollection);
@@ -129,7 +131,7 @@ pm.test("Collection: Response time is acceptable", function () {
           key: v.key,
           value: v.value,
           enabled: v.enabled,
-          type: 'default'
+          type: v.type === 'secret' ? 'secret' : 'default' as 'default' | 'secret'
         }));
 
       await collectionService.updateCollection(collection.id, currentWorkspaceId, {

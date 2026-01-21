@@ -6,14 +6,12 @@ import workspaceMemberService from '../services/workspaceMemberService';
 import type { Workspace } from '../services/workspaceService';
 import type { WorkspaceMember, UserSearchResult, WorkspaceRole } from '../types/workspace.types';
 
-// Global flag to prevent concurrent fetches across all instances
-let isFetchingWorkspaces = false;
-
 interface WorkspaceState {
   workspaces: Workspace[];
   currentWorkspace: Workspace | null;
   workspaceMembers: WorkspaceMember[];
   isLoading: boolean;
+  isFetchingWorkspaces: boolean;
   error: string | null;
 
   // Actions
@@ -25,11 +23,11 @@ interface WorkspaceState {
   duplicateWorkspace: (id: string) => Promise<void>;
   clearWorkspaces: () => void;
   
-  // Member management actions
+  // Member management actions - return boolean for success/failure
   fetchWorkspaceMembers: (workspaceId: string) => Promise<void>;
-  addMember: (workspaceId: string, userId: string, role: WorkspaceRole) => Promise<void>;
-  updateMemberRole: (workspaceId: string, memberId: string, role: WorkspaceRole) => Promise<void>;
-  removeMember: (workspaceId: string, memberId: string) => Promise<void>;
+  addMember: (workspaceId: string, userId: string, role: WorkspaceRole) => Promise<boolean>;
+  updateMemberRole: (workspaceId: string, memberId: string, role: WorkspaceRole) => Promise<boolean>;
+  removeMember: (workspaceId: string, memberId: string) => Promise<boolean>;
   searchUsers: (searchTerm: string) => Promise<UserSearchResult[]>;
   
   // Global variables management
@@ -44,6 +42,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
       currentWorkspace: null,
       workspaceMembers: [],
       isLoading: false,
+      isFetchingWorkspaces: false,
       error: null,
 
       /**
@@ -51,19 +50,15 @@ export const useWorkspaceStore = create<WorkspaceState>()(
        * Includes both owned and member workspaces with userRole
        */
       fetchWorkspaces: async () => {
-        // Prevent concurrent fetches using global flag
-        if (isFetchingWorkspaces) {
+        const state = get();
+        
+        // Prevent concurrent fetches using store state
+        if (state.isFetchingWorkspaces) {
           console.log('Workspace fetch already in progress, skipping...');
           return;
         }
         
-        const state = get();
-        if (state.isLoading) {
-          return;
-        }
-        
-        isFetchingWorkspaces = true;
-        set({ isLoading: true, error: null });
+        set({ isFetchingWorkspaces: true, isLoading: true, error: null });
         try {
           // Fetch both owned and member workspaces (backend already returns merged list)
           const workspaces = await workspaceService.getWorkspaces();
@@ -103,9 +98,9 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             localStorage.setItem('lastWorkspaceId', currentWorkspace.id);
           }
 
-          set({ workspaces, currentWorkspace, isLoading: false });
+          set({ workspaces, currentWorkspace, isLoading: false, isFetchingWorkspaces: false });
         } catch (error: any) {
-          set({ error: error.message, isLoading: false });
+          set({ error: error.message, isLoading: false, isFetchingWorkspaces: false });
           
           // If error is 401 (unauthorized), clear auth and redirect to login
           if (error.response?.status === 401) {
@@ -117,8 +112,6 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           } else {
             toast.error(error.message || 'Failed to fetch workspaces');
           }
-        } finally {
-          isFetchingWorkspaces = false;
         }
       },
 
@@ -249,6 +242,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           currentWorkspace: null,
           workspaceMembers: [],
           isLoading: false,
+          isFetchingWorkspaces: false,
           error: null,
         });
       },
@@ -267,8 +261,9 @@ export const useWorkspaceStore = create<WorkspaceState>()(
 
       /**
        * Add a member to workspace
+       * Returns true if successful, false otherwise
        */
-      addMember: async (workspaceId: string, userId: string, role: WorkspaceRole) => {
+      addMember: async (workspaceId: string, userId: string, role: WorkspaceRole): Promise<boolean> => {
         try {
           const newMember = await workspaceMemberService.addMember(workspaceId, userId, role);
           
@@ -288,16 +283,18 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           
           set({ workspaces, currentWorkspace });
           toast.success('Member added successfully');
+          return true;
         } catch (error: any) {
           toast.error(error.response?.data?.error || 'Failed to add member');
-          throw error;
+          return false;
         }
       },
 
       /**
        * Update member role
+       * Returns true if successful, false otherwise
        */
-      updateMemberRole: async (workspaceId: string, memberId: string, role: WorkspaceRole) => {
+      updateMemberRole: async (workspaceId: string, memberId: string, role: WorkspaceRole): Promise<boolean> => {
         try {
           const updatedMember = await workspaceMemberService.updateMemberRole(workspaceId, memberId, role);
           
@@ -308,16 +305,18 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           
           set({ workspaceMembers });
           toast.success('Member role updated');
+          return true;
         } catch (error: any) {
           toast.error(error.response?.data?.error || 'Failed to update member role');
-          throw error;
+          return false;
         }
       },
 
       /**
        * Remove member from workspace
+       * Returns true if successful, false otherwise
        */
-      removeMember: async (workspaceId: string, memberId: string) => {
+      removeMember: async (workspaceId: string, memberId: string): Promise<boolean> => {
         try {
           await workspaceMemberService.removeMember(workspaceId, memberId);
           
@@ -338,9 +337,10 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           
           set({ workspaces, currentWorkspace });
           toast.success('Member removed successfully');
+          return true;
         } catch (error: any) {
           toast.error(error.response?.data?.error || 'Failed to remove member');
-          throw error;
+          return false;
         }
       },
 

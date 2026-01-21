@@ -1,99 +1,28 @@
 import api from './api';
+import type {
+  Collection,
+  CollectionRequest,
+  CreateCollectionDto,
+  UpdateCollectionDto,
+  CreateFolderDto,
+  AddRequestDto,
+  UpdateRequestDto,
+  MoveRequestDto,
+  ReorderItemDto
+} from '../types';
 
-export interface Collection {
-  id: string;
-  name: string;
-  description?: string;
-  workspaceId: string;
-  parentFolderId?: string | null;
-  type: 'COLLECTION' | 'FOLDER';
-  orderIndex: number;
-  shareToken?: string | null;
-  isShared: boolean;
-  variables?: any[];
-  preRequestScript?: string | null;
-  testScript?: string | null;
-  auth?: any;
-  createdAt: string;
-  updatedAt: string;
-  childFolders?: Collection[];
-  requests?: CollectionRequest[];
-}
-
-export interface CollectionRequest {
-  id: string;
-  name: string;
-  method: string;
-  url: string;
-  collectionId: string;
-  requestBodyId?: string | null;
-  body: any;
-  headers?: any;
-  auth?: any;
-  params?: any;
-  orderIndex: number;
-  testScript?: string | null;
-  preRequestScript?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateCollectionDto {
-  name: string;
-  description?: string;
-  workspaceId: string;
-  parentFolderId?: string;
-  type: 'COLLECTION' | 'FOLDER';
-}
-
-export interface UpdateCollectionDto {
-  name?: string;
-  description?: string;
-  variables?: any[];
-  preRequestScript?: string;
-  testScript?: string;
-  auth?: any;
-}
-
-export interface CreateFolderDto {
-  name: string;
-  description?: string;
-}
-
-export interface AddRequestDto {
-  name: string;
-  method: string;
-  url: string;
-  requestBodyId?: string;
-  params?: any;
-  headers?: any;
-  body?: any;
-  auth?: any;
-  testScript?: string;
-  preRequestScript?: string;
-}
-
-export interface UpdateRequestDto {
-  name?: string;
-  method?: string;
-  url?: string;
-  params?: any;
-  headers?: any;
-  body?: any;
-  auth?: any;
-  testScript?: string;
-  preRequestScript?: string;
-}
-
-export interface MoveRequestDto {
-  collectionId: string;
-  orderIndex?: number;
-}
-
-export interface ReorderItemDto {
-  id: string;
-  orderIndex: number;
-}
+// Re-export types for backward compatibility
+export type {
+  Collection,
+  CollectionRequest,
+  CreateCollectionDto,
+  UpdateCollectionDto,
+  CreateFolderDto,
+  AddRequestDto,
+  UpdateRequestDto,
+  MoveRequestDto,
+  ReorderItemDto
+};
 
 class CollectionService {
   /**

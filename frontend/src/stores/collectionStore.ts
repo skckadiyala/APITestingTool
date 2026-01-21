@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import collectionService from '../services/collectionService';
 import type { Collection, CollectionRequest } from '../services/collectionService';
+import type { 
+  AuthConfig, 
+  RequestBody, 
+  RequestParam, 
+  RequestHeader 
+} from '../types';
 import toast from 'react-hot-toast';
 import { useWorkspaceStore } from './workspaceStore';
 
@@ -17,8 +23,33 @@ interface CollectionState {
   loadCollections: (workspaceId: string) => Promise<void>;
   createCollection: (name: string, description?: string) => Promise<Collection | null>;
   createFolder: (collectionId: string, name: string, description?: string) => Promise<Collection | null>;
-  addRequestToCollection: (collectionId: string, name: string, method: string, url: string, requestBodyId?: string, testScript?: string, preRequestScript?: string, params?: any, headers?: any, body?: any, auth?: any) => Promise<CollectionRequest | null>;
-  updateRequestInCollection: (requestId: string, data: { name?: string; method?: string; url?: string; params?: any; headers?: any; body?: any; auth?: any; testScript?: string; preRequestScript?: string }) => Promise<void>;
+  addRequestToCollection: (
+    collectionId: string, 
+    name: string, 
+    method: string, 
+    url: string, 
+    requestBodyId?: string, 
+    testScript?: string, 
+    preRequestScript?: string, 
+    params?: RequestParam[], 
+    headers?: RequestHeader[], 
+    body?: RequestBody | null, 
+    auth?: AuthConfig | null
+  ) => Promise<CollectionRequest | null>;
+  updateRequestInCollection: (
+    requestId: string, 
+    data: { 
+      name?: string; 
+      method?: string; 
+      url?: string; 
+      params?: RequestParam[]; 
+      headers?: RequestHeader[]; 
+      body?: RequestBody | null; 
+      auth?: AuthConfig | null; 
+      testScript?: string; 
+      preRequestScript?: string;
+    }
+  ) => Promise<void>;
   updateCollection: (id: string, name?: string, description?: string) => Promise<void>;
   deleteCollection: (id: string) => Promise<void>;
   deleteRequest: (requestId: string) => Promise<void>;
@@ -113,7 +144,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     }
   },
 
-  addRequestToCollection: async (collectionId: string, name: string, method: string, url: string, requestBodyId?: string, testScript?: string, preRequestScript?: string, params?: any, headers?: any, body?: any, auth?: any) => {
+  addRequestToCollection: async (collectionId: string, name: string, method: string, url: string, requestBodyId?: string, testScript?: string, preRequestScript?: string, params?: RequestParam[], headers?: RequestHeader[], body?: RequestBody | null, auth?: AuthConfig | null) => {
     set({ loading: true, error: null });
     try {
       const workspaceId = get().currentWorkspaceId;
@@ -143,7 +174,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     }
   },
 
-  updateRequestInCollection: async (requestId: string, data: { name?: string; method?: string; url?: string; params?: any; headers?: any; body?: any; auth?: any; testScript?: string; preRequestScript?: string }) => {
+  updateRequestInCollection: async (requestId: string, data: { name?: string; method?: string; url?: string; params?: RequestParam[]; headers?: RequestHeader[]; body?: RequestBody | null; auth?: AuthConfig | null; testScript?: string; preRequestScript?: string }) => {
     set({ loading: true, error: null });
     try {
       const workspaceId = get().currentWorkspaceId;

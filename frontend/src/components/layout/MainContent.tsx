@@ -17,10 +17,11 @@ import { useCollectionStore } from '../../stores/collectionStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
+import type { AuthConfig } from '../../types';
 
 
 type TabType = 'params' | 'headers' | 'body' | 'auth' | 'pre-request' | 'tests';
-type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2';
+type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2' | 'none';
 
 export interface MainContentRef {
   restoreFromHistory: (entry: HistoryEntry) => Promise<void>;
@@ -305,7 +306,7 @@ pm.test("Response has correct structure", function () {
   const handleAuthTypeChange = (newAuthType: AuthType) => {
     setAuthType(newAuthType);
     if (activeTabId) {
-      updateTab(activeTabId, { auth: { type: newAuthType } });
+      updateTab(activeTabId, { auth: { type: newAuthType } as AuthConfig });
     }
   };
 
@@ -438,7 +439,7 @@ pm.test("Response has correct structure", function () {
       }
 
       // Restore auth
-      const restoredAuth = historyDetail.requestBody?.auth || { type: 'noauth' };
+      const restoredAuth = historyDetail.requestBody?.auth || { type: 'noauth' as const };
       setAuthType(restoredAuth.type as AuthType);
 
       // Update the tab with all restored data
@@ -451,7 +452,7 @@ pm.test("Response has correct structure", function () {
             type: restoredBodyType,
             content: restoredBodyContent
           },
-          auth: restoredAuth,
+          auth: restoredAuth as AuthConfig,
           isDirty: false,
         });
       }
@@ -852,7 +853,7 @@ pm.test("Response has correct structure", function () {
         params: paramsToSave,
         headers: headersToSave,
         body: bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
-        auth: { type: authType },
+        auth: { type: authType } as AuthConfig,
         testScript: testScript.trim() || undefined,
         preRequestScript: preRequestScript.trim() || undefined,
       });
@@ -865,7 +866,7 @@ pm.test("Response has correct structure", function () {
         params: paramsToSave,
         headers: headersToSave,
         body: bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
-        auth: { type: authType },
+        auth: { type: authType } as AuthConfig,
         testScript: testScript.trim() || undefined,
         preRequestScript: preRequestScript.trim() || undefined,
         isDirty: false,
@@ -926,7 +927,7 @@ pm.test("Response has correct structure", function () {
         paramsToSave,
         headersToSave,
         bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
-        { type: authType }
+        { type: authType } as AuthConfig
       );
       setIsSaved(true);
       setShowSaveDialog(false);
@@ -976,7 +977,7 @@ pm.test("Response has correct structure", function () {
       ) : tabs.find(t => t.id === activeTabId)?.type === 'environment-settings' ? (
         <EnvironmentSettingsTabContent />
       ) : tabs.find(t => t.id === activeTabId)?.type === 'collection' ? (
-        <CollectionViewer collection={tabs.find(t => t.id === activeTabId)?.collectionData} />
+        <CollectionViewer collection={tabs.find(t => t.id === activeTabId)?.collectionData!} />
       ) : tabs.find(t => t.id === activeTabId)?.type === 'collection-runner' ? (
         <CollectionRunnerTab 
           collectionId={tabs.find(t => t.id === activeTabId)?.collectionId || ''} 

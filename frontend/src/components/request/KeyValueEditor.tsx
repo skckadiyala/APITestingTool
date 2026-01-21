@@ -7,6 +7,7 @@ export interface KeyValuePair {
   value: string;
   description?: string;
   enabled: boolean;
+  type?: 'secret' | 'default';
 }
 
 interface KeyValueEditorProps {
