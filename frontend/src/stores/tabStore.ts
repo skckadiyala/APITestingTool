@@ -291,7 +291,7 @@ export const useTabStore = create<TabState>()(
   },
 
   openCollectionRunner: (collectionId: string, collectionName: string) => {
-    const { tabs } = get();
+   // const { tabs } = get();
     
     // Always create a new collection runner tab (allows multiple runs)
     const newTab: Tab = {

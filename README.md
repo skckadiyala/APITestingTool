@@ -308,6 +308,65 @@ npm run prisma:migrate reset
 npm run prisma:migrate
 ```
 
+### PM2 shows "online" but can't connect via browser?
+
+If PM2 status shows services as "online" but you can't access them in your browser:
+
+**1. Test ports locally first:**
+```bash
+# Test backend
+curl http://localhost:5000/health
+
+# Test frontend  
+curl http://localhost:5173
+```
+
+**2. Check if frontend serve script exists:**
+```bash
+# Windows PowerShell
+Test-Path frontend\serve-frontend.js
+
+# Linux/Mac
+ls frontend/serve-frontend.js
+```
+
+If missing, the frontend won't work. Recreate `frontend/serve-frontend.js`:
+```javascript
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const serve = spawn('serve', ['-s', 'dist', '-l', '5173'], {
+  cwd: __dirname,
+  stdio: 'inherit',
+  shell: true
+});
+
+serve.on('error', (err) => {
+  console.error('Failed to start serve:', err);
+  process.exit(1);
+});
+
+serve.on('exit', (code) => {
+  process.exit(code);
+});
+```
+
+Then restart: `pm2 restart api-testing-frontend`
+
+**3. Check actual PM2 logs for errors:**
+```bash
+pm2 logs --lines 50
+```
+
+**4. Verify firewall/network:**
+- Ensure ports 5000 and 5173 are allowed in Windows Firewall
+- Check if services are accessible from other machines on your network
+- Use the full hostname: `http://YOUR_SERVER_NAME:5173`
+
 ## 📄 License
 
 MIT License - see LICENSE file for details
