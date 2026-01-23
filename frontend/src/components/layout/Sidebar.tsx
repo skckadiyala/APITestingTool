@@ -576,6 +576,7 @@ const CollectionItem = memo(function CollectionItem({
   const [newFolderName, setNewFolderName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(collection.name);
+  const menuRef = useRef<HTMLDivElement>(null);
   
   const { createFolder, deleteCollection, duplicateCollection, loadCollections, selectRequest, updateCollection } = useCollectionStore();
   const { loadRequestInTab, openCollectionInTab } = useTabStore();
@@ -584,6 +585,20 @@ const CollectionItem = memo(function CollectionItem({
   useEffect(() => {
     setEditValue(collection.name);
   }, [collection.name]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
 
   const handleCreateFolder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -678,21 +693,22 @@ const CollectionItem = memo(function CollectionItem({
               {collection.name}
             </span>
           )}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowMenu(!showMenu);
-            }}
-            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
-          >
-            <svg className="w-3 h-3 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-            </svg>
-          </button>
+          <div ref={menuRef} className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+            >
+              <svg className="w-3 h-3 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+              </svg>
+            </button>
 
-          {/* Context Menu */}
-          {showMenu && (
-            <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10 py-1 min-w-[180px]">
+            {/* Context Menu */}
+            {showMenu && (
+              <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-10 py-1 min-w-[180px]">
               <button
                 onClick={async () => {
                   setShowMenu(false);
@@ -798,6 +814,7 @@ const CollectionItem = memo(function CollectionItem({
               </button>
             </div>
           )}
+          </div>
         </div>
         {expanded && (
           <div className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2 mt-1 space-y-1">
