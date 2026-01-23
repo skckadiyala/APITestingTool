@@ -115,7 +115,7 @@ export class RequestExecutor {
           collection = rootCollection;
         }
       }
-      
+
       if (collection && (collection as any).variables) {
         const variables = (collection as any).variables as any[];
         currentCollectionVariables = variables.reduce((acc, v) => {
@@ -126,7 +126,7 @@ export class RequestExecutor {
         }, {} as Record<string, any>);
       }
     }
-    
+
     // Resolve variables from both environment and collection
     if (environmentId || collectionId) {
       config = await this.resolveVariables(config, environmentId, collectionId);
@@ -191,11 +191,11 @@ export class RequestExecutor {
       // Build the request
       const axiosConfig = this.buildAxiosConfig(config);
       const actualUrl = axiosConfig.url!; // Store the actual URL with query params
-      
+
       // Execute the request
       const response = await axios(axiosConfig);
       const endTime = Date.now();
-      
+
       // Parse and return the result
       const result = this.buildSuccessResult(config, response, startTime, endTime, actualUrl);
 
@@ -301,13 +301,13 @@ export class RequestExecutor {
     // Add body if applicable
     if (config.method !== 'GET' && config.method !== 'HEAD') {
       axiosConfig.data = this.buildBody(config.body);
-      
-      const hasContentType = axiosConfig.headers && 
+
+      const hasContentType = axiosConfig.headers &&
         (axiosConfig.headers['Content-Type'] || axiosConfig.headers['content-type']);
-      
+
       if (!hasContentType) {
         axiosConfig.headers = axiosConfig.headers || {};
-        
+
         // Set Content-Type based on body type
         if (config.body.type === 'x-www-form-urlencoded') {
           axiosConfig.headers['Content-Type'] = 'application/x-www-form-urlencoded';
@@ -345,7 +345,7 @@ export class RequestExecutor {
     // The params array is the source of truth for query parameters
     const urlParts = normalizedUrl.split('?');
     const baseUrlOnly = urlParts[0];
-    
+
     const url = new URL(baseUrlOnly);
     enabledParams.forEach(param => {
       // Only append if the key and value are not empty
@@ -425,9 +425,9 @@ export class RequestExecutor {
             // Convert array of {key, value, enabled} to URLSearchParams format
             const params = new URLSearchParams();
             data.filter((item: any) => item.enabled !== false)
-                .forEach((item: any) => {
-                  params.append(item.key, item.value);
-                });
+              .forEach((item: any) => {
+                params.append(item.key, item.value);
+              });
             return params.toString();
           }
           return body.content;
@@ -600,7 +600,7 @@ export class RequestExecutor {
       parts.slice(1).forEach(part => {
         const [key, val] = part.split('=');
         const lowerKey = key.toLowerCase();
-        
+
         if (lowerKey === 'domain') result.domain = val;
         if (lowerKey === 'path') result.path = val;
         if (lowerKey === 'expires') result.expires = val;
@@ -632,33 +632,88 @@ export class RequestExecutor {
 
   /**
    * Resolve environment variables in the request configuration
+   * Optimized to fetch each resource only once
    */
   private async resolveVariables(config: RequestConfig, environmentId?: string | null, collectionId?: string | null): Promise<RequestConfig> {
     try {
       // Build variables map with priority: environment > collection > global
       const variablesMap: Record<string, string> = {};
-      
-      // First, get workspace ID to load global variables (lowest priority)
+
       let workspaceId: string | null = null;
-      if (collectionId) {
-        const collection = await prisma.collection.findUnique({
-          where: { id: collectionId },
-          select: { workspaceId: true },
-        });
-        workspaceId = collection?.workspaceId || null;
-      } else if (environmentId) {
-        const environment = await prisma.environment.findUnique({
+      let environment: any = null;
+      let collection: any = null;
+
+      // Fetch environment if provided (single query)
+      if (environmentId) {
+        environment = await prisma.environment.findUnique({
           where: { id: environmentId },
-          select: { workspaceId: true },
+          select: {
+            workspaceId: true,
+            variables: true,
+          },
         });
         workspaceId = environment?.workspaceId || null;
       }
-      
-      // Get global variables (lowest priority)
+
+      // Fetch collection if provided (single query)
+      if (collectionId) {
+        collection = await prisma.collection.findUnique({
+          where: { id: collectionId },
+          select: {
+            id: true,
+            workspaceId: true,
+            type: true,
+            variables: true,
+            parentFolderId: true,
+          },
+        });
+
+        // Use collection's workspaceId if environment didn't provide one
+        if (!workspaceId && collection) {
+          workspaceId = collection.workspaceId;
+        }
+
+        // If this is a folder, find the root collection (optimized with single query)
+        if (collection && collection.type === 'FOLDER' && collection.parentFolderId) {
+          // Fetch all parent collections in a single query to avoid N+1
+          const allCollections = await prisma.collection.findMany({
+            where: {
+              workspaceId: collection.workspaceId,
+            },
+            select: {
+              id: true,
+              type: true,
+              variables: true,
+              parentFolderId: true,
+            },
+          });
+
+          // Build a map for O(1) lookup
+          const collectionMap = new Map(allCollections.map(c => [c.id, c]));
+
+          // Traverse up to find root collection
+          let currentId: string | undefined = collection.parentFolderId;
+          while (currentId) {
+            const parent = collectionMap.get(currentId);
+            if (!parent) break;
+
+            if (parent.type === 'COLLECTION') {
+              collection = parent;
+              break;
+            }
+
+            currentId = parent.parentFolderId || undefined;
+          }
+        }
+      }
+
+      // Fetch workspace for global variables if we have a workspaceId (single query)
       if (workspaceId) {
         const workspace = await prisma.workspace.findUnique({
           where: { id: workspaceId },
+          select: { settings: true },
         });
+
         if (workspace && workspace.settings) {
           const settings = workspace.settings as any;
           if (settings.globalVariables && Array.isArray(settings.globalVariables)) {
@@ -670,64 +725,25 @@ export class RequestExecutor {
           }
         }
       }
-      
-      // Then, get collection variables (medium priority - will override global vars)
-      if (collectionId) {
-        let collection = await prisma.collection.findUnique({
-          where: { id: collectionId },
-        });
-        
-        // If this is a folder with no variables, find the root collection
-        if (collection && collection.type === 'FOLDER' && (!(collection as any).variables || ((collection as any).variables as any[]).length === 0)) {
-          // Traverse up to find the root collection
-          let currentId: string | undefined = collection.parentFolderId || undefined;
-          let rootCollection = null;
-          
-          while (currentId) {
-            const parent = await prisma.collection.findUnique({
-              where: { id: currentId },
-            });
-            
-            if (!parent) break;
-            
-            if (parent.type === 'COLLECTION') {
-              rootCollection = parent;
-              break;
-            }
-            
-            currentId = parent.parentFolderId || undefined;
-          }
-          
-          if (rootCollection) {
-            collection = rootCollection;
-          }
-        }
-        
-        if (collection && (collection as any).variables) {
-          const collectionVars = (collection as any).variables as any[];
-          collectionVars.forEach(v => {
-            if (v.enabled !== false && v.key) {
-              variablesMap[v.key] = v.value || '';
-            }
-          });
-        }
-      }
-      
-      // Then, get environment variables (higher priority - will override collection vars)
-      let environment = null;
-      if (environmentId) {
-        environment = await prisma.environment.findUnique({
-          where: { id: environmentId },
-        });
 
-        if (environment && environment.variables) {
-          const envVars = environment.variables as any[];
-          envVars.forEach(v => {
-            if (v.enabled !== false && v.key) {
-              variablesMap[v.key] = v.value || '';
-            }
-          });
-        }
+      // Add collection variables (medium priority - overrides global vars)
+      if (collection && (collection as any).variables) {
+        const collectionVars = (collection as any).variables as any[];
+        collectionVars.forEach(v => {
+          if (v.enabled !== false && v.key) {
+            variablesMap[v.key] = v.value || '';
+          }
+        });
+      }
+
+      // Add environment variables (highest priority - overrides collection vars)
+      if (environment && environment.variables) {
+        const envVars = environment.variables as any[];
+        envVars.forEach(v => {
+          if (v.enabled !== false && v.key) {
+            variablesMap[v.key] = v.value || '';
+          }
+        });
       }
 
       // If no variables to resolve, return original config
@@ -776,7 +792,7 @@ export class RequestExecutor {
           const bodyStr = typeof resolvedConfig.body.content === 'string'
             ? resolvedConfig.body.content
             : JSON.stringify(resolvedConfig.body.content);
-          
+
           resolvedConfig.body = {
             ...resolvedConfig.body,
             content: replaceVars(bodyStr),
@@ -802,7 +818,7 @@ export class RequestExecutor {
           } else if (Array.isArray(resolvedConfig.body.content)) {
             contentArray = resolvedConfig.body.content;
           }
-          
+
           if (contentArray.length > 0) {
             resolvedConfig.body.content = contentArray.map((item: any) => ({
               ...item,
@@ -822,7 +838,7 @@ export class RequestExecutor {
           } else if (Array.isArray(resolvedConfig.body.content)) {
             contentArray = resolvedConfig.body.content;
           }
-          
+
           if (contentArray.length > 0) {
             resolvedConfig.body.content = contentArray.map((item: any) => ({
               ...item,

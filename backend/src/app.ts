@@ -8,8 +8,14 @@ import rateLimit from 'express-rate-limit';
 // Load environment variables
 dotenv.config();
 
+// Import configuration
+import { APP_CONFIG } from './config/app.config';
+
 // Import database connections
 import { connectMongoDB } from './config/database';
+
+// Import custom errors
+import { AppError } from './utils/errors';
 
 // Import routes
 import authRoutes from './routes/auth.routes';
@@ -21,50 +27,44 @@ import dataFileRoutes from './routes/dataFile.routes';
 import workspaceMembersRoutes from './routes/workspaceMembers.routes';
 
 const app: Application = express();
-const PORT = process.env.PORT || 5000;
-const API_PREFIX = process.env.API_PREFIX || '/api/v1';
-
-// Security middleware
-app.use(helmet());
 
 // CORS configuration
 const getAllowedOrigins = (): string[] => {
-  const frontendUrl = process.env.FRONTEND_URL || `http://${process.env.FRONTEND_HOST || 'localhost'}:${process.env.FRONTEND_PORT || '5173'}`;
-  const corsOrigin = process.env.CORS_ORIGIN;
-  
   const defaultOrigins = [
-    frontendUrl,
+    APP_CONFIG.FRONTEND_URL,
     'http://localhost:5173',
     'http://localhost:5174',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:5174',
   ];
-  
+
   // Add CORS_ORIGIN if it exists and is different
-  if (corsOrigin && !defaultOrigins.includes(corsOrigin)) {
-    defaultOrigins.push(corsOrigin);
+  if (APP_CONFIG.CORS_ORIGIN && !defaultOrigins.includes(APP_CONFIG.CORS_ORIGIN)) {
+    defaultOrigins.push(APP_CONFIG.CORS_ORIGIN);
   }
-  
+
   // Add any additional origins from ALLOWED_ORIGINS
-  const envOrigins = process.env.ALLOWED_ORIGINS?.split(',').map(origin => origin.trim()).filter(o => o) || [];
-  return [...defaultOrigins, ...envOrigins];
+  return [...defaultOrigins, ...APP_CONFIG.ALLOWED_ORIGINS];
 };
+
+// Security middleware
+app.use(helmet());
 
 app.use(cors({
   origin: (origin, callback) => {
     const allowedOrigins = getAllowedOrigins();
-    
+
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) {
       callback(null, true);
       return;
     }
-    
+
     // Case-insensitive origin matching
-    const isAllowed = allowedOrigins.some(allowedOrigin => 
+    const isAllowed = allowedOrigins.some(allowedOrigin =>
       allowedOrigin.toLowerCase() === origin.toLowerCase()
     );
-    
+
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -74,22 +74,21 @@ app.use(cors({
   },
   credentials: true,
 }));
-//}));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'), // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'),
-  message: 'Too many requests from this IP, please try again later.',
+  windowMs: APP_CONFIG.RATE_LIMIT_WINDOW_MS,
+  max: APP_CONFIG.RATE_LIMIT_MAX_REQUESTS,
+  message: APP_CONFIG.RATE_LIMIT_MESSAGE,
 });
 app.use(limiter);
 
 // Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: APP_CONFIG.MAX_REQUEST_SIZE }));
+app.use(express.urlencoded({ extended: true, limit: APP_CONFIG.MAX_REQUEST_SIZE }));
 
 // Logging middleware
-if (process.env.NODE_ENV === 'development') {
+if (APP_CONFIG.IS_DEVELOPMENT) {
   app.use(morgan('dev'));
 } else {
   app.use(morgan('combined'));
@@ -105,6 +104,7 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 // API Routes
+const API_PREFIX = APP_CONFIG.API_PREFIX;
 app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}`, workspaceMembersRoutes);
 app.use(`${API_PREFIX}/workspaces`, workspaceRoutes);
@@ -126,27 +126,65 @@ app.use((_req: Request, res: Response) => {
   });
 });
 
-// Global error handler
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+// Global error handler - standardized error handling
+app.use((err: Error | AppError, _req: Request, res: Response, _next: NextFunction) => {
+  // Log error for debugging
   console.error('Error:', err);
-  
-  res.status(500).json({
+
+  // Check if it's our custom AppError
+  if (err instanceof AppError) {
+    return res.status(err.statusCode).json({
+      status: 'error',
+      message: err.message,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    });
+  }
+
+  // Handle Prisma errors
+  if (err.name === 'PrismaClientKnownRequestError') {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Database operation failed',
+      ...(process.env.NODE_ENV === 'development' && { details: err.message }),
+    });
+  }
+
+  // Handle JWT errors
+  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+    return res.status(401).json({
+      status: 'error',
+      message: 'Invalid or expired token',
+    });
+  }
+
+  // Handle validation errors
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({
+      status: 'error',
+      message: err.message,
+    });
+  }
+
+  // Default to 500 server error
+  return res.status(500).json({
     status: 'error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+    message: APP_CONFIG.IS_DEVELOPMENT ? err.message : 'Internal server error',
+    ...(APP_CONFIG.IS_DEVELOPMENT && { stack: err.stack }),
   });
 });
 
 // Start server
+const PORT = APP_CONFIG.PORT;
+
 const startServer = async () => {
   try {
     // Connect to MongoDB
     await connectMongoDB();
-    
+
     app.listen(PORT, () => {
       const host = process.env.BACKEND_HOST || 'localhost';
       console.log(`🚀 Server is running on port ${PORT}`);
-      console.log(`📍 Environment: ${process.env.NODE_ENV}`);
+      console.log(`📍 Environment: ${APP_CONFIG.NODE_ENV}`);
       console.log(`🔗 Health check: http://${host}:${PORT}/health`);
       console.log(`🔗 API Base URL: http://${host}:${PORT}${API_PREFIX}`);
     });

@@ -52,17 +52,19 @@ export function useWorkspaceSwitch() {
 
   /**
    * Fetch workspace data with retry logic
+   * Returns true if successful, false otherwise
    */
   const fetchWorkspaceData = async (
     workspaceId: string,
     retryCount = 0
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     try {
       // Load collections and environments in parallel
       await Promise.all([
         loadCollections(workspaceId),
         loadEnvironments(workspaceId),
       ]);
+      return true;
     } catch (error: any) {
       if (retryCount < MAX_RETRIES) {
         // Exponential backoff retry
@@ -70,7 +72,7 @@ export function useWorkspaceSwitch() {
         await new Promise((resolve) => setTimeout(resolve, delay));
         return fetchWorkspaceData(workspaceId, retryCount + 1);
       }
-      throw error;
+      return false;
     }
   };
 
@@ -117,7 +119,7 @@ export function useWorkspaceSwitch() {
 
       try {
         // Race between switching and timeout
-        await Promise.race([
+        const success = await Promise.race([
           (async () => {
             // Step 1: Optimistically update UI
             setCurrentWorkspace(workspaceId);
@@ -129,10 +131,16 @@ export function useWorkspaceSwitch() {
             localStorage.setItem('lastWorkspaceId', workspaceId);
 
             // Step 4: Fetch new workspace data with retry logic
-            await fetchWorkspaceData(workspaceId);
+            const dataFetched = await fetchWorkspaceData(workspaceId);
+            return dataFetched;
           })(),
           timeoutPromise,
         ]);
+
+        // Check if data fetch was successful
+        if (!success) {
+          throw new Error('Failed to load workspace data');
+        }
 
         // Success!
         if (showNotification) {

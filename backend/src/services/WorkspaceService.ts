@@ -46,6 +46,7 @@ export class WorkspaceService {
 
   /**
    * Get all workspaces for a user
+   * Optimized to include related data in single queries to avoid N+1 problems
    */
   static async getUserWorkspaces(userId: string) {
     // Get workspaces where user is owner
@@ -54,11 +55,39 @@ export class WorkspaceService {
         ownerId: userId,
       },
       include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+              },
+            },
+          },
+        },
+        collections: {
+          where: {
+            type: 'COLLECTION',
+            parentFolderId: null,
+          },
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        environments: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
         _count: {
           select: {
             collections: {
               where: {
-                type: 'COLLECTION', // Only count collections, not folders
+                type: 'COLLECTION',
               },
             },
             environments: true,
@@ -76,6 +105,34 @@ export class WorkspaceService {
       include: {
         workspace: {
           include: {
+            members: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+            collections: {
+              where: {
+                type: 'COLLECTION',
+                parentFolderId: null,
+              },
+              select: {
+                id: true,
+                name: true,
+                type: true,
+              },
+            },
+            environments: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
             _count: {
               select: {
                 collections: {
@@ -102,6 +159,9 @@ export class WorkspaceService {
         createdAt: workspace.createdAt,
         updatedAt: workspace.updatedAt,
         settings: workspace.settings,
+        members: workspace.members,
+        collections: workspace.collections,
+        environments: workspace.environments,
         collectionsCount: workspace._count.collections,
         environmentsCount: workspace._count.environments,
         membersCount: workspace._count.members + 1, // +1 for owner
@@ -115,6 +175,9 @@ export class WorkspaceService {
         createdAt: member.workspace.createdAt,
         updatedAt: member.workspace.updatedAt,
         settings: member.workspace.settings,
+        members: member.workspace.members,
+        collections: member.workspace.collections,
+        environments: member.workspace.environments,
         collectionsCount: member.workspace._count.collections,
         environmentsCount: member.workspace._count.environments,
         membersCount: member.workspace._count.members + 1, // +1 for owner

@@ -4,48 +4,14 @@ import { useWorkspaceStore } from '../../stores/workspaceStore';
 import { useTabStore } from '../../stores/tabStore';
 import { Upload, Eye } from 'lucide-react';
 import dataFileService, { type DataFile } from '../../services/dataFileService';
-import collectionRunnerService from '../../services/collectionRunnerService';
+import collectionRunnerService, { type RunOptions } from '../../services/collectionRunnerService';
+import type { RequestResult, IterationResult } from '../../types';
 import DataFileUpload from './DataFileUpload';
 import DataFilePreview from './DataFilePreview';
 
 interface CollectionRunnerTabProps {
   collectionId: string;
   collectionName: string;
-}
-
-interface RunOptions {
-  environmentId?: string;
-  iterations: number;
-  delay: number;
-  stopOnError: boolean;
-  folderId?: string;
-  dataFileId?: string;
-}
-
-interface RunResult {
-  requestId: string;
-  requestName: string;
-  method: string;
-  url: string;
-  status: 'passed' | 'failed' | 'skipped';
-  statusCode?: number;
-  responseTime?: number;
-  testResults?: {
-    passed: number;
-    failed: number;
-    tests: Array<{ name: string; passed: boolean; error?: string }>;
-  };
-  error?: string;
-  timestamp: Date;
-}
-
-interface IterationResult {
-  iteration: number;
-  results: RunResult[];
-  passed: number;
-  failed: number;
-  totalTime: number;
-  dataRow?: any;
 }
 
 export default function CollectionRunnerTab({ collectionId, collectionName }: CollectionRunnerTabProps) {
@@ -604,7 +570,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                         </div>
                         <div className="flex items-center gap-2 text-xs">
                           <span className="text-green-600 dark:text-green-400">{iteration.passed} passed</span>
-                          {iteration.failed > 0 && (
+                            {iteration.failed !== undefined && iteration.failed > 0 && (
                             <span className="text-red-600 dark:text-red-400">{iteration.failed} failed</span>
                           )}
                         </div>
@@ -620,14 +586,14 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                 <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto flex-shrink-0">
                   <div className="p-4">
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                      Requests ({currentIteration?.results.filter((r: RunResult) => 
+                      Requests ({currentIteration?.results.filter((r: RequestResult) => 
                         statusFilter === 'all' || r.status === statusFilter
                       ).length || 0})
                     </h3>
                     <div className="space-y-2">
-                      {currentIteration?.results.filter((r: RunResult) => 
+                      {currentIteration?.results.filter((r: RequestResult) => 
                         statusFilter === 'all' || r.status === statusFilter
-                      ).map((result: RunResult, index: number) => (
+                      ).map((result: RequestResult, index: number) => (
                         <button
                           key={index}
                           onClick={() => updateRunnerState({ selectedRequest: result })}
@@ -728,10 +694,17 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                       {selectedRequest.testResults && (
                         <div>
                           <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                            Test Results ({selectedRequest.testResults.passed} passed, {selectedRequest.testResults.failed} failed)
+                            Test Results ({Array.isArray(selectedRequest.testResults) 
+                              ? selectedRequest.testResults.filter(t => t.passed).length
+                              : selectedRequest.testResults.passed} passed, {Array.isArray(selectedRequest.testResults)
+                              ? selectedRequest.testResults.filter(t => !t.passed).length
+                              : selectedRequest.testResults.failed} failed)
                           </h3>
                           <div className="space-y-2">
-                            {selectedRequest.testResults.tests.map((test: { name: string; passed: boolean; error?: string }, index: number) => (
+                            {(Array.isArray(selectedRequest.testResults)
+                              ? selectedRequest.testResults
+                              : selectedRequest.testResults.tests
+                            ).map((test: { name: string; passed: boolean; error?: string }, index: number) => (
                               <div
                                 key={index}
                                 className={`p-3 rounded-lg border ${

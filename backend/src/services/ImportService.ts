@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { URLParser } from '../utils/urlParser';
 
 import { prisma } from '../config/prisma';
 
@@ -71,31 +72,11 @@ export class ImportService {
     const processItems = async (items: any[], parentId: string) => {
       for (const item of items) {
         if (item.request) {
-          // It's a request
-          const url = typeof item.request.url === 'string' 
-            ? item.request.url 
-            : item.request.url.raw || '';
+          // It's a request - use URLParser utility
+          const { url, params } = URLParser.parsePostmanUrl(item.request.url);
 
-          // Extract query parameters from URL object
-          let params: any[] = [];
-          if (typeof item.request.url === 'object' && item.request.url.query) {
-            params = item.request.url.query.map((q: any) => ({
-              key: q.key,
-              value: q.value || '',
-              enabled: q.disabled !== true
-            }));
-          }
-
-          // Convert headers to our format {key, value}
-          let headers: any[] = [];
-          if (item.request.header && Array.isArray(item.request.header)) {
-            headers = item.request.header
-              .filter((h: any) => !h.disabled)
-              .map((h: any) => ({
-                key: h.key,
-                value: h.value || ''
-              }));
-          }
+          // Convert headers to our format using utility
+          const headers = URLParser.convertHeadersFromPostman(item.request.header || []);
 
           // Convert body to our format {type, content}
           let body: any = {};
@@ -199,7 +180,7 @@ export class ImportService {
               name: item.name || 'Untitled Request',
               method: item.request.method || 'GET',
               url,
-              params: params.length > 0 ? params : [],
+              params: params.length > 0 ? params : [] as any,
               headers: headers,
               body: body,
               auth: item.request.auth || {},

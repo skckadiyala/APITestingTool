@@ -1,5 +1,10 @@
 import axios from 'axios';
 import { API_BASE_URL } from './api';
+import type { 
+  RunnerResults, 
+  IterationResult, 
+  RequestResult
+} from '../types';
 
 export interface RunOptions {
   environmentId?: string;
@@ -7,53 +12,19 @@ export interface RunOptions {
   delay?: number;
   stopOnError?: boolean;
   folderId?: string;
+  dataFileId?: string;
 }
 
-export interface RunResult {
-  requestId: string;
-  requestName: string;
-  method: string;
-  url: string;
-  status: 'passed' | 'failed' | 'skipped';
-  statusCode?: number;
-  responseTime?: number;
-  testResults?: {
-    passed: number;
-    failed: number;
-    tests: Array<{ name: string; passed: boolean; error?: string }>;
-  };
-  error?: string;
-  timestamp: Date;
-}
-
-export interface IterationResult {
-  iteration: number;
-  results: RunResult[];
-  passed: number;
-  failed: number;
-  totalTime: number;
-}
-
-export interface CollectionRunResult {
-  collectionId: string;
-  collectionName: string;
-  startTime: Date;
-  endTime?: Date;
-  totalRequests: number;
-  totalPassed: number;
-  totalFailed: number;
-  totalTime: number;
-  iterations: IterationResult[];
-  status: 'running' | 'completed' | 'failed' | 'cancelled';
-}
+// Re-export for backward compatibility
+export type { RunnerResults, IterationResult, RequestResult };
 
 class CollectionRunnerService {
-  async runCollection(collectionId: string, options: RunOptions): Promise<CollectionRunResult> {
+  async runCollection(collectionId: string, options: RunOptions): Promise<RunnerResults> {
     const response = await axios.post(`${API_BASE_URL}/collections/${collectionId}/run`, options);
     return response.data;
   }
 
-  exportResultsAsJSON(result: CollectionRunResult): void {
+  exportResultsAsJSON(result: RunnerResults): void {
     const dataStr = JSON.stringify(result, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -64,7 +35,7 @@ class CollectionRunnerService {
     URL.revokeObjectURL(url);
   }
 
-  exportResultsAsHTML(result: CollectionRunResult): void {
+  exportResultsAsHTML(result: RunnerResults): void {
     const html = this.generateHTMLReport(result);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -75,9 +46,9 @@ class CollectionRunnerService {
     URL.revokeObjectURL(url);
   }
 
-  private generateHTMLReport(result: CollectionRunResult): string {
+  private generateHTMLReport(result: RunnerResults): string {
     const successRate = result.totalRequests > 0 
-      ? ((result.totalPassed / result.totalRequests) * 100).toFixed(1)
+      ? ((result.passedRequests / result.totalRequests) * 100).toFixed(1)
       : '0';
 
     return `
@@ -226,11 +197,11 @@ class CollectionRunnerService {
             </div>
             <div class="stat-card passed">
                 <div class="stat-label">Passed</div>
-                <div class="stat-value">${result.totalPassed}</div>
+                <div class="stat-value">${result.passedRequests}</div>
             </div>
             <div class="stat-card failed">
                 <div class="stat-label">Failed</div>
-                <div class="stat-value">${result.totalFailed}</div>
+                <div class="stat-value">${result.failedRequests}</div>
             </div>
             <div class="stat-card">
                 <div class="stat-label">Success Rate</div>
@@ -263,8 +234,15 @@ class CollectionRunnerService {
                         ${req.error ? `<div class="error">${req.error}</div>` : ''}
                         ${req.testResults ? `
                             <div class="test-results">
-                                <strong>Tests: ${req.testResults.passed} passed, ${req.testResults.failed} failed</strong>
-                                ${req.testResults.tests.map(test => `
+                                <strong>Tests: ${Array.isArray(req.testResults) 
+                                  ? req.testResults.filter((t: any) => t.passed).length
+                                  : req.testResults.passed} passed, ${Array.isArray(req.testResults)
+                                  ? req.testResults.filter((t: any) => !t.passed).length
+                                  : req.testResults.failed} failed</strong>
+                                ${(Array.isArray(req.testResults) 
+                                  ? req.testResults 
+                                  : req.testResults.tests
+                                ).map((test: any) => `
                                     <div class="test-item ${test.passed ? 'passed' : 'failed'}">
                                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                                             ${test.passed 
