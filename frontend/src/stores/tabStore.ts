@@ -19,12 +19,18 @@ export interface Tab {
   // Request data
   method: string;
   url: string;
+  requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
   params?: RequestParam[];
   headers?: RequestHeader[];
   body?: RequestBody;
   auth?: AuthConfig;
   testScript?: string;
   preRequestScript?: string;
+  // GraphQL-specific fields
+  graphqlQuery?: string;
+  graphqlVariables?: Record<string, any>;
+  graphqlSchema?: any;
+  schemaUrl?: string;
   // Reference to saved request
   requestId?: string;
   collectionId?: string;
@@ -69,6 +75,7 @@ export const useTabStore = create<TabState>()(
       isUntitled: true,
       method: tab.method || 'GET',
       url: tab.url || '',
+      requestType: tab.requestType || 'REST',
       params: tab.params || [],
       headers: tab.headers || [],
       body: tab.body || { type: 'json', content: '' },

@@ -31,12 +31,16 @@ export interface AuthConfig {
 export interface RequestConfig {
   method: HttpMethod;
   url: string;
+  requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET'; // Request type
   params: KeyValuePair[];
   headers: KeyValuePair[];
   body: {
     type: BodyType;
     content: string;
   };
+  // GraphQL-specific fields
+  graphqlQuery?: string;
+  graphqlVariables?: Record<string, any>;
   auth: AuthConfig;
   timeout?: number;
   followRedirects?: boolean;
@@ -202,6 +206,33 @@ class RequestService {
 
     const response = await apiClient.delete(`/requests/history?${params.toString()}`);
     return response.data;
+  }
+
+  /**
+   * Introspect GraphQL schema from endpoint
+   */
+  async introspectGraphQL(url: string, headers?: KeyValuePair[], requestId?: string) {
+    try {
+      const headersObj: Record<string, string> = {};
+      headers?.forEach(h => {
+        if (h.enabled && h.key && h.value) {
+          headersObj[h.key] = h.value;
+        }
+      });
+
+      const response = await apiClient.post('/graphql/introspect', {
+        url,
+        headers: headersObj,
+        requestId,
+      });
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response?.data) {
+        throw new Error(error.response.data.message || 'Failed to introspect GraphQL schema');
+      }
+      throw new Error(error.message || 'Failed to introspect GraphQL schema');
+    }
   }
 }
 

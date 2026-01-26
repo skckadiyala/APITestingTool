@@ -3,8 +3,11 @@ import ResponseBody from './ResponseBody';
 import ResponseHeaders from './ResponseHeaders';
 import ResponseCookies from './ResponseCookies';
 import ResponseTestResults from './ResponseTestResults';
+import GraphQLResponseData from './GraphQLResponseData';
+import GraphQLResponseErrors from './GraphQLResponseErrors';
+import GraphQLResponseExtensions from './GraphQLResponseExtensions';
 
-export type ResponseTabType = 'body' | 'headers' | 'cookies' | 'tests' | 'console';
+export type ResponseTabType = 'body' | 'data' | 'errors' | 'extensions' | 'headers' | 'cookies' | 'tests' | 'console';
 
 interface ResponseTabsProps {
   response: any;
@@ -18,11 +21,22 @@ interface ResponseTabsProps {
 
 const TAB_LABELS: Record<ResponseTabType, string> = {
   body: 'Body',
+  data: 'Data',
+  errors: 'Errors',
+  extensions: 'Extensions',
   headers: 'Headers',
   cookies: 'Cookies',
   tests: 'Test Results',
   console: 'Console',
 };
+
+// Helper to detect if response is GraphQL
+function isGraphQLResponse(response: any): boolean {
+  if (!response?.body) return false;
+  const body = response.body;
+  // GraphQL responses have 'data' and/or 'errors' fields
+  return typeof body === 'object' && (body.hasOwnProperty('data') || body.hasOwnProperty('errors'));
+}
 
 function getStatusColor(status: number) {
   if (status >= 200 && status < 300) return 'bg-green-500 text-white';
@@ -38,14 +52,32 @@ function formatSize(bytes: number) {
 }
 
 const ResponseTabs: React.FC<ResponseTabsProps> = ({ response, testResults, consoleLogs = [], status, statusText, time, size }) => {
-  const [activeTab, setActiveTab] = useState<ResponseTabType>('body');
+  const isGraphQL = isGraphQLResponse(response);
+  const [activeTab, setActiveTab] = useState<ResponseTabType>(isGraphQL ? 'data' : 'body');
+  
+  // Update active tab when response type changes
+  React.useEffect(() => {
+    if (isGraphQL && activeTab === 'body') {
+      setActiveTab('data');
+    } else if (!isGraphQL && (activeTab === 'data' || activeTab === 'errors' || activeTab === 'extensions')) {
+      setActiveTab('body');
+    }
+  }, [isGraphQL]);
+
+  // Determine which tabs to show
+  const visibleTabs: ResponseTabType[] = isGraphQL 
+    ? ['data', 'errors', 'extensions', 'headers', 'cookies', 'tests', 'console']
+    : ['body', 'headers', 'cookies', 'tests', 'console'];
+  
+  // Count GraphQL errors
+  const errorCount = isGraphQL && response?.body?.errors ? response.body.errors.length : 0;
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-2">
         {/* Tab Buttons */}
         <div className="flex gap-1">
-          {Object.entries(TAB_LABELS).map(([tab, label]) => (
+          {visibleTabs.map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab as ResponseTabType)}
@@ -53,7 +85,12 @@ const ResponseTabs: React.FC<ResponseTabsProps> = ({ response, testResults, cons
                 activeTab === tab ? 'border-primary-600 text-primary-600 dark:text-primary-400' : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
-              {label}
+              {TAB_LABELS[tab]}
+              {tab === 'errors' && errorCount > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white rounded-full text-[10px] font-bold">
+                  {errorCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -76,6 +113,9 @@ const ResponseTabs: React.FC<ResponseTabsProps> = ({ response, testResults, cons
       </div>
       <div className="flex-1 overflow-y-auto p-4 text-left">
         {activeTab === 'body' && <ResponseBody response={response} />}
+        {activeTab === 'data' && <GraphQLResponseData data={response?.body?.data} />}
+        {activeTab === 'errors' && <GraphQLResponseErrors errors={response?.body?.errors} />}
+        {activeTab === 'extensions' && <GraphQLResponseExtensions extensions={response?.body?.extensions} />}
         {activeTab === 'headers' && <ResponseHeaders response={response} />}
         {activeTab === 'cookies' && <ResponseCookies response={response} />}
         {activeTab === 'tests' && <ResponseTestResults testResults={testResults} />}

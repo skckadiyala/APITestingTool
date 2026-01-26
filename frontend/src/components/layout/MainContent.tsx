@@ -20,7 +20,7 @@ import { useWorkspaceStore } from '../../stores/workspaceStore';
 import type { AuthConfig } from '../../types';
 
 
-type TabType = 'params' | 'headers' | 'body' | 'auth' | 'pre-request' | 'tests';
+type TabType = 'params' | 'headers' | 'body' | 'query' | 'schema' | 'auth' | 'pre-request' | 'tests';
 type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2' | 'none';
 
 export interface MainContentRef {
@@ -55,6 +55,7 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
   // Request state
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('');
+  const [requestType, setRequestType] = useState<'REST' | 'GRAPHQL' | 'WEBSOCKET'>('REST');
   const [requestName, setRequestName] = useState('New Request');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -73,6 +74,19 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
   const [bodyType, setBodyType] = useState<BodyType>('json');
   const [bodyContent, setBodyContent] = useState('');
   const [formData, setFormData] = useState<Array<{ id: string; key: string; value: string; type: 'text' | 'file'; enabled: boolean }>>([]);
+  
+  // GraphQL-specific state
+  const [graphqlQuery, setGraphqlQuery] = useState(`query GetUser($id: ID!) {
+  user(id: $id) {
+    id
+    name
+    email
+  }
+}`);
+  const [graphqlVariables, setGraphqlVariables] = useState<Record<string, any>>({});
+  const [graphqlSchema, setGraphqlSchema] = useState<any>(undefined);
+  const [schemaLoading, setSchemaLoading] = useState(false);
+  const [schemaUrl, setSchemaUrl] = useState<string>('');
   
   const [authType, setAuthType] = useState<AuthType>('noauth');
   const [preRequestScript, setPreRequestScript] = useState(`// Pre-request script
@@ -149,6 +163,30 @@ pm.test("Response has correct structure", function () {
     setMethod(newMethod);
     if (activeTabId) {
       updateTab(activeTabId, { method: newMethod });
+    }
+  };
+
+  const handleRequestTypeChange = (newType: 'REST' | 'GRAPHQL' | 'WEBSOCKET') => {
+    setRequestType(newType);
+    
+    // Auto-set method to POST for GraphQL
+    if (newType === 'GRAPHQL') {
+      setMethod('POST');
+      // Switch to Query tab when switching to GraphQL
+      if (activeTab === 'body' || activeTab === 'params') {
+        setActiveTab('query');
+      }
+      if (activeTabId) {
+        updateTab(activeTabId, { method: 'POST', requestType: newType });
+      }
+    }
+    // Switch back to body tab when switching from GraphQL to REST
+    else if (newType === 'REST' && (activeTab === 'query' || activeTab === 'schema')) {
+      setActiveTab('body');
+    }
+    
+    if (activeTabId) {
+      updateTab(activeTabId, { isDirty: true, requestType: newType });
     }
   };
 
@@ -324,6 +362,85 @@ pm.test("Response has correct structure", function () {
     }
   };
 
+  const handleGraphqlQueryChange = (newQuery: string) => {
+    setGraphqlQuery(newQuery);
+    if (activeTabId) {
+      updateTab(activeTabId, { graphqlQuery: newQuery, isDirty: true });
+    }
+  };
+
+  const handleGraphqlVariablesChange = (newVariables: Record<string, any>) => {
+    setGraphqlVariables(newVariables);
+    if (activeTabId) {
+      updateTab(activeTabId, { graphqlVariables: newVariables, isDirty: true });
+    }
+  };
+
+  const handleFetchSchema = async () => {
+    if (!url) {
+      toast.error('Please enter a GraphQL endpoint URL');
+      return;
+    }
+
+    setSchemaLoading(true);
+    try {
+      const result = await requestService.introspectGraphQL(
+        url,
+        headers,
+        currentTab?.requestId || undefined
+      );
+
+      if (result.success && result.data?.schema) {
+        setGraphqlSchema(result.data.schema);
+        setSchemaUrl(url);
+        toast.success('Schema loaded successfully');
+        
+        // Update tab with schema info
+        if (currentTab) {
+          updateTab(currentTab.id, {
+            ...currentTab,
+            graphqlSchema: result.data.schema,
+            schemaUrl: url,
+          });
+        }
+      } else {
+        toast.error(result.message || 'Failed to load schema');
+      }
+    } catch (error: any) {
+      console.error('Schema introspection error:', error);
+      toast.error(error.message || 'Failed to load schema');
+    } finally {
+      setSchemaLoading(false);
+    }
+  };
+
+  const handleRefreshSchema = () => {
+    // Refresh schema by calling fetch again
+    handleFetchSchema();
+  };
+
+  const handleInsertField = (field: string) => {
+    // TODO: Implement field insertion into query
+    console.log('Inserting field:', field);
+  };
+
+  // Auto-fetch schema when URL changes for GraphQL requests
+  useEffect(() => {
+    // Only auto-fetch if:
+    // 1. Request type is GraphQL
+    // 2. URL is not empty
+    // 3. URL has changed from schemaUrl
+    // 4. Not currently loading
+    if (requestType === 'GRAPHQL' && url && url !== schemaUrl && !schemaLoading) {
+      // Debounce schema fetching
+      const timer = setTimeout(() => {
+        handleFetchSchema();
+      }, 1000); // Wait 1 second after user stops typing
+
+      return () => clearTimeout(timer);
+    }
+  }, [url, requestType]);
+
   // Sync active tab data to component state when tab changes
   useEffect(() => {
     if (!currentTab) {
@@ -333,6 +450,7 @@ pm.test("Response has correct structure", function () {
     // Set all state from the active tab
     setMethod(currentTab.method || 'GET');
     setUrl(currentTab.url || '');
+    setRequestType(currentTab.requestType || 'REST');
     setRequestName(currentTab.name || 'New Request');
     setParams(currentTab.params?.map((p, idx) => ({
       id: String(idx + 1),
@@ -370,6 +488,14 @@ pm.test("Response has correct structure", function () {
       }
     } else {
       setFormData([]);
+    }
+    
+    // Restore GraphQL-specific state
+    if (currentTab.requestType === 'GRAPHQL') {
+      setGraphqlQuery(currentTab.graphqlQuery || '');
+      setGraphqlVariables(currentTab.graphqlVariables || {});
+      setGraphqlSchema(currentTab.graphqlSchema);
+      setSchemaUrl(currentTab.schemaUrl || '');
     }
     
     setAuthType((currentTab.auth?.type as AuthType) || 'noauth');
@@ -638,12 +764,16 @@ pm.test("Response has correct structure", function () {
       const result = await requestService.execute({
         method: method as any,
         url: url.trim(),
-        params,
+        requestType: requestType, // Include request type
+        params: requestType === 'GRAPHQL' ? [] : params, // GraphQL doesn't use query params
         headers,
         body: {
           type: bodyType as any,
           content: bodyContentForExecution,
         },
+        // GraphQL-specific fields
+        graphqlQuery: requestType === 'GRAPHQL' ? graphqlQuery : undefined,
+        graphqlVariables: requestType === 'GRAPHQL' ? graphqlVariables : undefined,
         auth: {
           type: authType,
         },
@@ -985,13 +1115,23 @@ pm.test("Response has correct structure", function () {
         />
       ) : (
         <>
-          {/* Request Name Input */}
-          <div className="px-4 pt-3 pb-1">
+          {/* Request Type Selector and Request Name Input */}
+          <div className="px-4 pt-3 pb-1 flex items-center gap-3">
+            <select
+              value={requestType}
+              onChange={(e) => handleRequestTypeChange(e.target.value as 'REST' | 'GRAPHQL' | 'WEBSOCKET')}
+              className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+              title="Select request type"
+            >
+              <option value="REST">REST</option>
+              <option value="GRAPHQL">GraphQL</option>
+              <option value="WEBSOCKET">WebSocket</option>
+            </select>
             <input
               type="text"
               value={requestName}
               onChange={(e) => handleRequestNameChange(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm font-semibold border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-primary-500 bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
+              className="flex-1 px-2 py-1.5 text-sm font-semibold border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-primary-500 bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
               placeholder="Request Name"
             />
           </div>
@@ -999,6 +1139,7 @@ pm.test("Response has correct structure", function () {
           <URLBar
             method={method}
             url={url}
+            requestType={requestType}
             onMethodChange={handleMethodChange}
             onUrlChange={handleUrlChange}
             onSend={handleSend}
@@ -1013,6 +1154,7 @@ pm.test("Response has correct structure", function () {
             <RequestTabs
               activeTab={activeTab}
               onTabChange={setActiveTab}
+              requestType={requestType}
               params={params}
               headers={headers}
               bodyType={bodyType}
@@ -1021,6 +1163,11 @@ pm.test("Response has correct structure", function () {
               authType={authType}
               preRequestScript={preRequestScript}
               testScript={testScript}
+              graphqlQuery={graphqlQuery}
+              graphqlVariables={graphqlVariables}
+              graphqlSchema={graphqlSchema}
+              schemaUrl={url}
+              schemaLoading={schemaLoading}
               onParamsChange={handleParamsChange}
               onHeadersChange={handleHeadersChange}
               onBodyTypeChange={handleBodyTypeChange}
@@ -1029,6 +1176,11 @@ pm.test("Response has correct structure", function () {
               onAuthTypeChange={handleAuthTypeChange}
               onPreRequestScriptChange={handlePreRequestScriptChange}
               onTestScriptChange={handleTestScriptChange}
+              onGraphqlQueryChange={handleGraphqlQueryChange}
+              onGraphqlVariablesChange={handleGraphqlVariablesChange}
+              onFetchSchema={handleFetchSchema}
+              onRefreshSchema={handleRefreshSchema}
+              onInsertField={handleInsertField}
             />
           </div>
 

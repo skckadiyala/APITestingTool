@@ -3,9 +3,12 @@ import VariableInput from '../common/VariableInput';
 import { useWorkspacePermission } from '../../hooks/useWorkspacePermission';
 import { useCollectionStore } from '../../stores/collectionStore';
 
+type RequestType = 'REST' | 'GRAPHQL' | 'WEBSOCKET';
+
 interface URLBarProps {
   method: string;
   url: string;
+  requestType?: RequestType;
   onMethodChange: (method: string) => void;
   onUrlChange: (url: string) => void;
   onSend: () => void;
@@ -31,8 +34,10 @@ const METHOD_COLORS: Record<string, string> = {
 export default function URLBar({
   method,
   url,
+  requestType = 'REST',
   onMethodChange,
   onUrlChange,
+  // onRequestTypeChange,
   onSend,
   onSave,
   isLoading = false,
@@ -70,25 +75,53 @@ export default function URLBar({
     historyUrl.toLowerCase().includes(url.toLowerCase())
   );
 
+  // Get URL placeholder based on request type
+  const getUrlPlaceholder = () => {
+    switch (requestType) {
+      case 'GRAPHQL':
+        return 'Enter GraphQL endpoint (use {{variable}} for variables)';
+      case 'WEBSOCKET':
+        return 'Enter WebSocket URL (use {{variable}} for variables)';
+      default:
+        return 'Enter request URL (use {{variable}} for variables)';
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-3">
       <div className="flex gap-2 items-center">
-        {/* Method Dropdown */}
-        <div className="relative">
-          <select
-            value={method}
-            onChange={(e) => onMethodChange(e.target.value)}
-            className={`px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[90px] ${
-              METHOD_COLORS[method] || 'bg-white dark:bg-gray-700'
-            }`}
+        {/* Method Dropdown (REST only) or POST Badge (GraphQL) */}
+        {requestType === 'REST' ? (
+          <div className="relative">
+            <select
+              value={method}
+              onChange={(e) => onMethodChange(e.target.value)}
+              className={`px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 min-w-[90px] ${
+                METHOD_COLORS[method] || 'bg-white dark:bg-gray-700'
+              }`}
+            >
+              {HTTP_METHODS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : requestType === 'GRAPHQL' ? (
+          <div
+            className="px-2 py-1.5 rounded-md font-semibold text-xs min-w-[90px] text-center bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300 border border-purple-200 dark:border-purple-800"
+            title="GraphQL requests always use POST method"
           >
-            {HTTP_METHODS.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
-        </div>
+            POST
+          </div>
+        ) : (
+          <div
+            className="px-2 py-1.5 rounded-md font-semibold text-xs min-w-[90px] text-center bg-cyan-100 text-cyan-700 dark:bg-cyan-900 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800"
+            title="WebSocket connection"
+          >
+            WS
+          </div>
+        )}
 
         {/* URL Input with Variable Support */}
         <div className="flex-1 relative">
@@ -100,7 +133,7 @@ export default function URLBar({
                 setShowHistory(newUrl.length > 0);
               }}
               onKeyDown={handleKeyPress}
-              placeholder="Enter request URL (use {{variable}} for variables)"
+              placeholder={getUrlPlaceholder()}
               className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>

@@ -5,9 +5,72 @@ export interface KeyValuePair {
   description?: string;
 }
 
+export type RequestType = 'REST' | 'GRAPHQL' | 'WEBSOCKET';
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 export type BodyType = 'none' | 'json' | 'x-www-form-urlencoded' | 'form-data' | 'xml' | 'raw' | 'binary';
 export type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2';
+
+// ============================================
+// GraphQL Type Definitions
+// ============================================
+
+// Type-safe GraphQL variable values supporting nested structures
+export type GraphQLVariableValue = 
+  | string 
+  | number 
+  | boolean 
+  | null
+  | GraphQLVariableValue[]
+  | { [key: string]: GraphQLVariableValue };
+
+export interface GraphQLQueryVariables {
+  [key: string]: GraphQLVariableValue;
+}
+
+export interface GraphQLSchemaType {
+  name: string;
+  kind: string;
+  description?: string;
+  fields?: GraphQLField[];
+  inputFields?: GraphQLInputField[];
+  possibleTypes?: GraphQLType[];
+}
+
+export interface GraphQLField {
+  name: string;
+  type: GraphQLType;
+  args?: GraphQLInputField[];
+  description?: string;
+  isDeprecated?: boolean;
+  deprecationReason?: string;
+}
+
+export interface GraphQLInputField {
+  name: string;
+  type: GraphQLType;
+  defaultValue?: any;
+  description?: string;
+}
+
+export interface GraphQLType {
+  kind: string;
+  name?: string;
+  ofType?: GraphQLType;
+}
+
+export interface GraphQLSchema {
+  queryType?: { name: string };
+  mutationType?: { name: string };
+  subscriptionType?: { name: string };
+  types: GraphQLSchemaType[];
+  directives?: any[];
+}
+
+export interface GraphQLRequestConfig {
+  query: string;
+  variables?: GraphQLQueryVariables;
+  operationName?: string;
+}
 
 export interface AuthConfig {
   type: AuthType;
@@ -26,6 +89,7 @@ export interface AuthConfig {
 }
 
 export interface RequestConfig {
+  requestType?: RequestType;
   method: HttpMethod;
   url: string;
   params: KeyValuePair[];
@@ -35,6 +99,11 @@ export interface RequestConfig {
     content: string;
   };
   auth: AuthConfig;
+  
+  // GraphQL-specific fields
+  graphqlQuery?: string;
+  graphqlVariables?: GraphQLQueryVariables;
+  
   timeout?: number;
   followRedirects?: boolean;
   maxRedirects?: number;

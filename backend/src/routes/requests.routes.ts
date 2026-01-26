@@ -18,13 +18,29 @@ router.post('/execute', async (req: Request, res: Response) => {
     const collectionId = req.body.collectionId || null;
 
     // Validate required fields
-    if (!config.url || !config.method) {
+    if (!config.url) {
       return res.status(400).json({
         success: false,
         error: {
-          message: 'Missing required fields: url and method',
+          message: 'Missing required field: url',
         },
       });
+    }
+
+    // For GraphQL requests, method is optional (defaults to POST)
+    // For REST requests, method is required
+    if (config.requestType !== 'GRAPHQL' && !config.method) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          message: 'Missing required field: method',
+        },
+      });
+    }
+
+    // Set default method for GraphQL
+    if (config.requestType === 'GRAPHQL' && !config.method) {
+      config.method = 'POST';
     }
 
     // Validate URL format (skip validation if URL contains variables)

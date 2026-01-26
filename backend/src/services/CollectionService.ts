@@ -30,6 +30,7 @@ export interface AddRequestDto {
   name: string;
   method: string;
   url: string;
+  requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
   requestBodyId?: string;
   params?: any;
   headers?: any;
@@ -37,18 +38,30 @@ export interface AddRequestDto {
   auth?: any;
   testScript?: string;
   preRequestScript?: string;
+  // GraphQL-specific fields
+  graphqlQuery?: string;
+  graphqlVariables?: any;
+  graphqlSchema?: any;
+  graphqlSchemaUrl?: string;
 }
 
 export interface UpdateRequestDto {
   name?: string;
   method?: string;
   url?: string;
+  requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
   params?: any;
   headers?: any;
   body?: any;
   auth?: any;
   testScript?: string;
   preRequestScript?: string;
+  // GraphQL-specific fields
+  graphqlQuery?: string;
+  graphqlVariables?: any;
+  graphqlSchema?: any;
+  graphqlSchemaUrl?: string;
+  graphqlSchemaLastFetched?: Date;
 }
 
 export interface MoveRequestDto {
@@ -366,6 +379,30 @@ class CollectionService {
       where: { id: requestId },
       data,
     });
+  }
+
+  /**
+   * Get request with GraphQL schema
+   */
+  async getRequestWithSchema(requestId: string) {
+    const request = await prisma.request.findUnique({
+      where: { id: requestId },
+      select: {
+        id: true,
+        name: true,
+        url: true,
+        graphqlSchema: true,
+        graphqlSchemaUrl: true,
+        graphqlSchemaLastFetched: true,
+        collectionId: true,
+      },
+    });
+
+    if (!request) {
+      throw new NotFoundError('Request not found');
+    }
+
+    return request;
   }
 
   /**

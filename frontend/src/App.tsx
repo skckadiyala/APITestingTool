@@ -4,6 +4,7 @@ import { LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage } from '
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { ErrorBoundary } from './components/common/ErrorBoundary'
 import { useAuthStore } from './stores/authStore'
+import GraphQLEditorTest from './pages/GraphQLEditorTest'
 import './App.css'
 
 function App() {
@@ -23,6 +24,9 @@ function App() {
         />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+        {/* Test/Demo routes */}
+        <Route path="/test/graphql-editor" element={<GraphQLEditorTest />} />
 
         {/* Protected routes */}
         <Route

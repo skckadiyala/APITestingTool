@@ -9,6 +9,7 @@ import {
 } from '../types/request.types';
 import { TestScriptEngine } from './TestScriptEngine';
 import { VariableService } from './VariableService';
+import GraphQLExecutor from './GraphQLExecutor';
 import { prisma } from '../config/prisma';
 
 export class RequestExecutor {
@@ -188,12 +189,38 @@ export class RequestExecutor {
     }
 
     try {
-      // Build the request
-      const axiosConfig = this.buildAxiosConfig(config);
-      const actualUrl = axiosConfig.url!; // Store the actual URL with query params
+      let response: AxiosResponse;
+      let actualUrl: string;
 
-      // Execute the request
-      const response = await axios(axiosConfig);
+      // Check if this is a GraphQL request
+      if (config.requestType === 'GRAPHQL') {
+        // Execute GraphQL request
+        actualUrl = config.url;
+        const graphqlResult = await GraphQLExecutor.execute(
+          config.url,
+          config.graphqlQuery || '',
+          config.graphqlVariables,
+          undefined, // operationName can be extracted from query if needed
+          this.buildHeaders(config.headers, config.auth)
+        );
+
+        // Convert GraphQL result to Axios-like response format
+        response = {
+          data: graphqlResult,
+          status: graphqlResult.errors ? 400 : 200,
+          statusText: graphqlResult.errors ? 'GraphQL Error' : 'OK',
+          headers: { 'content-type': 'application/json' },
+          config: {} as any,
+        } as AxiosResponse;
+      } else {
+        // Build the request for REST
+        const axiosConfig = this.buildAxiosConfig(config);
+        actualUrl = axiosConfig.url!; // Store the actual URL with query params
+
+        // Execute the REST request
+        response = await axios(axiosConfig);
+      }
+
       const endTime = Date.now();
 
       // Parse and return the result
@@ -300,23 +327,34 @@ export class RequestExecutor {
 
     // Add body if applicable
     if (config.method !== 'GET' && config.method !== 'HEAD') {
-      axiosConfig.data = this.buildBody(config.body);
-
-      const hasContentType = axiosConfig.headers &&
-        (axiosConfig.headers['Content-Type'] || axiosConfig.headers['content-type']);
-
-      if (!hasContentType) {
+      // Handle GraphQL request body format
+      if (config.requestType === 'GRAPHQL') {
+        axiosConfig.data = {
+          query: config.graphqlQuery,
+          variables: config.graphqlVariables || {},
+        };
         axiosConfig.headers = axiosConfig.headers || {};
+        axiosConfig.headers['Content-Type'] = 'application/json';
+      } else {
+        // REST request body
+        axiosConfig.data = this.buildBody(config.body);
 
-        // Set Content-Type based on body type
-        if (config.body.type === 'x-www-form-urlencoded') {
-          axiosConfig.headers['Content-Type'] = 'application/x-www-form-urlencoded';
-        } else if (config.body.type === 'json') {
-          axiosConfig.headers['Content-Type'] = 'application/json';
-        } else if (config.body.type === 'raw') {
-          axiosConfig.headers['Content-Type'] = 'text/plain';
+        const hasContentType = axiosConfig.headers &&
+          (axiosConfig.headers['Content-Type'] || axiosConfig.headers['content-type']);
+
+        if (!hasContentType) {
+          axiosConfig.headers = axiosConfig.headers || {};
+
+          // Set Content-Type based on body type
+          if (config.body.type === 'x-www-form-urlencoded') {
+            axiosConfig.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+          } else if (config.body.type === 'json') {
+            axiosConfig.headers['Content-Type'] = 'application/json';
+          } else if (config.body.type === 'raw') {
+            axiosConfig.headers['Content-Type'] = 'text/plain';
+          }
+          // form-data will be handled by axios automatically with proper boundaries
         }
-        // form-data will be handled by axios automatically with proper boundaries
       }
     }
 
@@ -784,6 +822,24 @@ export class RequestExecutor {
           key: replaceVars(param.key),
           value: replaceVars(param.value),
         }));
+      }
+
+      // Resolve GraphQL query and variables
+      if (resolvedConfig.requestType === 'GRAPHQL') {
+        if (resolvedConfig.graphqlQuery) {
+          resolvedConfig.graphqlQuery = replaceVars(resolvedConfig.graphqlQuery);
+        }
+        
+        if (resolvedConfig.graphqlVariables) {
+          // Convert variables object to string, replace, and parse back
+          const varsStr = JSON.stringify(resolvedConfig.graphqlVariables);
+          const resolvedVarsStr = replaceVars(varsStr);
+          try {
+            resolvedConfig.graphqlVariables = JSON.parse(resolvedVarsStr);
+          } catch (error) {
+            console.error('Error parsing resolved GraphQL variables:', error);
+          }
+        }
       }
 
       // Resolve body

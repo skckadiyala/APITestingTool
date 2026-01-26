@@ -3,3 +3,5 @@ prompts-documentation
 
 
 CODE_REVIEW_PROMPTS.md
+backend/COLLECTION_GRAPHQL_ENDPOINTS.md
+backend/GRAPHQL_ENDPOINTS_TESTING.md

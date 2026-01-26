@@ -106,7 +106,12 @@ const ResponseBody: React.FC<ResponseBodyProps> = ({ response }) => {
   // XML view with syntax highlighting (only for XML content)
   const renderXML = () => {
     if (contentType !== 'xml') {
-      const bodyString = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+      let bodyString: string;
+      try {
+        bodyString = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+      } catch (error) {
+        bodyString = String(body);
+      }
       return <pre className="whitespace-pre-wrap break-words text-xs">{bodyString}</pre>;
     }
     return (
@@ -119,7 +124,12 @@ const ResponseBody: React.FC<ResponseBodyProps> = ({ response }) => {
   // HTML view with syntax highlighting (only for HTML content)
   const renderHTML = () => {
     if (contentType !== 'html') {
-      const bodyString = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+      let bodyString: string;
+      try {
+        bodyString = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+      } catch (error) {
+        bodyString = String(body);
+      }
       return <pre className="whitespace-pre-wrap break-words text-xs">{bodyString}</pre>;
     }
     return (
@@ -139,18 +149,46 @@ const ResponseBody: React.FC<ResponseBodyProps> = ({ response }) => {
             <JsonTree data={json} />
           </div>
         );
-      } catch {
+      } catch (error) {
+        // If it's not valid JSON but is an object, try to display it
+        if (typeof body === 'object' && body !== null) {
+          try {
+            return (
+              <div className="font-mono text-sm">
+                <JsonTree data={body} />
+              </div>
+            );
+          } catch {
+            return <pre className="whitespace-pre-wrap break-words text-xs">{JSON.stringify(body, null, 2)}</pre>;
+          }
+        }
         return <div className="text-xs text-red-500 dark:text-red-400">Invalid JSON</div>;
       }
     }
     if (contentType === 'xml') return renderXML();
     if (contentType === 'html') return renderHTML();
+    
+    // Handle non-JSON objects
+    if (typeof body === 'object' && body !== null) {
+      try {
+        return <pre className="whitespace-pre-wrap break-words text-xs">{JSON.stringify(body, null, 2)}</pre>;
+      } catch {
+        return <pre className="whitespace-pre-wrap break-words text-xs">{String(body)}</pre>;
+      }
+    }
+    
     return <pre className="whitespace-pre-wrap break-words text-xs">{body}</pre>;
   };
 
   // Raw view - continuous word-wrapped text without line breaks
   const renderRaw = () => {
-    const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
+    let bodyString: string;
+    try {
+      bodyString = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+    } catch (error) {
+      bodyString = String(body);
+    }
+    
     const displayBody = search
       ? bodyString.split('\n').filter((line: string) => line.toLowerCase().includes(search.toLowerCase())).join(' ')
       : bodyString;
