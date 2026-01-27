@@ -209,7 +209,7 @@ ${fields}
       const parts = path.replace(rootPrefix + '.', '').split('.');
       let current = tree;
       
-      parts.forEach((part, index) => {
+      parts.forEach((part) => {
         if (!current[part]) {
           current[part] = {};
         }

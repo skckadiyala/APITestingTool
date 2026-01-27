@@ -160,7 +160,7 @@ export const buildFieldPath = (typeName: string, fieldNames: string[]): string =
 /**
  * Generate a sample query for a field
  */
-export const generateSampleQuery = (type: GraphQLSchemaType, field: GraphQLField): string => {
+export const generateSampleQuery = (field: GraphQLField): string => {
   const args = field.args
     ?.map((arg) => {
       const argType = formatGraphQLType(arg.type);

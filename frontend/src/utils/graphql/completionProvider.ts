@@ -1,5 +1,5 @@
 import type { languages, Position, IRange } from 'monaco-editor';
-import type { GraphQLSchema, GraphQLSchemaType, GraphQLField, GraphQLInputField, GraphQLType } from '../../types/request.types';
+import type { GraphQLSchema, GraphQLSchemaType, GraphQLField, GraphQLType } from '../../types/request.types';
 
 /**
  * Context type for determining what kind of suggestions to provide
@@ -206,7 +206,7 @@ export class GraphQLCompletionProvider {
 
     // Check if we're inside field arguments
     if (/\(\s*\w*$/.test(textBeforeCursor) || /,\s*\w*$/.test(textBeforeCursor)) {
-      const currentTypeName = this.extractCurrentType(text, position);
+      const currentTypeName = this.extractCurrentType(text);
       const currentFieldName = this.extractCurrentField(textBeforeCursor);
       
       return {
@@ -220,7 +220,7 @@ export class GraphQLCompletionProvider {
     }
 
     // Default: field completion
-    const currentTypeName = this.extractCurrentType(text, position);
+    const currentTypeName = this.extractCurrentType(text);
     
     return {
       type: 'field',
@@ -234,7 +234,7 @@ export class GraphQLCompletionProvider {
   /**
    * Extract the current type name from the query
    */
-  private extractCurrentType(text: string, position: Position): string | undefined {
+  private extractCurrentType(text: string): string | undefined {
     // Look for the operation type (query/mutation/subscription)
     const queryMatch = text.match(/^\s*(query|mutation|subscription)/i);
     
