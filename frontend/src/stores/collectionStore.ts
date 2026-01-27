@@ -34,7 +34,11 @@ interface CollectionState {
     params?: RequestParam[], 
     headers?: RequestHeader[], 
     body?: RequestBody | null, 
-    auth?: AuthConfig | null
+    auth?: AuthConfig | null,
+    requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET',
+    graphqlQuery?: string,
+    graphqlVariables?: Record<string, any>,
+    graphqlSchema?: any
   ) => Promise<CollectionRequest | null>;
   updateRequestInCollection: (
     requestId: string, 
@@ -144,7 +148,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     }
   },
 
-  addRequestToCollection: async (collectionId: string, name: string, method: string, url: string, requestBodyId?: string, testScript?: string, preRequestScript?: string, params?: RequestParam[], headers?: RequestHeader[], body?: RequestBody | null, auth?: AuthConfig | null) => {
+  addRequestToCollection: async (collectionId: string, name: string, method: string, url: string, requestBodyId?: string, testScript?: string, preRequestScript?: string, params?: RequestParam[], headers?: RequestHeader[], body?: RequestBody | null, auth?: AuthConfig | null, requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET', graphqlQuery?: string, graphqlVariables?: Record<string, any>, graphqlSchema?: any) => {
     set({ loading: true, error: null });
     try {
       const workspaceId = get().currentWorkspaceId;
@@ -153,19 +157,25 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
         method,
         url,
         requestBodyId,
+        requestType,
         params,
         headers,
         body,
         auth,
         testScript,
         preRequestScript,
+        graphqlQuery,
+        graphqlVariables,
+        graphqlSchema,
       });
+      
+      // Reset loading state before reloading collections to prevent race condition
+      set({ loading: false });
       
       // Reload collections to get the updated list
       await get().loadCollections(get().currentWorkspaceId);
       
       toast.success(`Request "${name}" added to collection`);
-      set({ loading: false });
       return request;
     } catch (error: any) {
       set({ error: error.message || 'Failed to add request', loading: false });

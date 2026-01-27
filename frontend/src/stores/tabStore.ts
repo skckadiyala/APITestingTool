@@ -117,11 +117,18 @@ export const useTabStore = create<TabState>()(
 
   updateTab: (tabId: string, updates: Partial<Tab>) => {
     set((state) => ({
-      tabs: state.tabs.map((tab) =>
-        tab.id === tabId
-          ? { ...tab, ...updates, isDirty: updates.isDirty !== undefined ? updates.isDirty : true }
-          : tab
-      ),
+      tabs: state.tabs.map((tab) => {
+        if (tab.id !== tabId) return tab;
+        
+        // Only update isDirty if explicitly provided in updates
+        // Otherwise preserve the current isDirty state
+        const newTab = { ...tab, ...updates };
+        if (updates.isDirty === undefined) {
+          newTab.isDirty = tab.isDirty;
+        }
+        
+        return newTab;
+      }),
     }));
   },
 
@@ -147,12 +154,16 @@ export const useTabStore = create<TabState>()(
                 type: 'request' as const,
                 method: request.method,
                 url: request.url,
+                requestType: request.requestType || 'REST',
                 params: request.params || [],
                 headers: request.headers || [],
                 body: request.body || { type: 'json', content: '' },
                 auth: request.auth || { type: 'noauth' },
                 testScript: request.testScript || '',
                 preRequestScript: request.preRequestScript || '',
+                graphqlQuery: request.graphqlQuery || undefined,
+                graphqlVariables: request.graphqlVariables || undefined,
+                graphqlSchema: request.graphqlSchema || undefined,
                 requestId: request.id,
                 collectionId: request.collectionId,
                 isUntitled: false,
@@ -171,12 +182,16 @@ export const useTabStore = create<TabState>()(
         isUntitled: false,
         method: request.method,
         url: request.url,
+        requestType: request.requestType || 'REST',
         params: request.params || [],
         headers: request.headers || [],
         body: request.body || { type: 'json', content: '' },
         auth: request.auth || { type: 'noauth' },
         testScript: request.testScript || '',
         preRequestScript: request.preRequestScript || '',
+        graphqlQuery: request.graphqlQuery || undefined,
+        graphqlVariables: request.graphqlVariables || undefined,
+        graphqlSchema: request.graphqlSchema || undefined,
         requestId: request.id,
         collectionId: request.collectionId,
       };
