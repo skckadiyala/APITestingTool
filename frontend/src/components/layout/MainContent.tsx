@@ -1,4 +1,4 @@
-import { useState, forwardRef, useImperativeHandle, useEffect } from 'react';
+import { useState, forwardRef, useImperativeHandle, useEffect, useRef } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import URLBar from '../request/URLBar';
 import RequestTabs from '../request/RequestTabs';
@@ -17,6 +17,7 @@ import { useCollectionStore } from '../../stores/collectionStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
 import { useWorkspaceStore } from '../../stores/workspaceStore';
+import { useVariables } from '../../hooks/useVariables';
 import type { AuthConfig } from '../../types';
 
 
@@ -51,6 +52,7 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
   const currentTab = tabs.find(t => t.id === activeTabId);
   const { activeEnvironmentId, getActiveEnvironment, loadEnvironments } = useEnvironmentStore();
   const { currentWorkspace } = useWorkspaceStore();
+  const { replaceVariables } = useVariables();
   
   // Request state
   const [method, setMethod] = useState('GET');
@@ -117,6 +119,9 @@ pm.test("Response has correct structure", function () {
   const [responseHeight, setResponseHeight] = useState(320); // Default 320px (h-80)
   const [isResizing, setIsResizing] = useState(false);
   const [isResponseCollapsed, setIsResponseCollapsed] = useState(false);
+  
+  // Track when we're syncing state from tab to prevent isDirty updates
+  const isSyncingFromTab = useRef(false);
 
   // Handle response panel resize
   useEffect(() => {
@@ -161,8 +166,8 @@ pm.test("Response has correct structure", function () {
   // Wrapper functions to update both local and tab state
   const handleMethodChange = (newMethod: string) => {
     setMethod(newMethod);
-    if (activeTabId) {
-      updateTab(activeTabId, { method: newMethod });
+    if (activeTabId && !isSyncingFromTab.current) {
+      updateTab(activeTabId, { method: newMethod, isDirty: true });
     }
   };
 
@@ -192,14 +197,14 @@ pm.test("Response has correct structure", function () {
 
   const handleUrlChange = (newUrl: string) => {
     setUrl(newUrl);
-    if (activeTabId) {
-      updateTab(activeTabId, { url: newUrl });
+    if (activeTabId && !isSyncingFromTab.current) {
+      updateTab(activeTabId, { url: newUrl, isDirty: true });
     }
   };
 
   const handleRequestNameChange = (newName: string) => {
     setRequestName(newName);
-    if (activeTabId) {
+    if (activeTabId && !isSyncingFromTab.current) {
       updateTab(activeTabId, { name: newName, isDirty: true });
     }
   };
@@ -240,22 +245,22 @@ pm.test("Response has correct structure", function () {
       const newUrl = `${baseUrl}?${queryString}`;
       setUrl(newUrl);
       
-      if (activeTabId) {
-        updateTab(activeTabId, { params: newParams, url: newUrl });
+      if (activeTabId && !isSyncingFromTab.current) {
+        updateTab(activeTabId, { params: newParams, url: newUrl, isDirty: true });
       }
     } else {
       // No enabled params, keep base URL
       setUrl(baseUrl);
-      if (activeTabId) {
-        updateTab(activeTabId, { params: newParams, url: baseUrl });
+      if (activeTabId && !isSyncingFromTab.current) {
+        updateTab(activeTabId, { params: newParams, url: baseUrl, isDirty: true });
       }
     }
   };
 
   const handleHeadersChange = (newHeaders: KeyValuePair[]) => {
     setHeaders(newHeaders);
-    if (activeTabId) {
-      updateTab(activeTabId, { headers: newHeaders });
+    if (activeTabId && !isSyncingFromTab.current) {
+      updateTab(activeTabId, { headers: newHeaders, isDirty: true });
     }
   };
 
@@ -274,11 +279,11 @@ pm.test("Response has correct structure", function () {
       }
     }
     
-    if (activeTabId) {
+    if (activeTabId && !isSyncingFromTab.current) {
       const content = (newBodyType === 'x-www-form-urlencoded' || newBodyType === 'form-data') 
         ? JSON.stringify(formData)
         : bodyContent;
-      updateTab(activeTabId, { body: { type: newBodyType, content } });
+      updateTab(activeTabId, { body: { type: newBodyType, content }, isDirty: true });
       
       // Auto-update Content-Type header based on body type
       const activeTab = tabs.find(t => t.id === activeTabId);
@@ -313,7 +318,9 @@ pm.test("Response has correct structure", function () {
             });
           }
           // Update tab state (which uses simpler header format)
-          updateTab(activeTabId, { headers: updatedHeaders });
+          if (!isSyncingFromTab.current) {
+            updateTab(activeTabId, { headers: updatedHeaders, isDirty: true });
+          }
           // Update local state (which uses KeyValuePair format)
           setHeaders(updatedHeaders.map((h: any, idx) => ({
             id: h.id || `header-${idx}`,
@@ -329,49 +336,49 @@ pm.test("Response has correct structure", function () {
 
   const handleBodyContentChange = (newContent: string) => {
     setBodyContent(newContent);
-    if (activeTabId) {
-      updateTab(activeTabId, { body: { type: bodyType, content: newContent } });
+    if (activeTabId && !isSyncingFromTab.current) {
+      updateTab(activeTabId, { body: { type: bodyType, content: newContent }, isDirty: true });
     }
   };
 
   const handleFormDataChange = (newFormData: Array<{ id: string; key: string; value: string; type: 'text' | 'file'; enabled: boolean }>) => {
     setFormData(newFormData);
-    if (activeTabId) {
-      updateTab(activeTabId, { body: { type: bodyType, content: JSON.stringify(newFormData) } });
+    if (activeTabId && !isSyncingFromTab.current) {
+      updateTab(activeTabId, { body: { type: bodyType, content: JSON.stringify(newFormData) }, isDirty: true });
     }
   };
 
   const handleAuthTypeChange = (newAuthType: AuthType) => {
     setAuthType(newAuthType);
-    if (activeTabId) {
-      updateTab(activeTabId, { auth: { type: newAuthType } as AuthConfig });
+    if (activeTabId && !isSyncingFromTab.current) {
+      updateTab(activeTabId, { auth: { type: newAuthType } as AuthConfig, isDirty: true });
     }
   };
 
   const handlePreRequestScriptChange = (newScript: string) => {
     setPreRequestScript(newScript);
-    if (activeTabId) {
-      updateTab(activeTabId, { preRequestScript: newScript });
+    if (activeTabId && !isSyncingFromTab.current) {
+      updateTab(activeTabId, { preRequestScript: newScript, isDirty: true });
     }
   };
 
   const handleTestScriptChange = (newScript: string) => {
     setTestScript(newScript);
-    if (activeTabId) {
-      updateTab(activeTabId, { testScript: newScript });
+    if (activeTabId && !isSyncingFromTab.current) {
+      updateTab(activeTabId, { testScript: newScript, isDirty: true });
     }
   };
 
   const handleGraphqlQueryChange = (newQuery: string) => {
     setGraphqlQuery(newQuery);
-    if (activeTabId) {
+    if (activeTabId && !isSyncingFromTab.current) {
       updateTab(activeTabId, { graphqlQuery: newQuery, isDirty: true });
     }
   };
 
   const handleGraphqlVariablesChange = (newVariables: Record<string, any>) => {
     setGraphqlVariables(newVariables);
-    if (activeTabId) {
+    if (activeTabId && !isSyncingFromTab.current) {
       updateTab(activeTabId, { graphqlVariables: newVariables, isDirty: true });
     }
   };
@@ -382,17 +389,26 @@ pm.test("Response has correct structure", function () {
       return;
     }
 
+    // Resolve environment variables in the URL
+    const resolvedUrl = replaceVariables(url);
+    
+    // Check if URL still contains unresolved variables
+    if (resolvedUrl.includes('{{')) {
+      toast.error('URL contains unresolved variables. Please check your environment settings.');
+      return;
+    }
+
     setSchemaLoading(true);
     try {
       const result = await requestService.introspectGraphQL(
-        url,
+        resolvedUrl,
         headers,
         currentTab?.requestId || undefined
       );
 
       if (result.success && result.data?.schema) {
         setGraphqlSchema(result.data.schema);
-        setSchemaUrl(url);
+        setSchemaUrl(resolvedUrl);
         toast.success('Schema loaded successfully');
         
         // Update tab with schema info
@@ -400,7 +416,7 @@ pm.test("Response has correct structure", function () {
           updateTab(currentTab.id, {
             ...currentTab,
             graphqlSchema: result.data.schema,
-            schemaUrl: url,
+            schemaUrl: resolvedUrl,
           });
         }
       } else {
@@ -431,7 +447,11 @@ pm.test("Response has correct structure", function () {
     // 2. URL is not empty
     // 3. URL has changed from schemaUrl
     // 4. Not currently loading
-    if (requestType === 'GRAPHQL' && url && url !== schemaUrl && !schemaLoading) {
+    // 5. URL doesn't contain unresolved variables
+    const resolvedUrl = url ? replaceVariables(url) : '';
+    const hasUnresolvedVars = resolvedUrl.includes('{{');
+    
+    if (requestType === 'GRAPHQL' && url && url !== schemaUrl && !schemaLoading && !hasUnresolvedVars) {
       // Debounce schema fetching
       const timer = setTimeout(() => {
         handleFetchSchema();
@@ -446,6 +466,9 @@ pm.test("Response has correct structure", function () {
     if (!currentTab) {
       return;
     }
+
+    // Set flag to prevent isDirty updates during sync
+    isSyncingFromTab.current = true;
 
     // Set all state from the active tab
     setMethod(currentTab.method || 'GET');
@@ -504,6 +527,13 @@ pm.test("Response has correct structure", function () {
     setHasResponse(false);
     setExecutionResult(null);
     setConsoleLogs([]);
+
+    // Clear the flag after a longer delay to allow all child components to mount
+    const timer = setTimeout(() => {
+      isSyncingFromTab.current = false;
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [currentTab?.id, currentTab?.url, currentTab?.method, currentTab?.requestId]);
 
   // Restore request from history
@@ -1046,6 +1076,11 @@ pm.test("Response has correct structure", function () {
       const paramsToSave = params.filter(p => p.key.trim() !== '');
       const headersToSave = headers.filter(h => h.key.trim() !== '');
 
+      // Use currentTab state as source of truth since it's kept in sync via handleGraphqlQueryChange
+      const graphqlQueryToSave = requestType === 'GRAPHQL' ? (currentTab?.graphqlQuery || graphqlQuery) : undefined;
+      const graphqlVariablesToSave = requestType === 'GRAPHQL' ? (currentTab?.graphqlVariables || graphqlVariables) : undefined;
+      const graphqlSchemaToSave = requestType === 'GRAPHQL' ? (currentTab?.graphqlSchema || graphqlSchema) : undefined;
+
       await addRequestToCollection(
         selectedCollectionId,
         saveRequestName.trim(),
@@ -1057,7 +1092,11 @@ pm.test("Response has correct structure", function () {
         paramsToSave,
         headersToSave,
         bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
-        { type: authType } as AuthConfig
+        { type: authType } as AuthConfig,
+        requestType, // Pass request type
+        graphqlQueryToSave, // GraphQL query from tab state (source of truth)
+        graphqlVariablesToSave, // GraphQL variables from tab state
+        graphqlSchemaToSave // GraphQL schema from tab state
       );
       setIsSaved(true);
       setShowSaveDialog(false);
