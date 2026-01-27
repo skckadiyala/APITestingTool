@@ -31,6 +31,8 @@ export interface Tab {
   graphqlVariables?: Record<string, any>;
   graphqlSchema?: any;
   schemaUrl?: string;
+  // UI state
+  activeSubTab?: string; // Store which subtab is active (params, headers, body, etc.)
   // Reference to saved request
   requestId?: string;
   collectionId?: string;

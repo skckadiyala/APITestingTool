@@ -68,6 +68,14 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
   // Tab state
   const [activeTab, setActiveTab] = useState<TabType>('params');
   
+  // Wrapper to update active tab in both local state and tab store
+  const handleActiveTabChange = (newTab: TabType) => {
+    setActiveTab(newTab);
+    if (activeTabId) {
+      updateTab(activeTabId, { activeSubTab: newTab });
+    }
+  };
+  
   // Request configuration state
   const [params, setParams] = useState<KeyValuePair[]>([]);
   
@@ -519,6 +527,17 @@ pm.test("Response has correct structure", function () {
       setGraphqlVariables(currentTab.graphqlVariables || {});
       setGraphqlSchema(currentTab.graphqlSchema);
       setSchemaUrl(currentTab.schemaUrl || '');
+    }
+    
+    // Restore active subtab if previously set, otherwise use defaults
+    if (currentTab.activeSubTab) {
+      setActiveTab(currentTab.activeSubTab as TabType);
+    } else if (currentTab.requestType === 'GRAPHQL') {
+      // Default to Query tab for GraphQL requests
+      setActiveTab('query');
+    } else {
+      // Default to Headers tab for REST requests
+      setActiveTab('headers');
     }
     
     setAuthType((currentTab.auth?.type as AuthType) || 'noauth');
@@ -1006,16 +1025,26 @@ pm.test("Response has correct structure", function () {
       const paramsToSave = params.filter(p => p.key.trim() !== '');
       const headersToSave = headers.filter(h => h.key.trim() !== '');
 
+      // Use currentTab state as source of truth for GraphQL data
+      const graphqlQueryToSave = requestType === 'GRAPHQL' ? (currentTab?.graphqlQuery || graphqlQuery) : undefined;
+      const graphqlVariablesToSave = requestType === 'GRAPHQL' ? (currentTab?.graphqlVariables || graphqlVariables) : undefined;
+      const graphqlSchemaToSave = requestType === 'GRAPHQL' ? (currentTab?.graphqlSchema || graphqlSchema) : undefined;
+
       await updateRequestInCollection(activeTab.requestId, {
         name: requestName,
         method,
         url,
+        requestType, // Include request type
         params: paramsToSave,
         headers: headersToSave,
-        body: bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
+        body: (bodyContentToSave || bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
         auth: { type: authType } as AuthConfig,
         testScript: testScript.trim() || undefined,
         preRequestScript: preRequestScript.trim() || undefined,
+        // GraphQL-specific fields
+        graphqlQuery: graphqlQueryToSave,
+        graphqlVariables: graphqlVariablesToSave,
+        graphqlSchema: graphqlSchemaToSave,
       });
       
       // Update the tab with the saved data (using filtered data)
@@ -1025,7 +1054,7 @@ pm.test("Response has correct structure", function () {
         url,
         params: paramsToSave,
         headers: headersToSave,
-        body: bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
+        body: (bodyContentToSave || bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
         auth: { type: authType } as AuthConfig,
         testScript: testScript.trim() || undefined,
         preRequestScript: preRequestScript.trim() || undefined,
@@ -1081,7 +1110,7 @@ pm.test("Response has correct structure", function () {
       const graphqlVariablesToSave = requestType === 'GRAPHQL' ? (currentTab?.graphqlVariables || graphqlVariables) : undefined;
       const graphqlSchemaToSave = requestType === 'GRAPHQL' ? (currentTab?.graphqlSchema || graphqlSchema) : undefined;
 
-      await addRequestToCollection(
+      const savedRequest = await addRequestToCollection(
         selectedCollectionId,
         saveRequestName.trim(),
         method,
@@ -1091,13 +1120,26 @@ pm.test("Response has correct structure", function () {
         preRequestScript.trim() || undefined,
         paramsToSave,
         headersToSave,
-        bodyContentToSave || (bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
+        (bodyContentToSave || bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
         { type: authType } as AuthConfig,
         requestType, // Pass request type
         graphqlQueryToSave, // GraphQL query from tab state (source of truth)
         graphqlVariablesToSave, // GraphQL variables from tab state
         graphqlSchemaToSave // GraphQL schema from tab state
       );
+      
+      // Update the tab with saved request information
+      if (savedRequest && activeTabId) {
+        updateTab(activeTabId, {
+          requestId: savedRequest.id,
+          collectionId: savedRequest.collectionId,
+          requestType: savedRequest.requestType || requestType,
+          name: savedRequest.name,
+          isUntitled: false,
+          isDirty: false,
+        });
+      }
+      
       setIsSaved(true);
       setShowSaveDialog(false);
       setSaveRequestName('');
@@ -1192,7 +1234,7 @@ pm.test("Response has correct structure", function () {
           <div className="flex-1 overflow-hidden">
             <RequestTabs
               activeTab={activeTab}
-              onTabChange={setActiveTab}
+              onTabChange={handleActiveTabChange}
               requestType={requestType}
               params={params}
               headers={headers}
