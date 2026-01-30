@@ -71,7 +71,7 @@ export const useTabStore = create<TabState>()(
   createTab: (tab = {}) => {
     const newTab: Tab = {
       id: `tab-${Date.now()}-${tabCounter++}`,
-      name: tab.name || `New Request ${tabCounter}`,
+      name: tab.name || 'New Request',
       type: 'request',
       isDirty: false,
       isUntitled: true,

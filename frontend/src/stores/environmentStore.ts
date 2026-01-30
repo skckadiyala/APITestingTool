@@ -42,7 +42,17 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
     set({ loading: true, error: null, currentWorkspaceId: workspaceId });
     try {
       const environments = await environmentService.listEnvironments(workspaceId);
-      set({ environments, loading: false });
+      
+      // Restore workspace-specific active environment from localStorage
+      const storedActiveEnvId = localStorage.getItem(`activeEnvironment_${workspaceId}`);
+      let activeEnvironmentId = null;
+      
+      // Verify the stored environment still exists in the loaded environments
+      if (storedActiveEnvId && environments.some(env => env.id === storedActiveEnvId)) {
+        activeEnvironmentId = storedActiveEnvId;
+      }
+      
+      set({ environments, activeEnvironmentId, loading: false });
     } catch (error: any) {
       set({ error: error.message, loading: false });
       toast.error('Failed to load environments');
@@ -118,11 +128,14 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
   },
 
   setActiveEnvironment: (id: string | null) => {
+    const { currentWorkspaceId } = get();
     set({ activeEnvironmentId: id });
-    if (id) {
-      localStorage.setItem('activeEnvironmentId', id);
-    } else {
-      localStorage.removeItem('activeEnvironmentId');
+    
+    // Store active environment per workspace
+    if (id && currentWorkspaceId) {
+      localStorage.setItem(`activeEnvironment_${currentWorkspaceId}`, id);
+    } else if (currentWorkspaceId) {
+      localStorage.removeItem(`activeEnvironment_${currentWorkspaceId}`);
     }
   },
 

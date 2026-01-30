@@ -1,5 +1,5 @@
 import { useState, forwardRef, useImperativeHandle, useEffect, useRef } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import URLBar from '../request/URLBar';
 import RequestTabs from '../request/RequestTabs';
 import RequestTabBar from '../request/RequestTabBar';
@@ -1152,22 +1152,6 @@ pm.test("Response has correct structure", function () {
 
   return (
     <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: '#333',
-            color: '#fff',
-          },
-          success: {
-            duration: 3000,
-          },
-          error: {
-            duration: 5000,
-          },
-        }}
-      />
-      
       {/* Request Tabs */}
       <RequestTabBar />
       
