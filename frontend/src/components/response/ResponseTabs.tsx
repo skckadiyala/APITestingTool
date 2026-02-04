@@ -17,6 +17,7 @@ interface ResponseTabsProps {
   statusText?: string;
   time?: number;
   size?: number;
+  requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
 }
 
 const TAB_LABELS: Record<ResponseTabType, string> = {
@@ -30,12 +31,9 @@ const TAB_LABELS: Record<ResponseTabType, string> = {
   console: 'Console',
 };
 
-// Helper to detect if response is GraphQL
-function isGraphQLResponse(response: any): boolean {
-  if (!response?.body) return false;
-  const body = response.body;
-  // GraphQL responses have 'data' and/or 'errors' fields
-  return typeof body === 'object' && (body.hasOwnProperty('data') || body.hasOwnProperty('errors'));
+// Helper to detect if response is GraphQL based on request type
+function isGraphQLResponse(requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET'): boolean {
+  return requestType === 'GRAPHQL';
 }
 
 function getStatusColor(status: number) {
@@ -51,8 +49,8 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-const ResponseTabs: React.FC<ResponseTabsProps> = ({ response, testResults, consoleLogs = [], status, statusText, time, size }) => {
-  const isGraphQL = isGraphQLResponse(response);
+const ResponseTabs: React.FC<ResponseTabsProps> = ({ response, testResults, consoleLogs = [], status, statusText, time, size, requestType = 'REST' }) => {
+  const isGraphQL = isGraphQLResponse(requestType);
   const [activeTab, setActiveTab] = useState<ResponseTabType>(isGraphQL ? 'data' : 'body');
   
   // Update active tab when response type changes

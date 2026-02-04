@@ -1294,6 +1294,7 @@ pm.test("Response has correct structure", function () {
                       response={executionResult.response}
                       testResults={executionResult.testResults}
                       consoleLogs={consoleLogs}
+                      requestType={requestType}
                     />
                   </div>
                 )}
