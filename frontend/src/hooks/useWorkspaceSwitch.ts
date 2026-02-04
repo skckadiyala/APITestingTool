@@ -3,6 +3,7 @@ import { useWorkspaceStore } from '../stores/workspaceStore';
 import { useCollectionStore } from '../stores/collectionStore';
 import { useEnvironmentStore } from '../stores/environmentStore';
 import { useHistoryStore } from '../stores/historyStore';
+import { useTabStore } from '../stores/tabStore';
 import toast from 'react-hot-toast';
 
 interface WorkspaceSwitchOptions {
@@ -48,6 +49,9 @@ export function useWorkspaceSwitch() {
       error: null,
       selectedHistoryId: null,
     });
+    
+    // Clear all open tabs
+    useTabStore.getState().clearAllTabs();
   }, []);
 
   /**

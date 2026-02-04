@@ -25,6 +25,7 @@ import collectionsRoutes from './routes/collections.routes';
 import environmentsRoutes from './routes/environments.routes';
 import dataFileRoutes from './routes/dataFile.routes';
 import workspaceMembersRoutes from './routes/workspaceMembers.routes';
+import graphqlRoutes from './routes/graphql.routes';
 
 const app: Application = express();
 
@@ -110,6 +111,7 @@ app.use(`${API_PREFIX}`, workspaceMembersRoutes);
 app.use(`${API_PREFIX}/workspaces`, workspaceRoutes);
 app.use(`${API_PREFIX}/requests`, requestsRoutes);
 app.use(`${API_PREFIX}/data-files`, dataFileRoutes);
+app.use(`${API_PREFIX}/graphql`, graphqlRoutes);
 
 // Legacy routes (backward compatibility) - keeping these for now
 app.use(`${API_PREFIX}/collections`, collectionsRoutes);

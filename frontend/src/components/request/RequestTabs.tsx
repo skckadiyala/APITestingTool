@@ -2,13 +2,18 @@ import { useState } from 'react';
 import KeyValueEditor, { type KeyValuePair } from './KeyValueEditor';
 import BodyEditor, { type BodyType } from './BodyEditor';
 import Editor from '@monaco-editor/react';
+import GraphQLQueryPanel from './GraphQLQueryPanel';
+import GraphQLSchemaViewer from './GraphQLSchemaViewer';
+import type { GraphQLSchema } from '../../types/request.types';
 
-type TabType = 'params' | 'headers' | 'body' | 'auth' | 'pre-request' | 'tests';
+type TabType = 'params' | 'headers' | 'body' | 'query' | 'schema' | 'auth' | 'pre-request' | 'tests';
 type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2' | 'none';
+type RequestType = 'REST' | 'GRAPHQL' | 'WEBSOCKET';
 
 interface RequestTabsProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
+  requestType?: RequestType;
   params: KeyValuePair[];
   headers: KeyValuePair[];
   bodyType: BodyType;
@@ -17,6 +22,13 @@ interface RequestTabsProps {
   authType: AuthType;
   preRequestScript: string;
   testScript: string;
+  // GraphQL-specific props
+  graphqlQuery?: string;
+  graphqlVariables?: Record<string, any>;
+  graphqlSchema?: GraphQLSchema;
+  schemaUrl?: string;
+  schemaLastFetched?: Date;
+  schemaLoading?: boolean;
   onParamsChange: (params: KeyValuePair[]) => void;
   onHeadersChange: (headers: KeyValuePair[]) => void;
   onBodyTypeChange: (type: BodyType) => void;
@@ -25,6 +37,12 @@ interface RequestTabsProps {
   onAuthTypeChange: (type: AuthType) => void;
   onPreRequestScriptChange: (script: string) => void;
   onTestScriptChange: (script: string) => void;
+  // GraphQL handlers
+  onGraphqlQueryChange?: (query: string) => void;
+  onGraphqlVariablesChange?: (variables: Record<string, any>) => void;
+  onFetchSchema?: () => void;
+  onRefreshSchema?: () => void;
+  onInsertField?: (field: string) => void;
 }
 
 const COMMON_HEADERS = [
@@ -46,6 +64,7 @@ const COMMON_HEADERS = [
 export default function RequestTabs({
   activeTab,
   onTabChange,
+  requestType = 'REST',
   params,
   headers,
   bodyType,
@@ -54,6 +73,12 @@ export default function RequestTabs({
   authType,
   preRequestScript,
   testScript,
+  graphqlQuery = '',
+  graphqlVariables = {},
+  graphqlSchema,
+  schemaUrl,
+  schemaLastFetched,
+  schemaLoading = false,
   onParamsChange,
   onHeadersChange,
   onBodyTypeChange,
@@ -62,6 +87,11 @@ export default function RequestTabs({
   onAuthTypeChange,
   onPreRequestScriptChange,
   onTestScriptChange,
+  onGraphqlQueryChange,
+  onGraphqlVariablesChange,
+  onFetchSchema,
+  onRefreshSchema,
+  onInsertField,
 }: RequestTabsProps) {
   const [authConfig, setAuthConfig] = useState({
     bearerToken: '',
@@ -95,9 +125,19 @@ export default function RequestTabs({
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex gap-1 px-2">
-          <TabButton tab="params" label="Params" count={params.filter(p => p.enabled).length} />
+          {/* Hide Params tab for GraphQL - GraphQL doesn't use query parameters */}
+          {requestType !== 'GRAPHQL' && (
+            <TabButton tab="params" label="Params" count={params.filter(p => p.enabled).length} />
+          )}
           <TabButton tab="headers" label="Headers" count={headers.filter(h => h.enabled).length} />
-          <TabButton tab="body" label="Body" />
+          {requestType === 'GRAPHQL' ? (
+            <>
+              <TabButton tab="query" label="Query" />
+              <TabButton tab="schema" label="Schema" />
+            </>
+          ) : (
+            <TabButton tab="body" label="Body" />
+          )}
           <TabButton tab="auth" label="Auth" />
           <TabButton tab="pre-request" label="Pre-request Script" />
           <TabButton tab="tests" label="Tests" />
@@ -143,6 +183,36 @@ export default function RequestTabs({
               onContentChange={onBodyContentChange}
               formData={formData}
               onFormDataChange={onFormDataChange}
+            />
+          </div>
+        )}
+
+        {/* Query Tab (GraphQL) */}
+        {activeTab === 'query' && requestType === 'GRAPHQL' && (
+          <div className="h-full">
+            <GraphQLQueryPanel
+              query={graphqlQuery}
+              variables={graphqlVariables}
+              schema={graphqlSchema}
+              schemaLoading={schemaLoading}
+              onQueryChange={onGraphqlQueryChange || (() => {})}
+              onVariablesChange={onGraphqlVariablesChange || (() => {})}
+              onInsertField={onInsertField}
+            />
+          </div>
+        )}
+
+        {/* Schema Tab (GraphQL) */}
+        {activeTab === 'schema' && requestType === 'GRAPHQL' && (
+          <div className="h-full">
+            <GraphQLSchemaViewer
+              schema={graphqlSchema}
+              schemaUrl={schemaUrl}
+              lastFetched={schemaLastFetched}
+              loading={schemaLoading}
+              onFetchSchema={onFetchSchema || (() => {})}
+              onRefreshSchema={onRefreshSchema || (() => {})}
+              onInsertField={onInsertField || (() => {})}
             />
           </div>
         )}

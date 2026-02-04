@@ -88,27 +88,46 @@ enum CollectionType {
   FOLDER
 }
 
+enum RequestType {
+  REST
+  GRAPHQL
+  WEBSOCKET
+}
+
 model Request {
-  id              String    @id @default(uuid())
+  id              String       @id @default(uuid())
   name            String
-  method          String
+  method          String       // Keep for REST: GET, POST, etc.
+  requestType     RequestType  @default(REST) @map("request_type")
   url             String
-  collectionId    String    @map("collection_id")
-  requestBodyId   String?   @map("request_body_id")
-  params          Json?     @default("[]")
-  headers         Json?     @default("[]")
-  body            Json?
-  auth            Json?     @default("{}")
-  orderIndex      Int       @default(0) @map("order_index")
-  description     String?
-  testScript      String?   @map("test_script")
-  preRequestScript String?  @map("pre_request_script")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  collectionId    String       @map("collection_id")
   
-  collection      Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  // REST-specific fields
+  requestBodyId   String?      @map("request_body_id")
+  params          Json?        @default("[]")
+  headers         Json?        @default("[]")
+  body            Json?
+  auth            Json?        @default("{}")
+  
+  // GraphQL-specific fields
+  graphqlQuery         String?   @map("graphql_query")
+  graphqlVariables     Json?     @map("graphql_variables")
+  graphqlSchema        Json?     @map("graphql_schema")
+  graphqlSchemaUrl     String?   @map("graphql_schema_url")
+  graphqlSchemaLastFetched DateTime? @map("graphql_schema_last_fetched")
+  
+  // Common fields
+  orderIndex      Int          @default(0) @map("order_index")
+  description     String?
+  testScript      String?      @map("test_script")
+  preRequestScript String?     @map("pre_request_script")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+  
+  collection      Collection   @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   history         RequestHistory[]
   
+  @@index([requestType])
   @@map("requests")
 }
 

@@ -19,12 +19,20 @@ export interface Tab {
   // Request data
   method: string;
   url: string;
+  requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
   params?: RequestParam[];
   headers?: RequestHeader[];
   body?: RequestBody;
   auth?: AuthConfig;
   testScript?: string;
   preRequestScript?: string;
+  // GraphQL-specific fields
+  graphqlQuery?: string;
+  graphqlVariables?: Record<string, any>;
+  graphqlSchema?: any;
+  schemaUrl?: string;
+  // UI state
+  activeSubTab?: string; // Store which subtab is active (params, headers, body, etc.)
   // Reference to saved request
   requestId?: string;
   collectionId?: string;
@@ -63,12 +71,13 @@ export const useTabStore = create<TabState>()(
   createTab: (tab = {}) => {
     const newTab: Tab = {
       id: `tab-${Date.now()}-${tabCounter++}`,
-      name: tab.name || `New Request ${tabCounter}`,
+      name: tab.name || 'New Request',
       type: 'request',
       isDirty: false,
       isUntitled: true,
       method: tab.method || 'GET',
       url: tab.url || '',
+      requestType: tab.requestType || 'REST',
       params: tab.params || [],
       headers: tab.headers || [],
       body: tab.body || { type: 'json', content: '' },
@@ -110,11 +119,18 @@ export const useTabStore = create<TabState>()(
 
   updateTab: (tabId: string, updates: Partial<Tab>) => {
     set((state) => ({
-      tabs: state.tabs.map((tab) =>
-        tab.id === tabId
-          ? { ...tab, ...updates, isDirty: updates.isDirty !== undefined ? updates.isDirty : true }
-          : tab
-      ),
+      tabs: state.tabs.map((tab) => {
+        if (tab.id !== tabId) return tab;
+        
+        // Only update isDirty if explicitly provided in updates
+        // Otherwise preserve the current isDirty state
+        const newTab = { ...tab, ...updates };
+        if (updates.isDirty === undefined) {
+          newTab.isDirty = tab.isDirty;
+        }
+        
+        return newTab;
+      }),
     }));
   },
 
@@ -140,12 +156,16 @@ export const useTabStore = create<TabState>()(
                 type: 'request' as const,
                 method: request.method,
                 url: request.url,
+                requestType: request.requestType || 'REST',
                 params: request.params || [],
                 headers: request.headers || [],
                 body: request.body || { type: 'json', content: '' },
                 auth: request.auth || { type: 'noauth' },
                 testScript: request.testScript || '',
                 preRequestScript: request.preRequestScript || '',
+                graphqlQuery: request.graphqlQuery || undefined,
+                graphqlVariables: request.graphqlVariables || undefined,
+                graphqlSchema: request.graphqlSchema || undefined,
                 requestId: request.id,
                 collectionId: request.collectionId,
                 isUntitled: false,
@@ -164,12 +184,16 @@ export const useTabStore = create<TabState>()(
         isUntitled: false,
         method: request.method,
         url: request.url,
+        requestType: request.requestType || 'REST',
         params: request.params || [],
         headers: request.headers || [],
         body: request.body || { type: 'json', content: '' },
         auth: request.auth || { type: 'noauth' },
         testScript: request.testScript || '',
         preRequestScript: request.preRequestScript || '',
+        graphqlQuery: request.graphqlQuery || undefined,
+        graphqlVariables: request.graphqlVariables || undefined,
+        graphqlSchema: request.graphqlSchema || undefined,
         requestId: request.id,
         collectionId: request.collectionId,
       };

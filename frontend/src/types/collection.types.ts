@@ -28,6 +28,7 @@ export interface CollectionRequest {
   url: string;
   collectionId: string;
   requestBodyId?: string | null;
+  requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
   body: RequestBody | null;
   headers?: RequestHeader[];
   auth?: AuthConfig | null;
@@ -35,6 +36,9 @@ export interface CollectionRequest {
   orderIndex: number;
   testScript?: string | null;
   preRequestScript?: string | null;
+  graphqlQuery?: string | null;
+  graphqlVariables?: Record<string, any> | null;
+  graphqlSchema?: any | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -66,24 +70,32 @@ export interface AddRequestDto {
   method: string;
   url: string;
   requestBodyId?: string;
+  requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
   params?: RequestParam[];
   headers?: RequestHeader[];
   body?: RequestBody | null;
   auth?: AuthConfig | null;
   testScript?: string;
   preRequestScript?: string;
+  graphqlQuery?: string;
+  graphqlVariables?: Record<string, any>;
+  graphqlSchema?: any;
 }
 
 export interface UpdateRequestDto {
   name?: string;
   method?: string;
   url?: string;
+  requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
   params?: RequestParam[];
   headers?: RequestHeader[];
   body?: RequestBody | null;
   auth?: AuthConfig | null;
   testScript?: string;
   preRequestScript?: string;
+  graphqlQuery?: string;
+  graphqlVariables?: Record<string, any>;
+  graphqlSchema?: any;
 }
 
 export interface MoveRequestDto {

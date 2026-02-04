@@ -187,19 +187,60 @@ router.post('/:id/folders', async (req: Request, res: Response): Promise<void> =
 router.post('/:id/requests', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, method, url, requestBodyId, params, headers, body, auth, testScript, preRequestScript } = req.body;
+    const { 
+      name, 
+      method, 
+      url, 
+      requestType,
+      requestBodyId, 
+      params, 
+      headers, 
+      body, 
+      auth, 
+      testScript, 
+      preRequestScript,
+      // GraphQL-specific fields
+      graphqlQuery,
+      graphqlVariables,
+      graphqlSchema,
+      graphqlSchemaUrl,
+    } = req.body;
 
-    if (!name || !method || !url) {
-      res.status(400).json({
-        error: 'Missing required fields: name, method, url',
-      });
-      return;
+    // Validate based on request type
+    const type = requestType || 'REST';
+    
+    if (type === 'GRAPHQL') {
+      // GraphQL validation
+      if (!name || !url) {
+        res.status(400).json({
+          error: 'Missing required fields for GraphQL: name, url',
+        });
+        return;
+      }
+      
+      // For GraphQL, query can be empty initially (user might fetch schema first)
+      // But if provided, validate it's a string
+      if (graphqlQuery !== undefined && typeof graphqlQuery !== 'string') {
+        res.status(400).json({
+          error: 'graphqlQuery must be a string',
+        });
+        return;
+      }
+    } else {
+      // REST validation (backward compatible)
+      if (!name || !method || !url) {
+        res.status(400).json({
+          error: 'Missing required fields: name, method, url',
+        });
+        return;
+      }
     }
 
     const request = await CollectionService.addRequest(id, {
       name,
-      method,
+      method: method || 'POST', // GraphQL always uses POST, default for backward compatibility
       url,
+      requestType: type,
       requestBodyId,
       params,
       headers,
@@ -207,6 +248,10 @@ router.post('/:id/requests', async (req: Request, res: Response): Promise<void> 
       auth,
       testScript,
       preRequestScript,
+      graphqlQuery,
+      graphqlVariables,
+      graphqlSchema,
+      graphqlSchemaUrl,
     });
 
     res.status(201).json(request);
@@ -222,23 +267,93 @@ router.post('/:id/requests', async (req: Request, res: Response): Promise<void> 
 router.put('/requests/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name, method, url, params, headers, body, auth, testScript, preRequestScript } = req.body;
+    const { 
+      name, 
+      method, 
+      url, 
+      requestType,
+      params, 
+      headers, 
+      body, 
+      auth, 
+      testScript, 
+      preRequestScript,
+      // GraphQL-specific fields
+      graphqlQuery,
+      graphqlVariables,
+      graphqlSchema,
+      graphqlSchemaUrl,
+      graphqlSchemaLastFetched,
+    } = req.body;
+
+    // Validate graphqlVariables is valid JSON if provided
+    if (graphqlVariables !== undefined) {
+      try {
+        if (typeof graphqlVariables === 'string') {
+          JSON.parse(graphqlVariables);
+        }
+      } catch (error) {
+        res.status(400).json({
+          error: 'graphqlVariables must be valid JSON',
+        });
+        return;
+      }
+    }
 
     const request = await CollectionService.updateRequest(id, {
       name,
       method,
       url,
+      requestType,
       params,
       headers,
       body,
       auth,
       testScript,
       preRequestScript,
+      graphqlQuery,
+      graphqlVariables,
+      graphqlSchema,
+      graphqlSchemaUrl,
+      graphqlSchemaLastFetched: graphqlSchemaLastFetched ? new Date(graphqlSchemaLastFetched) : undefined,
     });
 
     res.json(request);
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Failed to update request' });
+  }
+});
+
+/**
+ * GET /api/v1/collections/requests/:id/schema
+ * Get cached GraphQL schema for a request
+ */
+router.get('/requests/:id/schema', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const request = await CollectionService.getRequestWithSchema(id);
+
+    if (!request.graphqlSchema) {
+      res.status(404).json({
+        error: 'No cached schema found for this request',
+      });
+      return;
+    }
+
+    res.json({
+      schema: request.graphqlSchema,
+      schemaUrl: request.graphqlSchemaUrl,
+      lastFetched: request.graphqlSchemaLastFetched,
+      requestId: request.id,
+      requestName: request.name,
+    });
+  } catch (error: any) {
+    if (error.message === 'Request not found') {
+      res.status(404).json({ error: error.message });
+      return;
+    }
+    res.status(500).json({ error: error.message || 'Failed to get request schema' });
   }
 });
 
