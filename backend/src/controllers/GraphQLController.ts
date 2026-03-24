@@ -2,10 +2,9 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { GraphQLExecutor } from '../services/GraphQLExecutor';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/prisma';
 import { GraphQLQueryVariables } from '../types/request.types';
 
-const prisma = new PrismaClient();
 const graphqlExecutor = new GraphQLExecutor();
 
 export class GraphQLController {
