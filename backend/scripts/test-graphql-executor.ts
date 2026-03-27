@@ -1,4 +1,4 @@
-import GraphQLExecutor from './src/services/GraphQLExecutor';
+import GraphQLExecutor from '../src/services/GraphQLExecutor';
 
 console.log('🧪 Testing GraphQL Executor...\n');
 

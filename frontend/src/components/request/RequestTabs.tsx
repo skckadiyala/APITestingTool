@@ -8,7 +8,7 @@ import type { GraphQLSchema } from '../../types/request.types';
 import type { AuthConfig } from '../../types';
 
 type TabType = 'params' | 'headers' | 'body' | 'query' | 'schema' | 'auth' | 'pre-request' | 'tests';
-type AuthType = 'noauth' | 'bearer' | 'basic' | 'api-key' | 'oauth2' | 'none';
+type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2' | 'none';
 type RequestType = 'REST' | 'GRAPHQL' | 'WEBSOCKET';
 
 interface RequestTabsProps {
@@ -119,7 +119,7 @@ export default function RequestTabs({
           basicUsername: parentAuthConfig.username || '',
           basicPassword: parentAuthConfig.password || ''
         }));
-      } else if (parentAuthConfig.type === 'api-key') {
+      } else if (parentAuthConfig.type === 'apikey') {
         setAuthConfig(prev => ({
           ...prev,
           apiKeyName: parentAuthConfig.key || 'X-API-Key',
@@ -261,14 +261,14 @@ export default function RequestTabs({
                 <option value="noauth">No Auth</option>
                 <option value="bearer">Bearer Token</option>
                 <option value="basic">Basic Auth</option>
-                <option value="api-key">API Key</option>
+                <option value="apikey">API Key</option>
                 <option value="oauth2">OAuth 2.0</option>
               </select>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                 {authType === 'noauth' && 'No authorization required'}
                 {authType === 'bearer' && 'Token-based authentication'}
                 {authType === 'basic' && 'Username and password'}
-                {authType === 'api-key' && 'Key-based authentication'}
+                {authType === 'apikey' && 'Key-based authentication'}
                 {authType === 'oauth2' && 'OAuth 2.0 protocol'}
               </p>
             </div>
@@ -385,7 +385,7 @@ export default function RequestTabs({
               )}
 
               {/* API Key */}
-              {authType === 'api-key' && (
+              {authType === 'apikey' && (
                 <div className="max-w-2xl">
                   <div className="space-y-4">
                     <div className="flex items-center gap-6">
@@ -400,7 +400,7 @@ export default function RequestTabs({
                           setAuthConfig({ ...authConfig, apiKeyName: newKeyName });
                           if (onAuthConfigChange) {
                             onAuthConfigChange({
-                              type: 'api-key',
+                              type: 'apikey',
                               key: newKeyName,
                               value: authConfig.apiKeyValue,
                               in: authConfig.apiKeyLocation
@@ -423,7 +423,7 @@ export default function RequestTabs({
                           setAuthConfig({ ...authConfig, apiKeyValue: newKeyValue });
                           if (onAuthConfigChange) {
                             onAuthConfigChange({
-                              type: 'api-key',
+                              type: 'apikey',
                               key: authConfig.apiKeyName,
                               value: newKeyValue,
                               in: authConfig.apiKeyLocation
@@ -447,7 +447,7 @@ export default function RequestTabs({
                               setAuthConfig({ ...authConfig, apiKeyLocation: 'header' });
                               if (onAuthConfigChange) {
                                 onAuthConfigChange({
-                                  type: 'api-key',
+                                  type: 'apikey',
                                   key: authConfig.apiKeyName,
                                   value: authConfig.apiKeyValue,
                                   in: 'header'
@@ -466,7 +466,7 @@ export default function RequestTabs({
                               setAuthConfig({ ...authConfig, apiKeyLocation: 'query' });
                               if (onAuthConfigChange) {
                                 onAuthConfigChange({
-                                  type: 'api-key',
+                                  type: 'apikey',
                                   key: authConfig.apiKeyName,
                                   value: authConfig.apiKeyValue,
                                   in: 'query'

@@ -1,4 +1,4 @@
-export type AuthType = 'none' | 'noauth' | 'bearer' | 'basic' | 'api-key' | 'oauth2';
+export type AuthType = 'none' | 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2';
 
 export interface BearerAuth {
   type: 'bearer';
@@ -12,7 +12,7 @@ export interface BasicAuth {
 }
 
 export interface ApiKeyAuth {
-  type: 'api-key';
+  type: 'apikey';
   key: string;
   value: string;
   in: 'header' | 'query';

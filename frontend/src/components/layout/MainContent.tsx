@@ -376,8 +376,8 @@ pm.test("Response has correct structure", function () {
       case 'basic':
         newAuthConfig = { type: 'basic', username: '', password: '' };
         break;
-      case 'api-key':
-        newAuthConfig = { type: 'api-key', key: 'X-API-Key', value: '', in: 'header' };
+      case 'apikey':
+        newAuthConfig = { type: 'apikey', key: 'X-API-Key', value: '', in: 'header' };
         break;
       case 'oauth2':
         newAuthConfig = { type: 'oauth2', accessToken: '' };

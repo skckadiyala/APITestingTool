@@ -13,7 +13,7 @@ async function resetPassword() {
   const newPassword = process.argv[3];
 
   if (!email || !newPassword) {
-    console.error('❌ Usage: ts-node scripts/reset-user-password.ts <email> <newPassword>');
+    console.error('❌ Usage: npx tsx scripts/reset-user-password.ts <email> <newPassword>');
     process.exit(1);
   }
 
