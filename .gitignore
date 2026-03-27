@@ -1,6 +1,6 @@
 build
 prompts-documentation
-
+.sfdx
 
 CODE_REVIEW_PROMPTS.md
 backend/COLLECTION_GRAPHQL_ENDPOINTS.md

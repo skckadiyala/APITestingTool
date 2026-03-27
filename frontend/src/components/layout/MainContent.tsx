@@ -98,7 +98,10 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
   const [schemaLoading, setSchemaLoading] = useState(false);
   const [schemaUrl, setSchemaUrl] = useState<string>('');
   
-  const [authType, setAuthType] = useState<AuthType>('noauth');
+  // Auth config state - store full auth configuration, not just type
+  const [authConfig, setAuthConfig] = useState<AuthConfig>({ type: 'noauth' });
+  // Keep authType for backward compatibility with some components
+  const authType = authConfig.type;
   const [preRequestScript, setPreRequestScript] = useState(`// Pre-request script
 // Execute code before sending the request
 
@@ -356,11 +359,33 @@ pm.test("Response has correct structure", function () {
     }
   };
 
-  const handleAuthTypeChange = (newAuthType: AuthType) => {
-    setAuthType(newAuthType);
+  const handleAuthConfigChange = (newAuthConfig: AuthConfig) => {
+    setAuthConfig(newAuthConfig);
     if (activeTabId && !isSyncingFromTab.current) {
-      updateTab(activeTabId, { auth: { type: newAuthType } as AuthConfig, isDirty: true });
+      updateTab(activeTabId, { auth: newAuthConfig, isDirty: true });
     }
+  };
+
+  const handleAuthTypeChange = (newAuthType: AuthType) => {
+    // When only type changes, create appropriate default config
+    let newAuthConfig: AuthConfig;
+    switch (newAuthType) {
+      case 'bearer':
+        newAuthConfig = { type: 'bearer', token: '' };
+        break;
+      case 'basic':
+        newAuthConfig = { type: 'basic', username: '', password: '' };
+        break;
+      case 'api-key':
+        newAuthConfig = { type: 'api-key', key: 'X-API-Key', value: '', in: 'header' };
+        break;
+      case 'oauth2':
+        newAuthConfig = { type: 'oauth2', accessToken: '' };
+        break;
+      default:
+        newAuthConfig = { type: 'noauth' };
+    }
+    handleAuthConfigChange(newAuthConfig);
   };
 
   const handlePreRequestScriptChange = (newScript: string) => {
@@ -540,12 +565,15 @@ pm.test("Response has correct structure", function () {
       setActiveTab('headers');
     }
     
-    setAuthType((currentTab.auth?.type as AuthType) || 'noauth');
+    // Restore full auth config from tab
+    setAuthConfig(currentTab.auth || { type: 'noauth' });
     setTestScript(currentTab.testScript || '');
     setPreRequestScript(currentTab.preRequestScript || '');
-    setHasResponse(false);
-    setExecutionResult(null);
-    setConsoleLogs([]);
+    
+    // Restore response data if it exists for this tab
+    setHasResponse(currentTab.hasResponse || false);
+    setExecutionResult(currentTab.response || null);
+    setConsoleLogs(currentTab.consoleLogs || []);
 
     // Clear the flag after a longer delay to allow all child components to mount
     const timer = setTimeout(() => {
@@ -615,7 +643,7 @@ pm.test("Response has correct structure", function () {
 
       // Restore auth
       const restoredAuth = historyDetail.requestBody?.auth || { type: 'noauth' as const };
-      setAuthType(restoredAuth.type as AuthType);
+      setAuthConfig(restoredAuth as AuthConfig);
 
       // Update the tab with all restored data
       if (targetTabId) {
@@ -629,6 +657,10 @@ pm.test("Response has correct structure", function () {
           },
           auth: restoredAuth as AuthConfig,
           isDirty: false,
+          // Clear response when loading from history
+          response: undefined,
+          consoleLogs: [],
+          hasResponse: false
         });
       }
 
@@ -727,9 +759,9 @@ pm.test("Response has correct structure", function () {
 
     // Load auth
     if (requestData.auth) {
-      setAuthType(requestData.auth.type as AuthType);
+      setAuthConfig(requestData.auth as AuthConfig);
     } else {
-      setAuthType('noauth');
+      setAuthConfig({ type: 'noauth' });
     }
 
     // Load test scripts
@@ -737,10 +769,19 @@ pm.test("Response has correct structure", function () {
       setTestScript(requestData.testScript);
     }
 
-    // Clear response
+    // Clear response when loading a different request
     setHasResponse(false);
     setExecutionResult(null);
     setConsoleLogs([]);
+    
+    // Clear response from tab store as well
+    if (activeTabId) {
+      updateTab(activeTabId, {
+        response: undefined,
+        consoleLogs: [],
+        hasResponse: false
+      });
+    }
 
     toast.success('Request loaded from collection', {
       icon: '📂',
@@ -823,9 +864,7 @@ pm.test("Response has correct structure", function () {
         // GraphQL-specific fields
         graphqlQuery: requestType === 'GRAPHQL' ? graphqlQuery : undefined,
         graphqlVariables: requestType === 'GRAPHQL' ? graphqlVariables : undefined,
-        auth: {
-          type: authType,
-        },
+        auth: authConfig,
         timeout: 30000,
         followRedirects: true,
         maxRedirects: 5,
@@ -904,6 +943,15 @@ pm.test("Response has correct structure", function () {
       setHasResponse(true);
       setConsoleLogs(logs);
 
+      // Persist response to tab store so it survives tab switches
+      if (activeTabId) {
+        updateTab(activeTabId, {
+          response: result,
+          consoleLogs: logs,
+          hasResponse: true
+        });
+      }
+
       if (result.success) {
         const timing = result.response?.timing.total || 0;
         
@@ -972,7 +1020,8 @@ pm.test("Response has correct structure", function () {
         icon: '❌',
         duration: 5000,
       });
-      setExecutionResult({
+      
+      const errorResult = {
         success: false,
         request: {
           method: method as any,
@@ -983,8 +1032,19 @@ pm.test("Response has correct structure", function () {
           message: error.message || 'Failed to execute request',
         },
         executedAt: new Date().toISOString(),
-      });
+      };
+      
+      setExecutionResult(errorResult);
       setHasResponse(true);
+      
+      // Persist error response to tab store so it survives tab switches
+      if (activeTabId) {
+        updateTab(activeTabId, {
+          response: errorResult,
+          consoleLogs: logs,
+          hasResponse: true
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1038,7 +1098,7 @@ pm.test("Response has correct structure", function () {
         params: paramsToSave,
         headers: headersToSave,
         body: (bodyContentToSave || bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
-        auth: { type: authType } as AuthConfig,
+        auth: authConfig,
         testScript: testScript.trim() || undefined,
         preRequestScript: preRequestScript.trim() || undefined,
         // GraphQL-specific fields
@@ -1055,7 +1115,7 @@ pm.test("Response has correct structure", function () {
         params: paramsToSave,
         headers: headersToSave,
         body: (bodyContentToSave || bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
-        auth: { type: authType } as AuthConfig,
+        auth: authConfig,
         testScript: testScript.trim() || undefined,
         preRequestScript: preRequestScript.trim() || undefined,
         isDirty: false,
@@ -1121,7 +1181,7 @@ pm.test("Response has correct structure", function () {
         paramsToSave,
         headersToSave,
         (bodyContentToSave || bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
-        { type: authType } as AuthConfig,
+        authConfig,
         requestType, // Pass request type
         graphqlQueryToSave, // GraphQL query from tab state (source of truth)
         graphqlVariablesToSave, // GraphQL variables from tab state
@@ -1226,6 +1286,7 @@ pm.test("Response has correct structure", function () {
               bodyContent={bodyContent}
               formData={formData}
               authType={authType}
+              authConfig={authConfig}
               preRequestScript={preRequestScript}
               testScript={testScript}
               graphqlQuery={graphqlQuery}
@@ -1239,6 +1300,7 @@ pm.test("Response has correct structure", function () {
               onBodyContentChange={handleBodyContentChange}
               onFormDataChange={handleFormDataChange}
               onAuthTypeChange={handleAuthTypeChange}
+              onAuthConfigChange={handleAuthConfigChange}
               onPreRequestScriptChange={handlePreRequestScriptChange}
               onTestScriptChange={handleTestScriptChange}
               onGraphqlQueryChange={handleGraphqlQueryChange}

@@ -2,16 +2,60 @@
 
 Complete guide to deploy the API Testing Tool from scratch, including all prerequisites, database setup, and deployment options.
 
+## ✨ Features
+
+- 🚀 **HTTP Request Builder** - Send GET, POST, PUT, DELETE, PATCH and more
+- 🔮 **GraphQL Support** - Execute queries, mutations with introspection
+- 📁 **Collections Management** - Organize requests into collections and folders
+- 🌍 **Environment Variables** - Manage variables across different environments
+- 📊 **Test Data Files** - CSV/JSON support for data-driven testing
+- 🔐 **Authentication** - Support for Bearer, Basic, OAuth, API Key, Digest, AWS V4, and more
+- 📜 **Pre-request & Test Scripts** - JavaScript-based scripting with Chai assertions
+- 📈 **Collection Runner** - Execute multiple requests with detailed reports
+- 🎨 **Modern UI** - Clean, intuitive interface built with React and TailwindCSS
+- 🌙 **Dark Mode** - Built-in dark mode support
+- 📥 **Import/Export** - Compatible with Postman Collection format
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────┐
+│       Frontend (React + TypeScript)      │
+│  - Request Builder                       │
+│  - Collections Manager                   │
+│  - Environment Manager                   │
+│  - Response Viewer                       │
+└─────────────────────────────────────────┘
+                   ↓ REST API
+┌─────────────────────────────────────────┐
+│    Backend (Express.js + TypeScript)    │
+│  - Authentication                        │
+│  - Request Execution                     │
+│  - Collection Management                 │
+│  - Script Execution                      │
+└─────────────────────────────────────────┘
+                   ↓
+┌─────────────────────────────────────────┐
+│          Data Layer                      │
+│  PostgreSQL (Metadata)                   │
+│  MongoDB (Request/Response Bodies)       │
+└─────────────────────────────────────────┘
+```
+
 ## Table of Contents
 
-1. [System Requirements](#system-requirements)
-2. [Prerequisites Installation](#prerequisites-installation)
-3. [Database Setup](#database-setup)
-4. [Application Setup](#application-setup)
-5. [Development Deployment](#development-deployment)
-6. [Production Deployment](#production-deployment)
-7. [Docker Deployment](#docker-deployment)
-8. [Troubleshooting](#troubleshooting)
+1. [Features & Architecture](#-features)
+2. [System Requirements](#system-requirements)
+3. [Technology Stack](#-technology-stack)
+4. [Prerequisites Installation](#prerequisites-installation)
+5. [Database Setup](#database-setup)
+6. [Application Setup](#application-setup)
+7. [Development Deployment](#development-deployment)
+8. [Production Deployment](#production-deployment)
+9. [Docker Deployment](#docker-deployment)
+10. [Available Scripts](#-available-scripts)
+11. [Troubleshooting](#troubleshooting)
+12. [Backup and Recovery](#backup-and-recovery)
 
 ---
 
@@ -27,6 +71,34 @@ Complete guide to deploy the API Testing Tool from scratch, including all prereq
 - **CPU**: 4 cores
 - **RAM**: 8GB
 - **Storage**: 20GB free space
+
+---
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool
+- **TailwindCSS** - Styling
+- **Zustand** - State management
+- **React Router** - Routing
+- **Axios** - HTTP client
+- **Monaco Editor** - Code editor
+
+### Backend
+- **Node.js** - Runtime
+- **Express.js** - Web framework
+- **TypeScript** - Type safety
+- **Prisma 7** - PostgreSQL ORM
+- **Mongoose** - MongoDB ODM
+- **JWT** - Authentication
+- **Zod** - Validation
+- **bcryptjs** - Password hashing
+
+### Databases
+- **PostgreSQL 14+** - Relational data (users, workspaces, collections, requests metadata)
+- **MongoDB 6+** - Document storage (request/response bodies, headers, scripts)
 
 ---
 
@@ -431,8 +503,10 @@ VITE_BACKEND_PORT=5000
 
 # Frontend Configuration
 VITE_FRONTEND_HOST=localhost
-VITE_FRONTEND_PORT=5173
+VITE_FRONTEND_PORT=5174
 ```
+
+**Note**: Vite's default dev server port is **5174** (not 5173). The frontend will automatically use this port when running `npm run dev`.
 
 ---
 
@@ -454,10 +528,10 @@ cd frontend
 npm run dev
 ```
 
-Frontend will start at `http://localhost:5173`
+Frontend will start at `http://localhost:5174`
 
 **Access the Application**
-Open your browser and navigate to: `http://localhost:5173`
+Open your browser and navigate to: `http://localhost:5174`
 
 ---
 
@@ -509,7 +583,7 @@ PORT=5000
 JWT_SECRET=<generate-a-strong-random-secret-key-here>
 JWT_REFRESH_SECRET=<generate-another-strong-random-secret-key>
 
-# Update URLs for your production domain
+# Update URLs for your production domain (adjust port if using Vite default 5174)
 FRONTEND_URL=https://yourdomain.com
 CORS_ORIGIN=https://yourdomain.com
 ALLOWED_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
@@ -543,9 +617,9 @@ NODE_ENV=production node dist/app.js
 **Serve Frontend**
 ```bash
 cd frontend
-serve -s dist -l 5173
+serve -s dist -l 5174
 # or
-http-server dist -p 5173
+http-server dist -p 5174
 ```
 
 ### 6. Option B: Using PM2 (Recommended)
@@ -584,10 +658,9 @@ module.exports = {
     {
       name: 'api-testing-frontend',
       cwd: './frontend',
-      script: 'serve',
-      args: 'dist -l 5173',
+      script: 'serve-frontend.js',
       env: {
-        PORT: 5173
+        PORT: 5174
       },
       instances: 1,
       autorestart: true,
@@ -777,7 +850,7 @@ open http://localhost:5000/api/v1/health
 
 ### 3. Access Frontend
 
-Open browser: `http://localhost:5173`
+Open browser: `http://localhost:5174`
 
 ### 4. Create First User
 
@@ -795,7 +868,98 @@ curl -X POST http://localhost:5000/api/v1/auth/register \
 
 ---
 
+## 📝 Available Scripts
+
+### Backend Scripts
+```bash
+npm run dev             # Start development server with nodemon
+npm run build           # Compile TypeScript to JavaScript
+npm start               # Start production server
+npm run prisma:generate # Generate Prisma Client
+npm run prisma:migrate  # Run database migrations
+npm run prisma:studio   # Open Prisma Studio (database GUI)
+npm run seed:all        # Seed both PostgreSQL and MongoDB
+npm run seed:mongo      # Seed MongoDB only
+npm test                # Run tests
+npm run test:watch      # Run tests in watch mode
+npm run test:coverage   # Run tests with coverage report
+npm run lint            # Run ESLint
+npm run format          # Format code with Prettier
+```
+
+### Frontend Scripts
+```bash
+npm run dev          # Start Vite development server (port 5174)
+npm run build        # Build for production
+npm run preview      # Preview production build
+npm test             # Run Vitest tests
+npm run test:ui      # Run Vitest with UI
+npm run test:coverage # Run tests with coverage
+npm run lint         # Run ESLint
+```
+
+### Docker Commands
+```bash
+docker-compose up -d              # Start PostgreSQL and MongoDB
+docker-compose down               # Stop databases
+docker-compose logs postgres      # View PostgreSQL logs
+docker-compose logs mongodb       # View MongoDB logs
+docker-compose ps                 # Check container status
+docker-compose restart           # Restart all containers
+```
+
+### PM2 Commands
+```bash
+pm2 start ecosystem.config.js    # Start all applications
+pm2 stop all                     # Stop all applications
+pm2 restart all                  # Restart all applications
+pm2 delete all                   # Remove all from PM2
+pm2 logs                         # View all logs
+pm2 logs api-testing-backend    # View backend logs
+pm2 logs api-testing-frontend   # View frontend logs
+pm2 monit                        # Monitor resources
+pm2 status                       # Check application status
+pm2 save                         # Save current PM2 config
+pm2 startup                      # Setup PM2 to start on boot
+```
+
+---
+
 ## Troubleshooting
+
+### Docker Daemon Not Running
+
+If you get "Cannot connect to the Docker daemon" error:
+
+1. **Open Docker Desktop** - Make sure Docker Desktop app is running
+2. **Wait for Docker to start** - Look for the whale icon in your system tray/menu bar
+3. **Verify Docker is running**:
+   ```bash
+   docker ps
+   ```
+4. **Try again**:
+   ```bash
+   docker-compose up -d
+   ```
+
+**Additional Docker Issues**:
+```bash
+# Check if containers are running
+docker-compose ps
+
+# View container logs
+docker-compose logs -f
+
+# Restart containers
+docker-compose restart
+
+# Stop and remove all containers
+docker-compose down
+
+# Complete reset (removes volumes - WARNING: deletes all data!)
+docker-compose down -v
+docker-compose up -d
+```
 
 ### Database Connection Issues
 
@@ -836,16 +1000,27 @@ sudo tail -f /var/log/mongodb/mongod.log
 
 ### Port Already in Use
 
+**Default Ports**:
+- Backend: 5000
+- Frontend: 5174 (Vite default)
+- PostgreSQL: 5432
+- MongoDB: 27017
+
 ```bash
 # Find process using port 5000 (backend)
 lsof -i :5000
 # Kill the process
 kill -9 <PID>
 
-# Find process using port 5173 (frontend)
-lsof -i :5173
+# Find process using port 5174 (frontend)
+lsof -i :5174
 kill -9 <PID>
 ```
+
+**Change ports if needed**:
+- Edit `backend/.env` → `PORT=<new-port>`
+- Edit `frontend/.env` → `VITE_FRONTEND_PORT=<new-port>`
+- Update `vite.config.ts` server port if needed
 
 ### Prisma Generation Issues
 
@@ -918,6 +1093,68 @@ npm cache clean --force
 
 ### PM2 Issues
 
+**PM2 shows "online" but can't connect via browser**
+
+If PM2 status shows services as "online" but you can't access them:
+
+**1. Test ports locally first:**
+```bash
+# Test backend
+curl http://localhost:5000/health
+
+# Test frontend  
+curl http://localhost:5174
+```
+
+**2. Check if frontend serve-frontend.js exists:**
+```bash
+# Windows PowerShell
+Test-Path frontend\serve-frontend.js
+
+# Linux/Mac
+ls frontend/serve-frontend.js
+```
+
+If missing, create `frontend/serve-frontend.js`:
+```javascript
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const serve = spawn('serve', ['-s', 'dist', '-l', '5174'], {
+  cwd: __dirname,
+  stdio: 'inherit',
+  shell: true
+});
+
+serve.on('error', (err) => {
+  console.error('Failed to start serve:', err);
+  process.exit(1);
+});
+
+serve.on('exit', (code) => {
+  process.exit(code);
+});
+```
+
+Then restart: `pm2 restart api-testing-frontend`
+
+**3. Check actual PM2 logs for errors:**
+```bash
+pm2 logs --lines 50
+pm2 logs api-testing-backend --lines 50
+pm2 logs api-testing-frontend --lines 50
+```
+
+**4. Verify firewall/network:**
+- Ensure ports 5000 and 5174 are allowed in your firewall
+- Check if services are accessible: `netstat -an | grep LISTEN`
+- Try accessing with explicit hostname: `http://YOUR_SERVER_NAME:5174`
+
+**General PM2 troubleshooting:**
 ```bash
 # View PM2 logs
 pm2 logs --lines 100
@@ -1038,6 +1275,26 @@ For more details, see [Prisma 7 Upgrade Guide](https://pris.ly/d/major-version-u
 
 ---
 
+## 🧪 Testing
+
+### Backend Tests
+```bash
+cd backend
+npm test                 # Run all tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Run tests with coverage report
+```
+
+### Frontend Tests
+```bash
+cd frontend
+npm test                 # Run Vitest tests
+npm run test:ui          # Run Vitest with UI
+npm run test:coverage    # Generate coverage report
+```
+
+---
+
 ## Production Checklist
 
 Before deploying to production, ensure:
@@ -1059,6 +1316,17 @@ Before deploying to production, ensure:
 ---
 
 ## Security Recommendations
+
+### Security Features Implemented
+
+The application includes the following security features:
+- **JWT-based authentication** - Secure token-based auth with refresh tokens
+- **Password hashing with bcryptjs** - Passwords never stored in plain text
+- **Rate limiting** - Prevents brute force attacks
+- **CORS configuration** - Controls allowed origins
+- **Input validation** - Zod schema validation for all inputs
+- **SQL/NoSQL injection prevention** - Parameterized queries and sanitization
+- **XSS protection** - Input sanitization and output encoding
 
 ### 1. Use Environment Variables
 Never commit `.env` files with sensitive data to version control.
@@ -1117,9 +1385,9 @@ server {
     listen 80;
     server_name yourdomain.com;
 
-    # Frontend
+    # Frontend (Vite default port 5174)
     location / {
-        proxy_pass http://localhost:5173;
+        proxy_pass http://localhost:5174;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -1148,15 +1416,33 @@ sudo systemctl restart nginx
 
 ---
 
+## 📖 Documentation
+
+For more detailed information, see:
+
+- **[README.md](README.md)** - Project overview and quick start
+- **[PROJECT_PLAN.md](prompts-documentation/PROJECT_PLAN.md)** - Complete project roadmap and phases
+- **[DESIGN_GUIDELINES.md](prompts-documentation/DESIGN_GUIDELINES.md)** - Architecture and design patterns
+- **[GETTING_STARTED.md](prompts-documentation/GETTING_STARTED.md)** - Developer quick start guide
+- **[GRAPHQL_ARCHITECTURE.md](prompts-documentation/GRAPHQL_ARCHITECTURE.md)** - GraphQL implementation details
+- **[Backend README](backend/README.md)** - Backend-specific documentation
+- **[Frontend README](frontend/README.md)** - Frontend-specific documentation
+
+---
+
 ## Support and Resources
 
-- **Project Repository**: [Your GitHub URL]
-- **Issues**: [Your GitHub Issues URL]
-- **Documentation**: See [README.md](README.md)
-- **PostgreSQL Docs**: https://www.postgresql.org/docs/
-- **MongoDB Docs**: https://www.mongodb.com/docs/
-- **Node.js Docs**: https://nodejs.org/docs/
-- **PM2 Docs**: https://pm2.keymetrics.io/docs/
+- **Project Repository**: [GitHub Repository](https://github.com/yourusername/APITestingTool)
+- **Issues**: Open issues on GitHub
+- **Documentation**: See links above
+- **External Resources**:
+  - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+  - [MongoDB Documentation](https://www.mongodb.com/docs/)
+  - [Node.js Documentation](https://nodejs.org/docs/)
+  - [Prisma Documentation](https://www.prisma.io/docs/)
+  - [PM2 Documentation](https://pm2.keymetrics.io/docs/)
+  - [React Documentation](https://react.dev/)
+  - [Vite Documentation](https://vitejs.dev/)
 
 ---
 

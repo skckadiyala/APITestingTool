@@ -40,6 +40,10 @@ export interface Tab {
   collectionData?: Collection;
   // Collection runner specific
   runnerState?: RunnerState;
+  // Response data - persisted across tab switches
+  response?: any; // ExecutionResult from requestService
+  consoleLogs?: Array<{ type: 'request' | 'response' | 'error' | 'info'; message: string; timestamp: number }>;
+  hasResponse?: boolean;
 }
 
 interface TabState {

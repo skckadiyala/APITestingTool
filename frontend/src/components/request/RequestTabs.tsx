@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import KeyValueEditor, { type KeyValuePair } from './KeyValueEditor';
 import BodyEditor, { type BodyType } from './BodyEditor';
 import Editor from '@monaco-editor/react';
 import GraphQLQueryPanel from './GraphQLQueryPanel';
 import GraphQLSchemaViewer from './GraphQLSchemaViewer';
 import type { GraphQLSchema } from '../../types/request.types';
+import type { AuthConfig } from '../../types';
 
 type TabType = 'params' | 'headers' | 'body' | 'query' | 'schema' | 'auth' | 'pre-request' | 'tests';
-type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2' | 'none';
+type AuthType = 'noauth' | 'bearer' | 'basic' | 'api-key' | 'oauth2' | 'none';
 type RequestType = 'REST' | 'GRAPHQL' | 'WEBSOCKET';
 
 interface RequestTabsProps {
@@ -20,6 +21,7 @@ interface RequestTabsProps {
   bodyContent: string;
   formData?: Array<{ id: string; key: string; value: string; type: 'text' | 'file'; enabled: boolean }>;
   authType: AuthType;
+  authConfig?: AuthConfig;
   preRequestScript: string;
   testScript: string;
   // GraphQL-specific props
@@ -35,6 +37,7 @@ interface RequestTabsProps {
   onBodyContentChange: (content: string) => void;
   onFormDataChange?: (formData: Array<{ id: string; key: string; value: string; type: 'text' | 'file'; enabled: boolean }>) => void;
   onAuthTypeChange: (type: AuthType) => void;
+  onAuthConfigChange?: (config: AuthConfig) => void;
   onPreRequestScriptChange: (script: string) => void;
   onTestScriptChange: (script: string) => void;
   // GraphQL handlers
@@ -71,6 +74,7 @@ export default function RequestTabs({
   bodyContent,
   formData = [],
   authType,
+  authConfig: parentAuthConfig,
   preRequestScript,
   testScript,
   graphqlQuery = '',
@@ -85,6 +89,7 @@ export default function RequestTabs({
   onBodyContentChange,
   onFormDataChange,
   onAuthTypeChange,
+  onAuthConfigChange,
   onPreRequestScriptChange,
   onTestScriptChange,
   onGraphqlQueryChange,
@@ -93,6 +98,7 @@ export default function RequestTabs({
   onRefreshSchema,
   onInsertField,
 }: RequestTabsProps) {
+  // Local state for auth configuration UI
   const [authConfig, setAuthConfig] = useState({
     bearerToken: '',
     basicUsername: '',
@@ -101,6 +107,28 @@ export default function RequestTabs({
     apiKeyValue: '',
     apiKeyLocation: 'header' as 'header' | 'query',
   });
+
+  // Initialize local auth state from parent's authConfig
+  useEffect(() => {
+    if (parentAuthConfig) {
+      if (parentAuthConfig.type === 'bearer') {
+        setAuthConfig(prev => ({ ...prev, bearerToken: parentAuthConfig.token || '' }));
+      } else if (parentAuthConfig.type === 'basic') {
+        setAuthConfig(prev => ({
+          ...prev,
+          basicUsername: parentAuthConfig.username || '',
+          basicPassword: parentAuthConfig.password || ''
+        }));
+      } else if (parentAuthConfig.type === 'api-key') {
+        setAuthConfig(prev => ({
+          ...prev,
+          apiKeyName: parentAuthConfig.key || 'X-API-Key',
+          apiKeyValue: parentAuthConfig.value || '',
+          apiKeyLocation: parentAuthConfig.in || 'header'
+        }));
+      }
+    }
+  }, [parentAuthConfig?.type]);
 
   const TabButton = ({ tab, label, count }: { tab: TabType; label: string; count?: number }) => (
     <button
@@ -233,14 +261,14 @@ export default function RequestTabs({
                 <option value="noauth">No Auth</option>
                 <option value="bearer">Bearer Token</option>
                 <option value="basic">Basic Auth</option>
-                <option value="apikey">API Key</option>
+                <option value="api-key">API Key</option>
                 <option value="oauth2">OAuth 2.0</option>
               </select>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                 {authType === 'noauth' && 'No authorization required'}
                 {authType === 'bearer' && 'Token-based authentication'}
                 {authType === 'basic' && 'Username and password'}
-                {authType === 'apikey' && 'Key-based authentication'}
+                {authType === 'api-key' && 'Key-based authentication'}
                 {authType === 'oauth2' && 'OAuth 2.0 protocol'}
               </p>
             </div>
@@ -277,7 +305,13 @@ export default function RequestTabs({
                       <input
                         type="text"
                         value={authConfig.bearerToken}
-                        onChange={(e) => setAuthConfig({ ...authConfig, bearerToken: e.target.value })}
+                        onChange={(e) => {
+                          const newToken = e.target.value;
+                          setAuthConfig({ ...authConfig, bearerToken: newToken });
+                          if (onAuthConfigChange) {
+                            onAuthConfigChange({ type: 'bearer', token: newToken });
+                          }
+                        }}
                         placeholder="Enter your bearer token"
                         className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
@@ -303,7 +337,17 @@ export default function RequestTabs({
                       <input
                         type="text"
                         value={authConfig.basicUsername}
-                        onChange={(e) => setAuthConfig({ ...authConfig, basicUsername: e.target.value })}
+                        onChange={(e) => {
+                          const newUsername = e.target.value;
+                          setAuthConfig({ ...authConfig, basicUsername: newUsername });
+                          if (onAuthConfigChange) {
+                            onAuthConfigChange({
+                              type: 'basic',
+                              username: newUsername,
+                              password: authConfig.basicPassword
+                            });
+                          }
+                        }}
                         placeholder="Username"
                         className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
@@ -315,7 +359,17 @@ export default function RequestTabs({
                       <input
                         type="password"
                         value={authConfig.basicPassword}
-                        onChange={(e) => setAuthConfig({ ...authConfig, basicPassword: e.target.value })}
+                        onChange={(e) => {
+                          const newPassword = e.target.value;
+                          setAuthConfig({ ...authConfig, basicPassword: newPassword });
+                          if (onAuthConfigChange) {
+                            onAuthConfigChange({
+                              type: 'basic',
+                              username: authConfig.basicUsername,
+                              password: newPassword
+                            });
+                          }
+                        }}
                         placeholder="Password"
                         className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
@@ -331,7 +385,7 @@ export default function RequestTabs({
               )}
 
               {/* API Key */}
-              {authType === 'apikey' && (
+              {authType === 'api-key' && (
                 <div className="max-w-2xl">
                   <div className="space-y-4">
                     <div className="flex items-center gap-6">
@@ -341,7 +395,18 @@ export default function RequestTabs({
                       <input
                         type="text"
                         value={authConfig.apiKeyName}
-                        onChange={(e) => setAuthConfig({ ...authConfig, apiKeyName: e.target.value })}
+                        onChange={(e) => {
+                          const newKeyName = e.target.value;
+                          setAuthConfig({ ...authConfig, apiKeyName: newKeyName });
+                          if (onAuthConfigChange) {
+                            onAuthConfigChange({
+                              type: 'api-key',
+                              key: newKeyName,
+                              value: authConfig.apiKeyValue,
+                              in: authConfig.apiKeyLocation
+                            });
+                          }
+                        }}
                         placeholder="e.g., X-API-Key"
                         className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
@@ -353,7 +418,18 @@ export default function RequestTabs({
                       <input
                         type="text"
                         value={authConfig.apiKeyValue}
-                        onChange={(e) => setAuthConfig({ ...authConfig, apiKeyValue: e.target.value })}
+                        onChange={(e) => {
+                          const newKeyValue = e.target.value;
+                          setAuthConfig({ ...authConfig, apiKeyValue: newKeyValue });
+                          if (onAuthConfigChange) {
+                            onAuthConfigChange({
+                              type: 'api-key',
+                              key: authConfig.apiKeyName,
+                              value: newKeyValue,
+                              in: authConfig.apiKeyLocation
+                            });
+                          }
+                        }}
                         placeholder="Your API key"
                         className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
@@ -367,7 +443,17 @@ export default function RequestTabs({
                           <input
                             type="radio"
                             checked={authConfig.apiKeyLocation === 'header'}
-                            onChange={() => setAuthConfig({ ...authConfig, apiKeyLocation: 'header' })}
+                            onChange={() => {
+                              setAuthConfig({ ...authConfig, apiKeyLocation: 'header' });
+                              if (onAuthConfigChange) {
+                                onAuthConfigChange({
+                                  type: 'api-key',
+                                  key: authConfig.apiKeyName,
+                                  value: authConfig.apiKeyValue,
+                                  in: 'header'
+                                });
+                              }
+                            }}
                             className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                           />
                           <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Header</span>
@@ -376,7 +462,17 @@ export default function RequestTabs({
                           <input
                             type="radio"
                             checked={authConfig.apiKeyLocation === 'query'}
-                            onChange={() => setAuthConfig({ ...authConfig, apiKeyLocation: 'query' })}
+                            onChange={() => {
+                              setAuthConfig({ ...authConfig, apiKeyLocation: 'query' });
+                              if (onAuthConfigChange) {
+                                onAuthConfigChange({
+                                  type: 'api-key',
+                                  key: authConfig.apiKeyName,
+                                  value: authConfig.apiKeyValue,
+                                  in: 'query'
+                                });
+                              }
+                            }}
                             className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                           />
                           <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Query Params</span>
