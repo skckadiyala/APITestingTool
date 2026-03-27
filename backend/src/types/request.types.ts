@@ -74,18 +74,19 @@ export interface GraphQLRequestConfig {
 
 export interface AuthConfig {
   type: AuthType;
-  bearer?: {
-    token: string;
-  };
-  basic?: {
-    username: string;
-    password: string;
-  };
-  apikey?: {
-    key: string;
-    value: string;
-    addTo: 'header' | 'query';
-  };
+  // Bearer token auth
+  token?: string;
+  // Basic auth
+  username?: string;
+  password?: string;
+  // API Key auth
+  key?: string;
+  value?: string;
+  in?: 'header' | 'query';
+  // OAuth2
+  accessToken?: string;
+  tokenType?: string;
+  refreshToken?: string;
 }
 
 export interface RequestConfig {
