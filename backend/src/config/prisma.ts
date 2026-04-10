@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 /**
  * Extend the global type to include prisma
@@ -14,12 +15,17 @@ declare global {
  */
 let prisma: PrismaClient;
 
+function createPrismaClient(): PrismaClient {
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  return new PrismaClient({ adapter } as any);
+}
+
 if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient();
+  prisma = createPrismaClient();
 } else {
   // In development, use a global variable to preserve the instance across hot reloads
   if (!global.prisma) {
-    global.prisma = new PrismaClient();
+    global.prisma = createPrismaClient();
   }
   prisma = global.prisma;
 }
