@@ -1,14 +1,19 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
 
-const prisma = new PrismaClient();
+dotenv.config();
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter } as any);
 
 async function resetPassword() {
   const email = process.argv[2];
   const newPassword = process.argv[3];
 
   if (!email || !newPassword) {
-    console.error('❌ Usage: ts-node scripts/reset-user-password.ts <email> <newPassword>');
+    console.error('❌ Usage: npx tsx scripts/reset-user-password.ts <email> <newPassword>');
     process.exit(1);
   }
 

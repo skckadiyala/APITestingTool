@@ -5,7 +5,7 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const serve = spawn('serve', ['-s', 'dist', '-l', '5173'], {
+const serve = spawn('serve', ['-s', 'dist', '-l', '5174'], {
   cwd: __dirname,
   stdio: 'inherit',
   shell: true

@@ -1,5 +1,5 @@
-import { RequestExecutor } from './src/services/RequestExecutor';
-import { RequestConfig } from './src/types/request.types';
+import { RequestExecutor } from '../src/services/RequestExecutor';
+import { RequestConfig } from '../src/types/request.types';
 
 console.log('🧪 Testing RequestExecutor with GraphQL...\n');
 

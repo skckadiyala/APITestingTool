@@ -1,6 +1,9 @@
 build
 prompts-documentation
-
+.sfdx
+deploy
+deploy.zip
+deploy.tar.gz
 
 CODE_REVIEW_PROMPTS.md
 backend/COLLECTION_GRAPHQL_ENDPOINTS.md

@@ -302,9 +302,20 @@ export class RequestExecutor {
    * Build axios configuration from our request config
    */
   private buildAxiosConfig(config: RequestConfig): AxiosRequestConfig {
+    // Build URL with query params and auth query params
+    let url = this.buildUrl(config.url, config.params);
+    
+    // Add API key to query params if auth type is apikey with in: 'query'
+    if (config.auth && config.auth.type === 'apikey' && 
+        config.auth.in === 'query' && config.auth.key && config.auth.value) {
+      const urlObj = new URL(url);
+      urlObj.searchParams.append(config.auth.key, config.auth.value);
+      url = urlObj.toString();
+    }
+    
     const axiosConfig: AxiosRequestConfig = {
       method: config.method,
-      url: this.buildUrl(config.url, config.params),
+      url: url,
       headers: this.buildHeaders(config.headers, config.auth),
       timeout: config.timeout || 30000, // 30 seconds default
       maxRedirects: config.maxRedirects ?? 5,
@@ -415,23 +426,30 @@ export class RequestExecutor {
     // Add authentication headers
     switch (auth.type) {
       case 'bearer':
-        if (auth.bearer?.token) {
-          result['Authorization'] = `Bearer ${auth.bearer.token}`;
+        if (auth.token) {
+          result['Authorization'] = `Bearer ${auth.token}`;
         }
         break;
 
       case 'basic':
-        if (auth.basic?.username && auth.basic?.password) {
+        if (auth.username && auth.password) {
           const credentials = Buffer.from(
-            `${auth.basic.username}:${auth.basic.password}`
+            `${auth.username}:${auth.password}`
           ).toString('base64');
           result['Authorization'] = `Basic ${credentials}`;
         }
         break;
 
       case 'apikey':
-        if (auth.apikey?.key && auth.apikey?.value && auth.apikey.addTo === 'header') {
-          result[auth.apikey.key] = auth.apikey.value;
+        if (auth.key && auth.value && auth.in === 'header') {
+          result[auth.key] = auth.value;
+        }
+        break;
+
+      case 'oauth2':
+        if (auth.accessToken) {
+          const tokenType = auth.tokenType || 'Bearer';
+          result['Authorization'] = `${tokenType} ${auth.accessToken}`;
         }
         break;
     }
@@ -902,6 +920,24 @@ export class RequestExecutor {
               value: item.type === 'text' ? replaceVars(item.value) : item.value,
             })) as any;
           }
+        }
+      }
+
+      // Resolve auth configuration
+      if (resolvedConfig.auth) {
+        const auth = resolvedConfig.auth;
+        
+        if (auth.type === 'bearer' && auth.token) {
+          auth.token = replaceVars(auth.token);
+        } else if (auth.type === 'basic') {
+          if (auth.username) auth.username = replaceVars(auth.username);
+          if (auth.password) auth.password = replaceVars(auth.password);
+        } else if (auth.type === 'apikey') {
+          if (auth.key) auth.key = replaceVars(auth.key);
+          if (auth.value) auth.value = replaceVars(auth.value);
+        } else if (auth.type === 'oauth2') {
+          if (auth.accessToken) auth.accessToken = replaceVars(auth.accessToken);
+          if (auth.refreshToken) auth.refreshToken = replaceVars(auth.refreshToken);
         }
       }
 
