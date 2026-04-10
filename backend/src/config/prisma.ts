@@ -19,7 +19,7 @@ const pool = new Pool({
 /**
  * Create Prisma adapter for PostgreSQL
  */
-const adapter = new PrismaPg(pool);
+const adapter = new PrismaPg(pool as any);
 
 /**
  * Singleton PrismaClient instance
@@ -29,11 +29,11 @@ const adapter = new PrismaPg(pool);
 let prisma: PrismaClient;
 
 if (process.env.NODE_ENV === 'production') {
-  prisma = new PrismaClient({ adapter });
+  prisma = new PrismaClient({ adapter } as any);
 } else {
   // In development, use a global variable to preserve the instance across hot reloads
   if (!global.prisma) {
-    global.prisma = new PrismaClient({ adapter });
+    global.prisma = new PrismaClient({ adapter } as any);
   }
   prisma = global.prisma;
 }
