@@ -543,9 +543,11 @@ pm.test("Response has correct structure", function () {
     setAuthType((currentTab.auth?.type as AuthType) || 'noauth');
     setTestScript(currentTab.testScript || '');
     setPreRequestScript(currentTab.preRequestScript || '');
-    setHasResponse(false);
-    setExecutionResult(null);
-    setConsoleLogs([]);
+    
+    // Restore response data if it exists for this tab
+    setHasResponse(currentTab.hasResponse || false);
+    setExecutionResult(currentTab.response || null);
+    setConsoleLogs(currentTab.consoleLogs || []);
 
     // Clear the flag after a longer delay to allow all child components to mount
     const timer = setTimeout(() => {
@@ -629,6 +631,10 @@ pm.test("Response has correct structure", function () {
           },
           auth: restoredAuth as AuthConfig,
           isDirty: false,
+          // Clear response when loading from history
+          response: undefined,
+          consoleLogs: [],
+          hasResponse: false
         });
       }
 
@@ -737,10 +743,19 @@ pm.test("Response has correct structure", function () {
       setTestScript(requestData.testScript);
     }
 
-    // Clear response
+    // Clear response when loading a different request
     setHasResponse(false);
     setExecutionResult(null);
     setConsoleLogs([]);
+    
+    // Clear response from tab store as well
+    if (activeTabId) {
+      updateTab(activeTabId, {
+        response: undefined,
+        consoleLogs: [],
+        hasResponse: false
+      });
+    }
 
     toast.success('Request loaded from collection', {
       icon: '📂',
@@ -903,6 +918,15 @@ pm.test("Response has correct structure", function () {
       setExecutionResult(result);
       setHasResponse(true);
       setConsoleLogs(logs);
+
+      // Persist response to tab store so it survives tab switches
+      if (activeTabId) {
+        updateTab(activeTabId, {
+          response: result,
+          consoleLogs: logs,
+          hasResponse: true
+        });
+      }
 
       if (result.success) {
         const timing = result.response?.timing.total || 0;
