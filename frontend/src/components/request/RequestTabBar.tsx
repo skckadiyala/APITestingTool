@@ -11,21 +11,21 @@ export default function RequestTabBar() {
   const getTabIcon = (tab: any) => {
     if (tab.type === 'workspace-settings') {
       return (
-        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3 h-3 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
       );
     }
     if (tab.type === 'profile-settings') {
       return (
-        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3 h-3 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
         </svg>
       );
     }
     if (tab.type === 'collection') {
       return (
-        <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="w-3 h-3 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
         </svg>
       );
@@ -34,14 +34,15 @@ export default function RequestTabBar() {
   };
 
   return (
-    <div className="flex items-center bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 overflow-x-auto">
-      {tabs.map((tab) => (
+    <div className="flex items-center bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 overflow-x-auto pl-4">
+      {tabs.map((tab, index) => (
         <div
           key={tab.id}
           onClick={() => setActiveTab(tab.id)}
           className={`
-            group flex items-center gap-2 px-3 py-2 border-r border-gray-300 dark:border-gray-700 cursor-pointer
-            min-w-[140px] max-w-[220px] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors
+            group flex items-center gap-1.5 py-2 border-r border-gray-200 dark:border-gray-700 cursor-pointer
+            min-w-[100px] max-w-[180px] hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors
+            ${index === 0 ? 'pr-2' : 'px-2'}
             ${activeTabId === tab.id 
               ? 'bg-white dark:bg-gray-900 border-b-2 border-b-primary-500' 
               : 'bg-gray-100 dark:bg-gray-800'
@@ -67,13 +68,13 @@ export default function RequestTabBar() {
           )}
 
           {/* Tab Name */}
-          <span className="flex-1 truncate text-sm text-gray-900 dark:text-gray-100">
+          <span className="flex-1 truncate text-xs text-gray-900 dark:text-gray-100">
             {tab.name || 'Untitled Request'}
           </span>
           
           {/* Dirty indicator */}
           {tab.isDirty && (
-            <span className="w-2 h-2 rounded-full bg-orange-500" title="Unsaved changes"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500" title="Unsaved changes"></span>
           )}
 
           {/* Close Button */}
@@ -102,11 +103,11 @@ export default function RequestTabBar() {
       {/* New Tab Button */}
       <button
         onClick={() => createTab()}
-        className="flex items-center justify-center px-3 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+        className="flex items-center justify-center px-2 py-2 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
         title="New request"
       >
         <svg
-          className="w-4 h-4"
+          className="w-3 h-3"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

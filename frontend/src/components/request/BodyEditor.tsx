@@ -203,12 +203,12 @@ export default function BodyEditor({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Body Type Selector */}
-      <div className="flex gap-2">
+      <div className="flex gap-1.5">
         <button
           onClick={() => onTypeChange('none')}
-          className={`px-3 py-1.5 text-sm rounded transition-colors ${
+          className={`px-2 py-0.5 text-xs rounded transition-colors ${
             type === 'none'
               ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 font-medium'
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -218,7 +218,7 @@ export default function BodyEditor({
         </button>
         <button
           onClick={() => onTypeChange('json')}
-          className={`px-3 py-1.5 text-sm rounded transition-colors ${
+          className={`px-2 py-0.5 text-xs rounded transition-colors ${
             type === 'json'
               ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 font-medium'
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -228,7 +228,7 @@ export default function BodyEditor({
         </button>
         <button
           onClick={() => onTypeChange('x-www-form-urlencoded')}
-          className={`px-3 py-1.5 text-sm rounded transition-colors ${
+          className={`px-2 py-0.5 text-xs rounded transition-colors ${
             type === 'x-www-form-urlencoded'
               ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 font-medium'
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -238,7 +238,7 @@ export default function BodyEditor({
         </button>
         <button
           onClick={() => onTypeChange('form-data')}
-          className={`px-3 py-1.5 text-sm rounded transition-colors ${
+          className={`px-2 py-0.5 text-xs rounded transition-colors ${
             type === 'form-data'
               ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 font-medium'
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -248,7 +248,7 @@ export default function BodyEditor({
         </button>
         <button
           onClick={() => onTypeChange('xml')}
-          className={`px-3 py-1.5 text-sm rounded transition-colors ${
+          className={`px-2 py-0.5 text-xs rounded transition-colors ${
             type === 'xml'
               ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 font-medium'
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -258,7 +258,7 @@ export default function BodyEditor({
         </button>
         <button
           onClick={() => onTypeChange('raw')}
-          className={`px-3 py-1.5 text-sm rounded transition-colors ${
+          className={`px-2 py-0.5 text-xs rounded transition-colors ${
             type === 'raw'
               ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 font-medium'
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -268,7 +268,7 @@ export default function BodyEditor({
         </button>
         <button
           onClick={() => onTypeChange('binary')}
-          className={`px-3 py-1.5 text-sm rounded transition-colors ${
+          className={`px-2 py-0.5 text-xs rounded transition-colors ${
             type === 'binary'
               ? 'bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 font-medium'
               : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -280,7 +280,7 @@ export default function BodyEditor({
 
       {/* JSON Editor */}
       {type === 'json' && (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex justify-between items-center">
             <div className="text-xs text-gray-600 dark:text-gray-400">
               {jsonError ? (

@@ -9,6 +9,14 @@ import { useCollectionStore } from '../../stores/collectionStore';
 type CollectionTab = 'authorization' | 'pre-request' | 'tests' | 'variables';
 type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2';
 
+const AUTH_TYPE_COLORS: Record<string, string> = {
+  noauth: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  bearer: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  basic: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  apikey: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+  oauth2: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
+};
+
 interface CollectionViewerProps {
   collection: Collection;
   onUpdate?: (updates: Partial<Collection>) => void;
@@ -177,13 +185,15 @@ pm.test("Collection: Response time is acceptable", function () {
       <div className="flex h-full">
         {/* Left Panel - Auth Type Selector */}
         <div className="w-64 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+          <h3 className="text-[12px] font-semibold text-gray-700 dark:text-gray-300 mb-3">
             Auth Type
           </h3>
           <select
             value={authType}
             onChange={(e) => setAuthType(e.target.value as AuthType)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+              AUTH_TYPE_COLORS[authType] || 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+            }`}
           >
             {authTypes.map((type) => (
               <option key={type.id} value={type.id}>
@@ -191,7 +201,7 @@ pm.test("Collection: Response time is acceptable", function () {
               </option>
             ))}
           </select>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+          <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-2">
             {authTypes.find(t => t.id === authType)?.description}
           </p>
         </div>
@@ -205,10 +215,10 @@ pm.test("Collection: Response time is acceptable", function () {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <p className="text-[12px] text-gray-700 dark:text-gray-300">
                     This collection does not use any authorization. Requests in this collection will be sent without authentication headers.
                   </p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-2">
                     You can still configure authorization for individual requests if needed.
                   </p>
                 </div>
@@ -220,7 +230,7 @@ pm.test("Collection: Response time is acceptable", function () {
             <div className="max-w-2xl">
               <div className="space-y-4">
                 <div className="flex items-center gap-6">
-                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                  <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                     Token
                   </label>
                   <input
@@ -228,10 +238,10 @@ pm.test("Collection: Response time is acceptable", function () {
                     value={bearerToken}
                     onChange={(e) => setBearerToken(e.target.value)}
                     placeholder="Enter your bearer token"
-                    className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                    className="w-96 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                   />
                 </div>
-                <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
+                <div className="flex items-start gap-2 text-[12px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
                   <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -245,7 +255,7 @@ pm.test("Collection: Response time is acceptable", function () {
             <div className="max-w-2xl">
               <div className="space-y-4">
                 <div className="flex items-center gap-6">
-                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                  <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                     Username
                   </label>
                   <input
@@ -257,7 +267,7 @@ pm.test("Collection: Response time is acceptable", function () {
                   />
                 </div>
                 <div className="flex items-center gap-6">
-                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                  <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                     Password
                   </label>
                   <input
@@ -265,7 +275,7 @@ pm.test("Collection: Response time is acceptable", function () {
                     value={basicPassword}
                     onChange={(e) => setBasicPassword(e.target.value)}
                     placeholder="Password"
-                    className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                    className="w-96 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                   />
                 </div>
                 <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
@@ -282,7 +292,7 @@ pm.test("Collection: Response time is acceptable", function () {
             <div className="max-w-2xl">
               <div className="space-y-4">
                 <div className="flex items-center gap-6">
-                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                  <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                     Key Name
                   </label>
                   <input
@@ -290,11 +300,11 @@ pm.test("Collection: Response time is acceptable", function () {
                     value={apiKeyKey}
                     onChange={(e) => setApiKeyKey(e.target.value)}
                     placeholder="e.g., X-API-Key"
-                    className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                    className="w-96 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                   />
                 </div>
                 <div className="flex items-center gap-6">
-                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                  <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                     Value
                   </label>
                   <input
@@ -302,11 +312,11 @@ pm.test("Collection: Response time is acceptable", function () {
                     value={apiKeyValue}
                     onChange={(e) => setApiKeyValue(e.target.value)}
                     placeholder="Your API key"
-                    className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                    className="w-96 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                   />
                 </div>
                 <div className="flex items-center gap-6">
-                  <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                  <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                     Add To
                   </label>
                   <div className="flex gap-6">
@@ -319,7 +329,7 @@ pm.test("Collection: Response time is acceptable", function () {
                         onChange={(e) => setApiKeyAddTo(e.target.value as 'header' | 'query')}
                         className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Header</span>
+                      <span className="ml-2 text-[12px] text-gray-700 dark:text-gray-300">Header</span>
                     </label>
                     <label className="flex items-center cursor-pointer">
                       <input
@@ -330,7 +340,7 @@ pm.test("Collection: Response time is acceptable", function () {
                         onChange={(e) => setApiKeyAddTo(e.target.value as 'header' | 'query')}
                         className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Query Params</span>
+                      <span className="ml-2 text-[12px] text-gray-700 dark:text-gray-300">Query Params</span>
                     </label>
                   </div>
                 </div>
@@ -354,13 +364,13 @@ pm.test("Collection: Response time is acceptable", function () {
                     </svg>
                   </div>
                   <div>
-                    <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                    <h4 className="text-[12px] font-semibold text-blue-900 dark:text-blue-100 mb-2">
                       OAuth 2.0 Coming Soon
                     </h4>
-                    <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                    <p className="text-[12px] text-blue-800 dark:text-blue-200 mb-3">
                       Full OAuth 2.0 configuration support will be available in an upcoming release.
                     </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <p className="text-[12px] text-blue-700 dark:text-blue-300">
                       In the meantime, you can use <span className="font-medium">Bearer Token</span> authentication with a manually obtained access token.
                     </p>
                   </div>
@@ -376,12 +386,12 @@ pm.test("Collection: Response time is acceptable", function () {
   return (
     <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {/* Collection Header */}
-      <div className="h-16 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <svg className="w-6 h-6 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <svg className="w-[14px] h-[14px] text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-[12px] font-semibold text-gray-900 dark:text-gray-100">
             {collection.name}
           </h2>
         </div>
@@ -390,7 +400,7 @@ pm.test("Collection: Response time is acceptable", function () {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-3 py-1 bg-primary-600 hover:bg-primary-700 text-white rounded-md text-[12px] font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
         >
           {isSaving ? (
             <>

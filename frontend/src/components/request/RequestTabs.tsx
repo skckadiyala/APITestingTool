@@ -4,11 +4,10 @@ import BodyEditor, { type BodyType } from './BodyEditor';
 import Editor from '@monaco-editor/react';
 import GraphQLQueryPanel from './GraphQLQueryPanel';
 import GraphQLSchemaViewer from './GraphQLSchemaViewer';
-import type { GraphQLSchema } from '../../types/request.types';
+import type { GraphQLSchema, RequestType } from '../../types/request.types';
 
 type TabType = 'params' | 'headers' | 'body' | 'query' | 'schema' | 'auth' | 'pre-request' | 'tests';
 type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2' | 'none';
-type RequestType = 'REST' | 'GRAPHQL' | 'WEBSOCKET';
 
 interface RequestTabsProps {
   activeTab: TabType;
@@ -61,6 +60,14 @@ const COMMON_HEADERS = [
   'X-Requested-With',
 ];
 
+const AUTH_TYPE_COLORS: Record<string, string> = {
+  noauth: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+  bearer: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  basic: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  apikey: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+  oauth2: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
+};
+
 export default function RequestTabs({
   activeTab,
   onTabChange,
@@ -105,7 +112,7 @@ export default function RequestTabs({
   const TabButton = ({ tab, label, count }: { tab: TabType; label: string; count?: number }) => (
     <button
       onClick={() => onTabChange(tab)}
-      className={`px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ${
+      className={`px-2 py-1 text-xs font-medium border-b-2 transition-colors ${
         activeTab === tab
           ? 'border-primary-600 text-primary-600 dark:text-primary-400'
           : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
@@ -124,7 +131,7 @@ export default function RequestTabs({
     <div className="flex flex-col h-full">
       {/* Tab Navigation */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex gap-1 px-2">
+        <div className="flex gap-1 px-1.5">
           {/* Hide Params tab for GraphQL - GraphQL doesn't use query parameters */}
           {requestType !== 'GRAPHQL' && (
             <TabButton tab="params" label="Params" count={params.filter(p => p.enabled).length} />
@@ -145,7 +152,7 @@ export default function RequestTabs({
       </div>
 
       {/* Tab Content */}
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800 p-2">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800 p-1.5">
         {/* Params Tab */}
         {activeTab === 'params' && (
           <div>
@@ -222,13 +229,15 @@ export default function RequestTabs({
           <div className="flex h-full">
             {/* Left Panel - Auth Type Selector */}
             <div className="w-64 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
-              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              <h3 className="text-[12px] font-semibold text-gray-700 dark:text-gray-300 mb-3">
                 Auth Type
               </h3>
               <select
                 value={authType}
                 onChange={(e) => onAuthTypeChange(e.target.value as AuthType)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className={`w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md font-semibold text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                  AUTH_TYPE_COLORS[authType] || 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                }`}
               >
                 <option value="noauth">No Auth</option>
                 <option value="bearer">Bearer Token</option>
@@ -236,7 +245,7 @@ export default function RequestTabs({
                 <option value="apikey">API Key</option>
                 <option value="oauth2">OAuth 2.0</option>
               </select>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-2">
                 {authType === 'noauth' && 'No authorization required'}
                 {authType === 'bearer' && 'Token-based authentication'}
                 {authType === 'basic' && 'Username and password'}
@@ -255,10 +264,10 @@ export default function RequestTabs({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">
+                      <p className="text-[12px] text-gray-700 dark:text-gray-300">
                         This request does not use any authorization. The request will be sent without authentication headers.
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-2">
                         You can configure authorization for this request using any of the auth types above.
                       </p>
                     </div>
@@ -271,7 +280,7 @@ export default function RequestTabs({
                 <div className="max-w-2xl">
                   <div className="space-y-4">
                     <div className="flex items-center gap-6">
-                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                      <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                         Token
                       </label>
                       <input
@@ -279,7 +288,7 @@ export default function RequestTabs({
                         value={authConfig.bearerToken}
                         onChange={(e) => setAuthConfig({ ...authConfig, bearerToken: e.target.value })}
                         placeholder="Enter your bearer token"
-                        className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                        className="w-96 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
                     </div>
                     <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
@@ -297,7 +306,7 @@ export default function RequestTabs({
                 <div className="max-w-2xl">
                   <div className="space-y-4">
                     <div className="flex items-center gap-6">
-                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                      <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                         Username
                       </label>
                       <input
@@ -305,11 +314,11 @@ export default function RequestTabs({
                         value={authConfig.basicUsername}
                         onChange={(e) => setAuthConfig({ ...authConfig, basicUsername: e.target.value })}
                         placeholder="Username"
-                        className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                        className="w-96 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
                     </div>
                     <div className="flex items-center gap-6">
-                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                      <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                         Password
                       </label>
                       <input
@@ -317,7 +326,7 @@ export default function RequestTabs({
                         value={authConfig.basicPassword}
                         onChange={(e) => setAuthConfig({ ...authConfig, basicPassword: e.target.value })}
                         placeholder="Password"
-                        className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                        className="w-96 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
                     </div>
                     <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900 p-3 rounded-lg ml-38">
@@ -335,7 +344,7 @@ export default function RequestTabs({
                 <div className="max-w-2xl">
                   <div className="space-y-4">
                     <div className="flex items-center gap-6">
-                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                      <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                         Key Name
                       </label>
                       <input
@@ -343,11 +352,11 @@ export default function RequestTabs({
                         value={authConfig.apiKeyName}
                         onChange={(e) => setAuthConfig({ ...authConfig, apiKeyName: e.target.value })}
                         placeholder="e.g., X-API-Key"
-                        className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                        className="w-96 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
                     </div>
                     <div className="flex items-center gap-6">
-                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                      <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                         Value
                       </label>
                       <input
@@ -355,11 +364,11 @@ export default function RequestTabs({
                         value={authConfig.apiKeyValue}
                         onChange={(e) => setAuthConfig({ ...authConfig, apiKeyValue: e.target.value })}
                         placeholder="Your API key"
-                        className="w-96 px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
+                        className="w-96 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-shadow"
                       />
                     </div>
                     <div className="flex items-center gap-6">
-                      <label className="w-32 text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                      <label className="w-32 text-[12px] font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                         Add To
                       </label>
                       <div className="flex gap-6">
@@ -370,7 +379,7 @@ export default function RequestTabs({
                             onChange={() => setAuthConfig({ ...authConfig, apiKeyLocation: 'header' })}
                             className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                           />
-                          <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Header</span>
+                          <span className="ml-2 text-[12px] text-gray-700 dark:text-gray-300">Header</span>
                         </label>
                         <label className="flex items-center cursor-pointer">
                           <input
@@ -379,7 +388,7 @@ export default function RequestTabs({
                             onChange={() => setAuthConfig({ ...authConfig, apiKeyLocation: 'query' })}
                             className="w-4 h-4 text-primary-600 focus:ring-primary-500"
                           />
-                          <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Query Params</span>
+                          <span className="ml-2 text-[12px] text-gray-700 dark:text-gray-300">Query Params</span>
                         </label>
                       </div>
                     </div>
@@ -404,13 +413,13 @@ export default function RequestTabs({
                         </svg>
                       </div>
                       <div>
-                        <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+                        <h4 className="text-[12px] font-semibold text-blue-900 dark:text-blue-100 mb-2">
                           OAuth 2.0 Coming Soon
                         </h4>
-                        <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">
+                        <p className="text-[12px] text-blue-800 dark:text-blue-200 mb-3">
                           Full OAuth 2.0 configuration support will be available in an upcoming release.
                         </p>
-                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                        <p className="text-[12px] text-blue-700 dark:text-blue-300">
                           In the meantime, you can use <span className="font-medium">Bearer Token</span> authentication with a manually obtained access token.
                         </p>
                       </div>

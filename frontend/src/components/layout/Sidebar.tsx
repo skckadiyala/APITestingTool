@@ -319,37 +319,37 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
       className="transition-all duration-300 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col relative"
     >
       {/* Sidebar Header */}
-      <div className="h-12 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-3 gap-2">
+      <div className="border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 py-[5.6px] gap-2 relative -mr-px">
         {!isCollapsed && (
           <>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Collections</h3>
+            <h3 className="text-[12px] font-medium text-gray-900 dark:text-gray-100">Collections</h3>
             <div className="flex gap-1.5 flex-1 justify-end">
               {canEdit ? (
                 <>
                   <button 
                     onClick={() => setShowNewCollectionDialog(true)}
-                    className="px-2 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center gap-1 transition-colors"
+                    className="px-2 py-1 text-[12px] font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center gap-1 transition-colors"
                     title="Create New Collection"
                   >
-                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-[12px] h-[12px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     <span>New</span>
                   </button>
                   <button 
                     onClick={() => setShowImportDialog(true)}
-                    className="px-2 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center gap-1 transition-colors"
+                    className="px-2 py-1 text-[12px] font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-primary-100 hover:text-primary-600 dark:hover:bg-primary-900 dark:hover:text-primary-400 flex items-center gap-1 transition-colors"
                     title="Import Collection"
                   >
-                    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-[12px] h-[12px] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                     </svg>
                     <span>Import</span>
                   </button>
                 </>
               ) : (
-                <div className="flex items-center gap-1 px-2 py-1 text-xs text-gray-500 dark:text-gray-400" title="Read-only access">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-1 px-2 py-1 text-[12px] text-gray-500 dark:text-gray-400" title="Read-only access">
+                  <svg className="w-[12px] h-[12px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
@@ -378,16 +378,16 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
       {!isCollapsed && (
         <>
           {/* Search Bar */}
-          <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-            <div className="relative mb-2">
+          <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 relative -mr-px">
+            <div className="relative">
               <input
                 type="text"
                 placeholder="Search collections..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-1.5 pl-8 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-3 py-1.5 pl-8 text-[12px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
-              <svg className="absolute left-2.5 top-2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-2.5 top-2 w-[12px] h-[12px] text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               {searchQuery && (
@@ -404,18 +404,18 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto px-4 py-3">
             <div className="space-y-2">
               {/* Loading State */}
               {loading && (
-                <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-center py-4 text-[12px] text-gray-500 dark:text-gray-400">
                   Loading collections...
                 </div>
               )}
 
               {/* Collections List */}
               {!loading && collections.length === 0 && (
-                <div className="text-center py-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-center py-4 text-[12px] text-gray-500 dark:text-gray-400">
                   No collections yet. Create one to get started!
                 </div>
               )}
@@ -426,8 +426,8 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
                   <svg className="w-12 h-12 mx-auto text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">No matches found</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Try adjusting your search or filters</p>
+                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mb-1">No matches found</p>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500">Try adjusting your search or filters</p>
                 </div>
               )}
 
@@ -438,7 +438,7 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
                 >
-                  <div className="space-y-1">
+                  <div className="space-y-[1px]">
                     {filteredCollections.map((collection) => (
                       <CollectionItem 
                         key={collection.id} 
@@ -661,17 +661,17 @@ const CollectionItem = memo(function CollectionItem({
     <>
       <div>
         <div
-          className="flex items-start gap-1 px-2 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer group relative"
+          className="flex items-start gap-1 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer group relative"
         >
           <svg
-            className={`w-3 h-3 text-gray-500 transform ${expanded ? 'rotate-90' : ''} mt-0.5`}
+            className={`w-[12px] h-[12px] text-gray-500 transform ${expanded ? 'rotate-90' : ''} mt-0.5`}
             fill="currentColor"
             viewBox="0 0 20 20"
             onClick={onToggleExpanded}
           >
             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
           </svg>
-          <svg className="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-[12px] h-[12px] text-primary-600 dark:text-primary-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
           {isEditing ? (
@@ -681,13 +681,13 @@ const CollectionItem = memo(function CollectionItem({
               onChange={(e) => setEditValue(e.target.value)}
               onBlur={handleEditSubmit}
               onKeyDown={handleKeyDown}
-              className="flex-1 text-sm px-1 py-0.5 border border-primary-500 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="flex-1 text-[12px] px-1 py-0.5 border border-primary-500 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary-500"
               autoFocus
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
             <span 
-              className="text-sm text-left flex-1 cursor-pointer text-gray-900 dark:text-gray-100"
+              className="text-[12px] text-left flex-1 cursor-pointer text-gray-900 dark:text-gray-100"
               onClick={() => openCollectionInTab(collection)}
             >
               {collection.name}
@@ -701,7 +701,7 @@ const CollectionItem = memo(function CollectionItem({
               }}
               className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
             >
-              <svg className="w-3 h-3 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-[12px] h-[12px] text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
               </svg>
             </button>
@@ -738,9 +738,9 @@ const CollectionItem = memo(function CollectionItem({
                     console.error('Failed to create request:', error);
                   }
                 }}
-                className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
+                className="w-full px-3 py-1.5 text-left text-[12px] hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-[12px] h-[12px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 Add Request
@@ -750,9 +750,9 @@ const CollectionItem = memo(function CollectionItem({
                   setShowFolderDialog(true);
                   setShowMenu(false);
                 }}
-                className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
+                className="w-full px-3 py-1.5 text-left text-[12px] hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-[12px] h-[12px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
                 </svg>
                 Add Folder
@@ -760,18 +760,18 @@ const CollectionItem = memo(function CollectionItem({
               <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
               <button
                 onClick={startEditing}
-                className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
+                className="w-full px-3 py-1.5 text-left text-[12px] hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-[12px] h-[12px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 Rename
               </button>
               <button
                 onClick={handleDuplicate}
-                className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
+                className="w-full px-3 py-1.5 text-left text-[12px] hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-[12px] h-[12px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
                 Duplicate
@@ -782,9 +782,9 @@ const CollectionItem = memo(function CollectionItem({
                   onExport(collection.id, collection.name);
                   setShowMenu(false);
                 }}
-                className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
+                className="w-full px-3 py-1.5 text-left text-[12px] hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-[12px] h-[12px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
                 Export
@@ -794,9 +794,9 @@ const CollectionItem = memo(function CollectionItem({
                   onRunCollection(collection.id, collection.name);
                   setShowMenu(false);
                 }}
-                className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
+                className="w-full px-3 py-1.5 text-left text-[12px] hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 flex items-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-[12px] h-[12px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -805,9 +805,9 @@ const CollectionItem = memo(function CollectionItem({
               <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
               <button
                 onClick={handleDelete}
-                className="w-full px-3 py-1.5 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 flex items-center gap-2"
+                className="w-full px-3 py-1.5 text-left text-[12px] hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 flex items-center gap-2"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-[12px] h-[12px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>
                 Delete
@@ -817,7 +817,7 @@ const CollectionItem = memo(function CollectionItem({
           </div>
         </div>
         {expanded && (
-          <div className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2 mt-1 space-y-1">
+          <div className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2 mt-0.5 space-y-[1px]">
             {collection.childFolders && collection.childFolders.map((folder) => (
               <FolderItem 
                 key={folder.id} 
@@ -923,34 +923,34 @@ const FolderItem = memo(function FolderItem({
   return (
     <div ref={setNodeRef}>
       <div
-        className={`flex items-start gap-1 px-2 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer group ${
+        className={`flex items-start gap-1 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer group ${
           isOver ? 'bg-primary-50 dark:bg-primary-900/20 ring-2 ring-primary-500' : ''
         }`}
       >
         <svg
-          className={`w-3 h-3 text-gray-500 transform ${expanded ? 'rotate-90' : ''} mt-0.5`}
+          className={`w-[12px] h-[12px] text-gray-500 transform ${expanded ? 'rotate-90' : ''} mt-0.5`}
           fill="currentColor"
           viewBox="0 0 20 20"
           onClick={onToggleExpanded}
         >
           <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
         </svg>
-        <svg className="w-4 h-4 text-yellow-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" onClick={onToggleExpanded}>
+        <svg className="w-[12px] h-[12px] text-yellow-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" onClick={onToggleExpanded}>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
         </svg>
-        <span className="text-sm text-left text-gray-900 dark:text-gray-100 flex-1" onClick={onToggleExpanded}>{folder.name}</span>
+        <span className="text-[12px] text-left text-gray-900 dark:text-gray-100 flex-1" onClick={onToggleExpanded}>{folder.name}</span>
         <button
           onClick={handleDeleteFolder}
           className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900"
           title="Delete folder"
         >
-          <svg className="w-3 h-3 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-[12px] h-[12px] text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </button>
       </div>
       {expanded && (
-        <div className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2 mt-1 space-y-1">
+        <div className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-2 mt-0.5 space-y-[1px]">
           {folder.childFolders && folder.childFolders.map((child) => (
             <FolderItem 
               key={child.id} 
@@ -1041,7 +1041,7 @@ const RequestItem = memo(function RequestItem({ request, collectionId }: { reque
         ref={setNodeRef}
         style={style}
         onClick={handleClick}
-        className={`flex items-start gap-2 px-2 py-1.5 rounded cursor-pointer group ${
+        className={`flex items-start gap-2 px-2 py-1 rounded cursor-pointer group ${
           isSelected 
             ? 'bg-primary-100 dark:bg-primary-900 ring-1 ring-primary-500' 
             : 'hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -1053,14 +1053,14 @@ const RequestItem = memo(function RequestItem({ request, collectionId }: { reque
           className="cursor-grab active:cursor-grabbing p-0.5 opacity-0 group-hover:opacity-100 mt-0.5"
           title="Drag to reorder"
         >
-          <svg className="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-[12px] h-[12px] text-gray-400" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
           </svg>
         </div>
-        <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${methodColors[request.method] || 'bg-gray-100 text-gray-700'}`}>
+        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${methodColors[request.method] || 'bg-gray-100 text-gray-700'}`}>
           {request.method}
         </span>
-        <span className="text-sm text-left text-gray-900 dark:text-gray-100 flex-1">{request.name}</span>
+        <span className="text-[12px] text-left text-gray-900 dark:text-gray-100 flex-1">{request.name}</span>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100">
           <button
             onClick={(e) => {
@@ -1070,7 +1070,7 @@ const RequestItem = memo(function RequestItem({ request, collectionId }: { reque
             className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900"
             title="Move to folder"
           >
-            <svg className="w-3 h-3 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-[12px] h-[12px] text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
             </svg>
           </button>
@@ -1079,7 +1079,7 @@ const RequestItem = memo(function RequestItem({ request, collectionId }: { reque
             className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900"
             title="Delete request"
           >
-            <svg className="w-3 h-3 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-[12px] h-[12px] text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </button>
