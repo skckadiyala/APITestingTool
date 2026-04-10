@@ -10,7 +10,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "moduleResolution": "nodenext",
     "sourceMap": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
