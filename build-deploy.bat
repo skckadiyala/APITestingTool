@@ -92,7 +92,7 @@ echo.
 echo [4/6] Copying Frontend files...
 echo ----------------------------------------
 xcopy /E /I /Q "%ROOT_DIR%frontend\dist" "%DEPLOY_DIR%\frontend\dist"
-copy /Y "%ROOT_DIR%frontend\serve-frontend.js" "%DEPLOY_DIR%\frontend\serve-frontend.js"
+@REM copy /Y "%ROOT_DIR%frontend\serve-frontend.js" "%DEPLOY_DIR%\frontend\serve-frontend.js"
 copy /Y "%ROOT_DIR%frontend\package.json" "%DEPLOY_DIR%\frontend\package.json"
 
 echo Frontend files copied.
