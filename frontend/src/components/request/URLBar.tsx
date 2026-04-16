@@ -2,15 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 import VariableInput from '../common/VariableInput';
 import { useWorkspacePermission } from '../../hooks/useWorkspacePermission';
 import { useCollectionStore } from '../../stores/collectionStore';
-
-type RequestType = 'REST' | 'GRAPHQL' | 'WEBSOCKET';
+import type { RequestType } from '../../types/request.types';
+import { REQUEST_TYPE_CONFIG, getRequestTypeLabel } from '../../utils/requestTypeConfig';
 
 interface URLBarProps {
   method: string;
   url: string;
   requestType?: RequestType;
+  requestName?: string;
   onMethodChange: (method: string) => void;
   onUrlChange: (url: string) => void;
+  onRequestTypeChange?: (type: RequestType) => void;
+  onRequestNameChange?: (name: string) => void;
   onSend: () => void;
   onSave: () => void;
   isLoading?: boolean;
@@ -35,9 +38,11 @@ export default function URLBar({
   method,
   url,
   requestType = 'REST',
+  requestName = 'Untitled Request',
   onMethodChange,
   onUrlChange,
-  // onRequestTypeChange,
+  onRequestTypeChange,
+  onRequestNameChange,
   onSend,
   onSave,
   isLoading = false,
@@ -45,35 +50,30 @@ export default function URLBar({
   isExistingRequest = false,
   isDirty = false,
 }: URLBarProps) {
-  const [showHistory, setShowHistory] = useState(false);
-  const [urlHistory] = useState<string[]>([]);
-  const settingsRef = useRef<HTMLDivElement>(null);
+  const [showRequestTypeMenu, setShowRequestTypeMenu] = useState(false);
+  const requestTypeRef = useRef<HTMLDivElement>(null);
   const { currentWorkspaceId } = useCollectionStore();
   const { canEdit } = useWorkspacePermission(currentWorkspaceId);
 
-  // Close history dropdown when clicking outside
+  // Close request type menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
-        setShowHistory(false);
+      if (requestTypeRef.current && !requestTypeRef.current.contains(event.target as Node)) {
+        setShowRequestTypeMenu(false);
       }
     };
 
-    if (showHistory) {
+    if (showRequestTypeMenu) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [showHistory]);
+  }, [showRequestTypeMenu]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       onSend();
     }
   };
-
-  const filteredHistory = urlHistory.filter((historyUrl) =>
-    historyUrl.toLowerCase().includes(url.toLowerCase())
-  );
 
   // Get URL placeholder based on request type
   const getUrlPlaceholder = () => {
@@ -88,8 +88,77 @@ export default function URLBar({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-3">
-      <div className="flex gap-2 items-center">
+    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      {/* Request Name and Type Selector Row */}
+      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 relative -ml-px">
+        <div className="flex gap-3 items-center">
+          {/* Request Type Selector with Postman-style dropdown */}
+          <div className="relative" ref={requestTypeRef}>
+            <button
+              onClick={() => setShowRequestTypeMenu(!showRequestTypeMenu)}
+              disabled={!onRequestTypeChange}
+              className="flex items-center gap-2 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300 min-w-[110px] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="text-primary-600 dark:text-primary-400">
+                {(() => {
+                  const IconComponent = REQUEST_TYPE_CONFIG[requestType].icon;
+                  return <IconComponent className="w-3.5 h-3.5" />;
+                })()}
+              </span>
+              <span className="text-xs font-medium">{getRequestTypeLabel(requestType)}</span>
+              <svg className="w-3.5 h-3.5 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* Request Type Dropdown Menu */}
+            {showRequestTypeMenu && onRequestTypeChange && (
+              <div className="absolute top-full left-0 mt-1 w-[200px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-1 z-50">
+                {(['REST', 'GRAPHQL', 'WEBSOCKET'] as const).map((type) => {
+                  const config = REQUEST_TYPE_CONFIG[type];
+                  const IconComponent = config.icon;
+                  const colorClasses = {
+                    REST: 'text-primary-600 dark:text-primary-400',
+                    GRAPHQL: 'text-pink-600 dark:text-pink-400',
+                    WEBSOCKET: 'text-orange-600 dark:text-orange-400',
+                  };
+                  
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        onRequestTypeChange(type);
+                        setShowRequestTypeMenu(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
+                        requestType === type ? 'bg-gray-100 dark:bg-gray-700' : ''
+                      }`}
+                    >
+                      <span className={colorClasses[type]}>
+                        <IconComponent className="w-3.5 h-3.5" />
+                      </span>
+                      <span className="text-xs text-gray-900 dark:text-gray-100">{config.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Editable Request Name */}
+          <input
+            type="text"
+            value={requestName}
+            onChange={(e) => onRequestNameChange?.(e.target.value)}
+            placeholder="Untitled Request"
+            className="flex-1 px-3 py-1.5 text-sm font-medium text-gray-900 dark:text-gray-100 bg-transparent border border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-primary-500 dark:focus:border-primary-400 rounded-md focus:outline-none transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* URL Bar Row */}
+      <div className="px-4 py-2">
+        <div className="flex gap-2 items-center">
         {/* Method Dropdown (REST only) or POST Badge (GraphQL) */}
         {requestType === 'REST' ? (
           <div className="relative">
@@ -128,36 +197,12 @@ export default function URLBar({
           <div className="relative">
             <VariableInput
               value={url}
-              onChange={(newUrl) => {
-                onUrlChange(newUrl);
-                setShowHistory(newUrl.length > 0);
-              }}
+              onChange={onUrlChange}
               onKeyDown={handleKeyPress}
               placeholder={getUrlPlaceholder()}
               className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
-
-          {/* Autocomplete Dropdown */}
-          {showHistory && filteredHistory.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
-              {filteredHistory.map((historyUrl, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    onUrlChange(historyUrl);
-                    setShowHistory(false);
-                  }}
-                  className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="truncate">{historyUrl}</span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* Send Button */}
@@ -225,6 +270,7 @@ export default function URLBar({
           )}
         </button>
       )}
+        </div>
       </div>
     </div>
   );

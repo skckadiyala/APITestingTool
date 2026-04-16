@@ -1240,33 +1240,15 @@ pm.test("Response has correct structure", function () {
         />
       ) : (
         <>
-          {/* Request Type Selector and Request Name Input */}
-          <div className="px-4 pt-3 pb-1 flex items-center gap-3">
-            <select
-              value={requestType}
-              onChange={(e) => handleRequestTypeChange(e.target.value as 'REST' | 'GRAPHQL' | 'WEBSOCKET')}
-              className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md font-medium text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-              title="Select request type"
-            >
-              <option value="REST">REST</option>
-              <option value="GRAPHQL">GraphQL</option>
-              <option value="WEBSOCKET">WebSocket</option>
-            </select>
-            <input
-              type="text"
-              value={requestName}
-              onChange={(e) => handleRequestNameChange(e.target.value)}
-              className="flex-1 px-2 py-1.5 text-sm font-semibold border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600 focus:border-primary-500 bg-transparent text-gray-900 dark:text-gray-100 focus:outline-none transition-colors"
-              placeholder="Request Name"
-            />
-          </div>
-
           <URLBar
             method={method}
             url={url}
             requestType={requestType}
+            requestName={requestName}
             onMethodChange={handleMethodChange}
             onUrlChange={handleUrlChange}
+            onRequestNameChange={handleRequestNameChange}
+            onRequestTypeChange={handleRequestTypeChange}
             onSend={handleSend}
             onSave={handleSave}
             isLoading={isLoading}

@@ -87,9 +87,9 @@ cp "$ROOT_DIR/backend/package-lock.json" "$DEPLOY_DIR/backend/package-lock.json"
 cp "$ROOT_DIR/backend/prisma/schema.prisma" "$DEPLOY_DIR/backend/prisma/schema.prisma"
 
 # Install production-only dependencies
-# echo "Installing production dependencies..."
-# cd "$DEPLOY_DIR/backend"
-# npm install --production
+echo "Installing production dependencies..."
+cd "$DEPLOY_DIR/backend"
+npm install --production
 
 # Generate Prisma client in deploy context
 npx prisma generate

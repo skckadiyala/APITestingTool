@@ -170,9 +170,9 @@ export default function KeyValueEditor({
 
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
             {pairs.filter((p) => p.enabled).length} enabled
           </span>
           {pairs.length > 0 && (
@@ -190,7 +190,7 @@ export default function KeyValueEditor({
         {bulkEditMode && (
           <button
             onClick={toggleBulkMode}
-            className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+            className="text-xs text-primary-600 dark:text-primary-400 hover:underline"
           >
             Bulk Edit
           </button>
@@ -198,7 +198,7 @@ export default function KeyValueEditor({
       </div>
 
       {/* Header Row */}
-      <div className="grid grid-cols-12 gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 px-1">
+      <div className="grid grid-cols-12 gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 px-1">
         <div className="col-span-1"></div>
         <div className={showDescription ? 'col-span-3' : 'col-span-5'}>KEY</div>
         <div className={showDescription ? 'col-span-3' : 'col-span-5'}>VALUE</div>
@@ -208,14 +208,14 @@ export default function KeyValueEditor({
 
       {/* Key-Value Rows */}
       {pairs.map((pair) => (
-        <div key={pair.id} className="grid grid-cols-12 gap-2 items-center">
+        <div key={pair.id} className="grid grid-cols-12 gap-1.5 items-center">
           {/* Enabled Checkbox */}
           <div className="col-span-1 flex justify-center">
             <input
               type="checkbox"
               checked={pair.enabled}
               onChange={(e) => updatePair(pair.id, 'enabled', e.target.checked)}
-              className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+              className="w-3 h-3 text-primary-600 rounded focus:ring-primary-500"
             />
           </div>
 
@@ -231,7 +231,7 @@ export default function KeyValueEditor({
               onFocus={() => pair.key && setShowSuggestions(pair.id)}
               onBlur={() => setTimeout(() => setShowSuggestions(null), 200)}
               placeholder={placeholder.key}
-              className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             
             {/* Suggestions Dropdown */}
@@ -244,7 +244,7 @@ export default function KeyValueEditor({
                       updatePair(pair.id, 'key', suggestion);
                       setShowSuggestions(null);
                     }}
-                    className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm text-gray-900 dark:text-gray-100"
+                    className="w-full text-left px-2 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs text-gray-900 dark:text-gray-100"
                   >
                     {suggestion}
                   </button>
@@ -259,7 +259,7 @@ export default function KeyValueEditor({
               value={pair.value}
               onChange={(value) => updatePair(pair.id, 'value', value)}
               placeholder={placeholder.value}
-              className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
 
@@ -271,7 +271,7 @@ export default function KeyValueEditor({
                 value={pair.description || ''}
                 onChange={(e) => updatePair(pair.id, 'description', e.target.value)}
                 placeholder="Description"
-                className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
           )}
@@ -280,10 +280,10 @@ export default function KeyValueEditor({
           <div className="col-span-1 flex justify-center">
             <button
               onClick={() => removePair(pair.id)}
-              className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
               title="Remove"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </button>
