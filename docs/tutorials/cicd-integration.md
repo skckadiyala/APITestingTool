@@ -9,7 +9,7 @@ Automate API testing with Azure DevOps Pipelines. Learn to run Simba collections
 **What you'll learn:**
 - Export Simba collections for CI/CD
 - Set up Azure DevOps pipeline
-- Run Newman (Postman Collection Runner) in pipeline
+- Run collections using Newman or Postman CLI
 - Generate HTML test reports
 - Integrate tests with pull requests
 - Manage test environments securely
@@ -41,9 +41,9 @@ Automate API testing with Azure DevOps Pipelines. Learn to run Simba collections
 │   Azure DevOps Pipeline                 │
 │                                         │
 │  1. Checkout code                       │
-│  2. Install Node.js & Newman            │
+│  2. Install Node.js & CLI tools         │
 │  3. Export Simba collection             │
-│  4. Run Newman with collection          │
+│  4. Run tests (Newman/Postman CLI)      │
 │  5. Generate HTML report                │
 │  6. Publish test results                │
 │  7. Fail build if tests fail            │
@@ -169,6 +169,115 @@ newman run api-tests.postman_collection.json \
 └───────────────────────────────────────────────────┘
 ```
 
+### Alternative: Test Locally with Postman CLI
+
+**Postman CLI** is the official CLI tool from Postman that provides additional features beyond Newman, including cloud-based test runs and better integration with Postman's ecosystem.
+
+**Install Postman CLI:**
+```bash
+# Install via npm
+npm install -g postman-cli
+
+# Verify installation
+postman --version
+# Output: 1.3.0
+
+# Login to Postman (optional, for cloud features)
+postman login
+```
+
+**Run collection locally:**
+```bash
+cd tests/
+
+# Basic run
+postman collection run api-tests.postman_collection.json \
+  -e ci-environment.postman_environment.json
+
+# With environment variables
+postman collection run api-tests.postman_collection.json \
+  -e ci-environment.postman_environment.json \
+  --env-var "apiKey=your-test-api-key" \
+  --env-var "baseUrl=https://api-staging.example.com"
+
+# With detailed output
+postman collection run api-tests.postman_collection.json \
+  -e ci-environment.postman_environment.json \
+  --verbose
+
+# Run with bail on failure (stop on first error)
+postman collection run api-tests.postman_collection.json \
+  -e ci-environment.postman_environment.json \
+  --bail
+
+# Export results to JSON
+postman collection run api-tests.postman_collection.json \
+  -e ci-environment.postman_environment.json \
+  --reporters cli,json \
+  --reporter-json-export ./postman-results.json
+```
+
+**Expected output:**
+```
+Postman CLI v1.3.0
+
+→ API Test Suite
+
+→ GET /users
+  ✓  Status code is 200
+  ✓  Response is an array
+  ✓  Users have required fields
+
+→ POST /users
+  ✓  Status code is 201
+  ✓  User created successfully
+  ✓  Response contains user ID
+
+┌─────────────────────────┬────────────┬────────────┐
+│                         │   executed │     failed │
+├─────────────────────────┼────────────┼────────────┤
+│              iterations │          1 │          0 │
+├─────────────────────────┼────────────┼────────────┤
+│                requests │         15 │          0 │
+├─────────────────────────┼────────────┼────────────┤
+│            test-scripts │         30 │          0 │
+├─────────────────────────┼────────────┼────────────┤
+│              assertions │         45 │          0 │
+└─────────────────────────┴────────────┴────────────┘
+
+✓ All tests passed!
+Total run duration: 3.1s
+```
+
+**Postman CLI vs Newman Comparison:**
+
+| Feature | Postman CLI | Newman |
+|---------|-------------|--------|
+| **Installation** | `npm install -g postman-cli` | `npm install -g newman` |
+| **Maintained by** | Postman (official) | Postman (community) |
+| **Cloud integration** | ✅ Yes (sync with Postman Cloud) | ❌ No |
+| **Local-only execution** | ✅ Yes | ✅ Yes |
+| **HTML reports** | ✅ Via reporters | ✅ Via newman-reporter-htmlextra |
+| **JSON reports** | ✅ Built-in | ✅ Built-in |
+| **CI/CD integration** | ✅ Yes | ✅ Yes |
+| **Run collections from cloud** | ✅ Yes | ❌ No |
+| **Advanced features** | ✅ More features | ✅ Basic features |
+| **Maturity** | 🆕 Newer | ✅ Well-established |
+
+**When to use Postman CLI:**
+- ✅ You want official Postman support and latest features
+- ✅ You use Postman Cloud and want to sync collections
+- ✅ You need advanced reporting and monitoring features
+- ✅ You prefer modern CLI experience
+
+**When to use Newman:**
+- ✅ You want a lightweight, proven solution
+- ✅ You need extensive community plugins and reporters
+- ✅ You have existing Newman scripts and workflows
+- ✅ You don't need cloud integration
+
+> 💡 **Best Practice:** Both tools are compatible with Postman/Simba collections. Choose based on your team's needs. Many teams use Newman for its maturity and extensive reporter ecosystem.
+
 ---
 
 ## Part 4: Create Azure Pipeline
@@ -253,6 +362,88 @@ git add azure-pipelines.yml
 git commit -m "Add Azure DevOps CI/CD pipeline for API tests"
 git push origin main
 ```
+
+### Alternative: Pipeline with Postman CLI
+
+If you prefer to use **Postman CLI** instead of Newman, here's the alternative YAML configuration:
+
+```yaml
+# API Testing Pipeline (Postman CLI)
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - 'src/**'
+      - 'tests/**'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  # Non-secret variables
+  API_BASE_URL: 'https://jsonplaceholder.typicode.com'
+  TEST_TIMEOUT: '5000'
+
+steps:
+# Step 1: Checkout code
+- checkout: self
+  displayName: 'Checkout repository'
+
+# Step 2: Install Node.js
+- task: NodeTool@0
+  inputs:
+    versionSpec: '18.x'
+  displayName: 'Install Node.js'
+
+# Step 3: Install Postman CLI
+- script: |
+    npm install -g postman-cli
+  displayName: 'Install Postman CLI'
+
+# Step 4: Run API Tests with Postman CLI
+- script: |
+    postman collection run tests/api-tests.postman_collection.json \
+      -e tests/ci-environment.postman_environment.json \
+      --env-var "baseUrl=$(API_BASE_URL)" \
+      --timeout-request $(TEST_TIMEOUT) \
+      --reporters cli,json \
+      --reporter-json-export $(Build.ArtifactStagingDirectory)/postman-results.json \
+      --bail
+  displayName: 'Run API Tests with Postman CLI'
+  continueOnError: false
+
+# Step 5: Publish Test Results (JSON)
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/postman-results.json'
+    ArtifactName: 'postman-test-results'
+    publishLocation: 'Container'
+  displayName: 'Publish Test Results JSON'
+  condition: always()
+
+# Step 6: Parse and Display Results
+- script: |
+    echo "Test Results Summary:"
+    cat $(Build.ArtifactStagingDirectory)/postman-results.json | jq '.run.stats'
+  displayName: 'Display Test Summary'
+  condition: always()
+```
+
+**Key Differences from Newman Pipeline:**
+
+| Aspect | Newman Pipeline | Postman CLI Pipeline |
+|--------|-----------------|---------------------|
+| **Installation** | `npm install -g newman newman-reporter-htmlextra` | `npm install -g postman-cli` |
+| **Run command** | `newman run ...` | `postman collection run ...` |
+| **HTML reporter** | ✅ Built-in via htmlextra | ⚠️ Requires additional setup |
+| **JUnit reporter** | ✅ Built-in | ⚠️ JSON output (convert manually) |
+| **JSON output** | ✅ Available | ✅ Native support |
+| **Bail on error** | `--bail` | `--bail` |
+
+> 💡 **Recommendation:** For Azure DevOps pipelines, **Newman** is currently the better choice due to its mature JUnit reporter integration with Azure's test results visualization. Use Postman CLI if you need cloud features or advanced Postman-specific functionality.
 
 ---
 
