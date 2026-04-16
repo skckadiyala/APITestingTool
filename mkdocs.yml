@@ -1,0 +1,166 @@
+site_name: Simba - API Testing Tool
+site_description: Complete guide for using Simba API Testing Tool
+site_author: CDW Team
+site_url: https://your-docs-url.com
+
+# Repository
+repo_name: APITestingTool
+repo_url: https://github.com/skckadiyala/APITestingTool
+edit_uri: edit/main/docs/
+
+# Theme configuration
+theme:
+  name: material
+  palette:
+    # Light mode
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  
+  font:
+    text: Roboto
+    code: Roboto Mono
+  
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.tabs.link
+  
+  icon:
+    repo: fontawesome/brands/github
+  
+  logo: assets/Simba.png
+  favicon: assets/Simba.png
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - codehilite
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+# Plugins
+plugins:
+  - search
+  - awesome-pages
+
+# Navigation
+nav:
+  - Home: index.md
+  
+  - Getting Started:
+    - Overview: getting-started/overview.md
+    - Installation: getting-started/installation.md
+    - First Request: getting-started/first-request.md
+    - Interface Tour: getting-started/interface-tour.md
+    - Quick Start Guide: getting-started/quick-start.md
+  
+  - Core Concepts:
+    - Workspaces: concepts/workspaces.md
+    - Collections: concepts/collections.md
+    - Requests: concepts/requests.md
+    - Environments: concepts/environments.md
+    - Variables: concepts/variables.md
+  
+  - Making Requests:
+    - REST API:
+      - GET Requests: requests/rest/get-requests.md
+      - POST Requests: requests/rest/post-requests.md
+      - PUT & PATCH: requests/rest/put-patch.md
+      - DELETE Requests: requests/rest/delete-requests.md
+      - Headers: requests/rest/headers.md
+      - Query Parameters: requests/rest/query-params.md
+      - Request Body: requests/rest/request-body.md
+    - GraphQL:
+      - Overview: requests/graphql/overview.md
+      - Queries: requests/graphql/queries.md
+      - Mutations: requests/graphql/mutations.md
+      - Variables: requests/graphql/variables.md
+      - Schema Explorer: requests/graphql/schema-explorer.md
+    - WebSocket:
+      - Connecting: requests/websocket/connecting.md
+      - Messages: requests/websocket/messages.md
+  
+  - Authentication:
+    - Bearer Token: authentication/bearer-token.md
+    - Basic Auth: authentication/basic-auth.md
+    - API Key: authentication/api-key.md
+    - OAuth 2.0: authentication/oauth2.md
+  
+  - Advanced Features:
+    - Pre-request Scripts: advanced/pre-request-scripts.md
+    - Test Scripts: advanced/test-scripts.md
+    - Collection Runner: advanced/collection-runner.md
+    - Data-Driven Testing: advanced/data-driven-testing.md
+    - Request History: advanced/request-history.md
+  
+  - Collaboration:
+    - Workspace Sharing: collaboration/workspace-sharing.md
+    - Team Permissions: collaboration/permissions.md
+    - Import/Export: collaboration/import-export.md
+  
+  - Tutorials:
+    - Testing REST API: tutorials/rest-api-testing.md
+    - Testing GraphQL API: tutorials/graphql-testing.md
+    - OAuth Authentication: tutorials/oauth-flow.md
+    - Automated Testing: tutorials/automated-testing.md
+    - CI/CD Integration: tutorials/cicd-integration.md
+  
+  - Reference:
+    - Scripting API: reference/scripting-api.md
+    - Variable Syntax: reference/variable-syntax.md
+    - Keyboard Shortcuts: reference/keyboard-shortcuts.md
+    - Error Messages: reference/error-messages.md
+    - Troubleshooting: reference/troubleshooting.md
+    - FAQ: reference/faq.md
+  
+  - About:
+    - Changelog: about/changelog.md
+    - Migration from Postman: about/migration-postman.md
+    - Contributing: about/contributing.md
+    - License: about/license.md
+
+# Extra
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/skckadiyala/APITestingTool
+    - icon: fontawesome/solid/envelope
+      link: mailto:support@cdw.com
+  
+  version:
+    provider: mike
+
+# Copyright
+copyright: Copyright &copy; 2026 CDW
