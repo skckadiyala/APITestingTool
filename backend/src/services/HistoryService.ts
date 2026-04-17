@@ -33,6 +33,8 @@ export class HistoryService {
       
       const requestBody = await RequestBody.create({
         requestId: requestId || 'adhoc',
+        pathParams: result.request.pathParams,
+        params: result.request.params,
         headers: Object.entries(result.request.headers).map(([key, value]) => ({
           key,
           value,
@@ -66,6 +68,7 @@ export class HistoryService {
           userId,
           method: result.request.method,
           url: result.request.url,
+          originalUrl: result.request.originalUrl,
           requestBodyId: requestBody._id.toString(),
           responseBodyId: responseBody ? responseBody._id.toString() : undefined,
           statusCode: result.response?.status ?? undefined,

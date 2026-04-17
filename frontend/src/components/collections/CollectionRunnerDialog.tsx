@@ -90,7 +90,7 @@ export default function CollectionRunnerDialog({
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-[12px] font-semibold text-gray-900 dark:text-gray-100">
             Run Collection
           </h2>
           <button
@@ -112,23 +112,23 @@ export default function CollectionRunnerDialog({
         <div className="px-6 py-4 space-y-4">
           {/* Collection Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
               Collection
             </label>
-            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
+            <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100">
               {collectionName}
             </div>
           </div>
 
           {/* Environment Selector */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
               Environment
             </label>
             <select
               value={selectedEnvironmentId}
               onChange={(e) => setSelectedEnvironmentId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">No Environment</option>
               {environments.map((env) => (
@@ -141,7 +141,7 @@ export default function CollectionRunnerDialog({
 
           {/* Data File */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
               Data File (Optional)
             </label>
             <div className="flex gap-2">
@@ -149,7 +149,7 @@ export default function CollectionRunnerDialog({
                 value={selectedDataFileId}
                 onChange={(e) => setSelectedDataFileId(e.target.value)}
                 disabled={loading}
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50"
               >
                 <option value="">No Data File</option>
                 {dataFiles.map((file) => (
@@ -166,7 +166,7 @@ export default function CollectionRunnerDialog({
                   }
                   setShowUploadDialog(true);
                 }}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                className="px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                 title="Upload new data file"
               >
                 <Upload className="w-4 h-4" />
@@ -174,7 +174,7 @@ export default function CollectionRunnerDialog({
               {selectedDataFile && (
                 <button
                   onClick={() => setShowPreviewDialog(true)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  className="px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
                   title="Preview data file"
                 >
                   <Eye className="w-4 h-4" />
@@ -182,11 +182,11 @@ export default function CollectionRunnerDialog({
               )}
             </div>
             {selectedDataFile ? (
-              <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+              <p className="mt-1 text-[12px] text-green-600 dark:text-green-400">
                 ✓ Using {selectedDataFile.rowCount} rows from {selectedDataFile.name}
               </p>
             ) : (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-[12px] text-gray-500 dark:text-gray-400">
                 Upload CSV or JSON file for data-driven testing
               </p>
             )}
@@ -194,7 +194,7 @@ export default function CollectionRunnerDialog({
 
           {/* Iterations */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
               Iterations
             </label>
             <input
@@ -204,9 +204,9 @@ export default function CollectionRunnerDialog({
               value={selectedDataFile ? selectedDataFile.rowCount : iterations}
               onChange={(e) => setIterations(parseInt(e.target.value) || 1)}
               disabled={!!selectedDataFile}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-[12px] text-gray-500 dark:text-gray-400">
               {selectedDataFile
                 ? 'Iterations set by data file row count'
                 : 'Number of times to run the collection (1-100)'}
@@ -215,7 +215,7 @@ export default function CollectionRunnerDialog({
 
           {/* Delay */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
               Delay (ms)
             </label>
             <input
@@ -225,9 +225,9 @@ export default function CollectionRunnerDialog({
               step="100"
               value={delay}
               onChange={(e) => setDelay(parseInt(e.target.value) || 0)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-[12px] text-gray-500 dark:text-gray-400">
               Delay between requests in milliseconds
             </p>
           </div>
@@ -243,7 +243,7 @@ export default function CollectionRunnerDialog({
             />
             <label
               htmlFor="stopOnError"
-              className="ml-2 text-sm text-gray-700 dark:text-gray-300"
+              className="ml-2 text-[12px] text-gray-700 dark:text-gray-300"
             >
               Stop run on error
             </label>
@@ -254,13 +254,13 @@ export default function CollectionRunnerDialog({
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            className="px-4 py-2.5 text-[12px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
           >
             Cancel
           </button>
           <button
             onClick={handleRun}
-            className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+            className="px-4 py-2.5 text-[12px] bg-primary-600 text-white rounded hover:bg-primary-700"
           >
             Run Collection
           </button>
@@ -279,15 +279,15 @@ export default function CollectionRunnerDialog({
         ) : (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md mx-4">
-              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
+              <h3 className="text-[12px] font-semibold text-red-600 dark:text-red-400 mb-2">
                 Workspace Required
               </h3>
-              <p className="text-gray-700 dark:text-gray-300 mb-4">
+              <p className="text-[12px] text-gray-700 dark:text-gray-300 mb-4">
                 Please select a workspace before uploading data files.
               </p>
               <button
                 onClick={() => setShowUploadDialog(false)}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 w-full"
+                className="px-4 py-2.5 text-[12px] bg-blue-500 text-white rounded-lg hover:bg-blue-600 w-full"
               >
                 Close
               </button>

@@ -1,5 +1,5 @@
 import type { AuthConfig } from './auth.types';
-import type { Variable, RequestBody, RequestParam, RequestHeader } from './request.types';
+import type { Variable, RequestBody, RequestParam, RequestHeader, PathParam } from './request.types';
 
 export interface Collection {
   id: string;
@@ -32,6 +32,7 @@ export interface CollectionRequest {
   body: RequestBody | null;
   headers?: RequestHeader[];
   auth?: AuthConfig | null;
+  pathParams?: PathParam[];
   params?: RequestParam[];
   orderIndex: number;
   testScript?: string | null;
@@ -71,6 +72,7 @@ export interface AddRequestDto {
   url: string;
   requestBodyId?: string;
   requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
+  pathParams?: PathParam[];
   params?: RequestParam[];
   headers?: RequestHeader[];
   body?: RequestBody | null;
@@ -87,6 +89,7 @@ export interface UpdateRequestDto {
   method?: string;
   url?: string;
   requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
+  pathParams?: PathParam[];
   params?: RequestParam[];
   headers?: RequestHeader[];
   body?: RequestBody | null;

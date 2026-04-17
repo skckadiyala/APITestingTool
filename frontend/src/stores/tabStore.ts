@@ -9,6 +9,7 @@ import type {
   Collection,
   RunnerState
 } from '../types';
+import type { PathParam } from '../types/request.types';
 
 export interface Tab {
   id: string;
@@ -20,6 +21,7 @@ export interface Tab {
   method: string;
   url: string;
   requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
+  pathParams?: PathParam[];
   params?: RequestParam[];
   headers?: RequestHeader[];
   body?: RequestBody;
@@ -82,6 +84,7 @@ export const useTabStore = create<TabState>()(
       method: tab.method || 'GET',
       url: tab.url || '',
       requestType: tab.requestType || 'REST',
+      pathParams: tab.pathParams || [],
       params: tab.params || [],
       headers: tab.headers || [],
       body: tab.body || { type: 'json', content: '' },
@@ -161,6 +164,7 @@ export const useTabStore = create<TabState>()(
                 method: request.method,
                 url: request.url,
                 requestType: request.requestType || 'REST',
+                pathParams: request.pathParams || [],
                 params: request.params || [],
                 headers: request.headers || [],
                 body: request.body || { type: 'json', content: '' },
@@ -189,6 +193,7 @@ export const useTabStore = create<TabState>()(
         method: request.method,
         url: request.url,
         requestType: request.requestType || 'REST',
+        pathParams: request.pathParams || [],
         params: request.params || [],
         headers: request.headers || [],
         body: request.body || { type: 'json', content: '' },

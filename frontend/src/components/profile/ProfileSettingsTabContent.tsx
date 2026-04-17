@@ -314,17 +314,17 @@ export default function ProfileSettingsTabContent() {
           /* Overview Tab Content - Profile Information */
           <div className="max-w-2xl">
             <div className="mb-8">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+              <h2 className="text-[12px] font-semibold text-gray-900 dark:text-white mb-1">
                 Profile Information
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-[12px] text-gray-500 dark:text-gray-400">
                 Update your personal information
               </p>
             </div>
 
             <div className="space-y-5">
               <div className="flex items-start gap-4">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-36 pt-2 flex-shrink-0">
+                <label className="text-[12px] font-medium text-gray-700 dark:text-gray-300 w-36 pt-2 flex-shrink-0">
                   Name
                 </label>
                 <div className="flex-1">
@@ -332,17 +332,17 @@ export default function ProfileSettingsTabContent() {
                     type="text"
                     value={profileData.name}
                     onChange={(e) => handleProfileChange('name', e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                    className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                     maxLength={100}
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1.5">
                     {profileData.name.length}/100 characters
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-36 pt-2 flex-shrink-0">
+                <label className="text-[12px] font-medium text-gray-700 dark:text-gray-300 w-36 pt-2 flex-shrink-0">
                   Email
                 </label>
                 <div className="flex-1">
@@ -350,9 +350,9 @@ export default function ProfileSettingsTabContent() {
                     type="email"
                     value={profileData.email}
                     disabled
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                    className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                   />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1.5">
                     Email cannot be changed
                   </p>
                 </div>
@@ -364,12 +364,12 @@ export default function ProfileSettingsTabContent() {
                   <button
                     onClick={handleSaveProfile}
                     disabled={!hasUnsavedProfileChanges || isLoadingProfile}
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition-colors"
+                    className="px-4 py-2.5 text-[12px] font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition-colors"
                   >
                     {isLoadingProfile ? 'Saving...' : 'Save Changes'}
                   </button>
                   {hasUnsavedProfileChanges && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1.5">
                       Press ⌘S to save
                     </p>
                   )}
@@ -381,10 +381,10 @@ export default function ProfileSettingsTabContent() {
           /* Workspaces Tab Content */
           <div className="max-w-2xl">
             <div className="mb-8">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+              <h2 className="text-[12px] font-semibold text-gray-900 dark:text-white mb-1">
                 Manage Workspaces
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-[12px] text-gray-500 dark:text-gray-400">
                 Create, edit, and organize your workspaces
               </p>
             </div>
@@ -399,7 +399,7 @@ export default function ProfileSettingsTabContent() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search workspaces..."
-                    className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-4 py-2.5 pl-10 border border-gray-300 dark:border-gray-600 rounded-md text-[12px] bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                   <svg
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -411,7 +411,7 @@ export default function ProfileSettingsTabContent() {
                   </svg>
                 </div>
                 {searchQuery && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1">
                     {filteredWorkspaces.length} workspace{filteredWorkspaces.length !== 1 ? 's' : ''} found
                   </p>
                 )}
@@ -420,7 +420,7 @@ export default function ProfileSettingsTabContent() {
               {/* Create Workspace Button */}
               <button
                 onClick={() => setIsCreateDialogOpen(true)}
-                className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 text-sm font-medium transition-colors flex items-center gap-2 flex-shrink-0"
+                className="px-4 py-2.5 bg-primary-600 text-white rounded-md hover:bg-primary-700 text-[12px] font-medium transition-colors flex items-center gap-2 flex-shrink-0"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -477,12 +477,12 @@ export default function ProfileSettingsTabContent() {
                               }}
                               onBlur={() => handleSaveEdit(workspace.id)}
                               maxLength={100}
-                              className="w-full px-2 py-1 border border-primary-500 rounded text-base font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                              className="w-full px-2 py-1 border border-primary-500 rounded text-[12px] font-medium text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
                             />
                           ) : (
                             <div className="flex items-center gap-2">
                               <h3
-                                className="text-base font-medium text-gray-900 dark:text-white truncate cursor-pointer hover:text-primary-600 dark:hover:text-primary-400"
+                                className="text-[12px] font-medium text-gray-900 dark:text-white truncate cursor-pointer hover:text-primary-600 dark:hover:text-primary-400"
                                 onClick={() => handleStartEdit(workspace)}
                                 title={workspace.name}
                               >
@@ -568,34 +568,34 @@ export default function ProfileSettingsTabContent() {
           </div>
         ) : (
           /* Settings Tab Content - Security and Preferences */
-          <div className="max-w-2xl space-y-12">
+          <div className="max-w-7xl grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Security Section */}
             <section>
               <div className="mb-8">
-                <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+                <h2 className="text-[12px] font-semibold text-gray-900 dark:text-white mb-1">
                   Security
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-[12px] text-gray-500 dark:text-gray-400">
                   Manage your password and account security
                 </p>
               </div>
 
               <div className="space-y-5">
                 <div className="flex items-start gap-4">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-36 pt-2 flex-shrink-0">
+                  <label className="text-[12px] font-medium text-gray-700 dark:text-gray-300 w-36 pt-2 flex-shrink-0">
                     Current Password
                   </label>
                   <input
                     type="password"
                     value={passwordData.currentPassword}
                     onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                    className="flex-1 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                     placeholder="Enter current password"
                   />
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-36 pt-2 flex-shrink-0">
+                  <label className="text-[12px] font-medium text-gray-700 dark:text-gray-300 w-36 pt-2 flex-shrink-0">
                     New Password
                   </label>
                   <div className="flex-1">
@@ -603,24 +603,24 @@ export default function ProfileSettingsTabContent() {
                       type="password"
                       value={passwordData.newPassword}
                       onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                      className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                       placeholder="Enter new password"
                     />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1.5">
                       Must be at least 8 characters
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-36 pt-2 flex-shrink-0">
+                  <label className="text-[12px] font-medium text-gray-700 dark:text-gray-300 w-36 pt-2 flex-shrink-0">
                     Confirm Password
                   </label>
                   <input
                     type="password"
                     value={passwordData.confirmPassword}
                     onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                    className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
+                    className="flex-1 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-gray-700 dark:text-white"
                     placeholder="Confirm new password"
                   />
                 </div>
@@ -631,11 +631,11 @@ export default function ProfileSettingsTabContent() {
                     <button
                       onClick={handleChangePassword}
                       disabled={isLoadingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}
-                      className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition-colors"
+                      className="px-4 py-2.5 text-[12px] font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition-colors"
                     >
                       {isLoadingPassword ? 'Updating...' : 'Update Password'}
                     </button>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-1.5">
                       You will be logged out of all other devices
                     </p>
                   </div>
@@ -646,41 +646,41 @@ export default function ProfileSettingsTabContent() {
             {/* Preferences Section */}
             <section>
               <div className="mb-8">
-                <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
+                <h2 className="text-[12px] font-semibold text-gray-900 dark:text-white mb-1">
                   Preferences
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-[12px] text-gray-500 dark:text-gray-400">
                   Customize your application experience
                 </p>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {/* Notifications */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Notifications</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between py-2.5">
-                      <div>
-                        <label className="text-sm text-gray-700 dark:text-gray-300 font-medium">Email Notifications</label>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Receive updates via email</p>
+                  <h3 className="text-[12px] font-medium text-gray-900 dark:text-white mb-2.5">Notifications</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between py-1.5">
+                      <div className="flex-1 text-left">
+                        <label className="text-[12px] text-gray-700 dark:text-gray-300 font-medium block">Email Notifications</label>
+                        <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">Receive updates via email</p>
                       </div>
                       <input
                         type="checkbox"
                         checked={preferences.emailNotifications}
                         onChange={(e) => handlePreferenceChange('emailNotifications', e.target.checked)}
-                        className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded flex-shrink-0 ml-4 mt-0.5"
                       />
                     </div>
-                    <div className="flex items-center justify-between py-2.5">
-                      <div>
-                        <label className="text-sm text-gray-700 dark:text-gray-300 font-medium">Desktop Notifications</label>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Show desktop alerts</p>
+                    <div className="flex items-start justify-between py-1.5">
+                      <div className="flex-1 text-left">
+                        <label className="text-[12px] text-gray-700 dark:text-gray-300 font-medium block">Desktop Notifications</label>
+                        <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">Show desktop alerts</p>
                       </div>
                       <input
                         type="checkbox"
                         checked={preferences.desktopNotifications}
                         onChange={(e) => handlePreferenceChange('desktopNotifications', e.target.checked)}
-                        className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded flex-shrink-0 ml-4 mt-0.5"
                       />
                     </div>
                   </div>
@@ -688,18 +688,18 @@ export default function ProfileSettingsTabContent() {
 
                 {/* Editor */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Editor</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between py-2.5">
-                      <div>
-                        <label className="text-sm text-gray-700 dark:text-gray-300 font-medium">Auto-save Requests</label>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Automatically save changes</p>
+                  <h3 className="text-[12px] font-medium text-gray-900 dark:text-white mb-2.5">Editor</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between py-1.5">
+                      <div className="flex-1 text-left">
+                        <label className="text-[12px] text-gray-700 dark:text-gray-300 font-medium block">Auto-save Requests</label>
+                        <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">Automatically save changes</p>
                       </div>
                       <input
                         type="checkbox"
                         checked={preferences.autoSaveRequests}
                         onChange={(e) => handlePreferenceChange('autoSaveRequests', e.target.checked)}
-                        className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded flex-shrink-0 ml-4 mt-0.5"
                       />
                     </div>
                   </div>
@@ -707,10 +707,10 @@ export default function ProfileSettingsTabContent() {
 
                 {/* Appearance */}
                 <div>
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">Appearance</h3>
-                  <div className="space-y-2">
+                  <h3 className="text-[12px] font-medium text-gray-900 dark:text-white mb-2.5">Appearance</h3>
+                  <div className="flex items-center gap-6">
                     {(['system', 'light', 'dark'] as const).map((theme) => (
-                      <div key={theme} className="flex items-center py-2.5">
+                      <div key={theme} className="flex items-center">
                         <input
                           type="radio"
                           name="theme"
@@ -720,7 +720,7 @@ export default function ProfileSettingsTabContent() {
                           className="w-4 h-4 text-primary-600 focus:ring-primary-500 border-gray-300"
                           id={`theme-${theme}`}
                         />
-                        <label htmlFor={`theme-${theme}`} className="ml-3 text-sm text-gray-700 dark:text-gray-300 capitalize cursor-pointer">
+                        <label htmlFor={`theme-${theme}`} className="ml-3 text-[12px] text-gray-700 dark:text-gray-300 capitalize cursor-pointer">
                           {theme === 'system' && 'System'}
                           {theme === 'light' && 'Light'}
                           {theme === 'dark' && 'Dark'}
@@ -731,11 +731,11 @@ export default function ProfileSettingsTabContent() {
                 </div>
 
                 {/* Save Preferences */}
-                <div className="pt-2">
+                <div className="pt-3">
                   <button
                     onClick={handleSavePreferences}
                     disabled={!hasUnsavedPreferenceChanges || isLoadingPreferences}
-                    className="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition-colors"
+                    className="px-4 py-2.5 text-[12px] font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition-colors"
                   >
                     {isLoadingPreferences ? 'Saving...' : 'Save Preferences'}
                   </button>
@@ -750,14 +750,14 @@ export default function ProfileSettingsTabContent() {
       {deleteConfirmId && (
         <div className="fixed inset-0 bg-black bg-opacity-60 z-[60] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            <h3 className="text-[12px] font-semibold text-gray-900 dark:text-white mb-2">
               Delete Workspace
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-[12px] text-gray-600 dark:text-gray-400 mb-4">
               This action cannot be undone. All collections, requests, and environments in this workspace will be permanently deleted.
             </p>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Type the workspace name <span className="font-semibold">{workspaces.find(w => w.id === deleteConfirmId)?.name}</span> to confirm:
               </label>
               <input
@@ -765,7 +765,7 @@ export default function ProfileSettingsTabContent() {
                 value={deleteConfirmName}
                 onChange={(e) => setDeleteConfirmName(e.target.value)}
                 placeholder="Workspace name"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-md text-[12px] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 autoFocus
               />
             </div>
@@ -775,14 +775,14 @@ export default function ProfileSettingsTabContent() {
                   setDeleteConfirmId(null);
                   setDeleteConfirmName('');
                 }}
-                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
+                className="flex-1 px-4 py-2.5 text-[12px] font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={deleteConfirmName !== workspaces.find(w => w.id === deleteConfirmId)?.name}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition-colors"
+                className="flex-1 px-4 py-2.5 text-[12px] font-medium text-white bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed rounded-md transition-colors"
               >
                 Delete Workspace
               </button>

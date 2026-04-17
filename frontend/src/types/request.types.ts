@@ -8,6 +8,12 @@ export interface KeyValuePair {
   description?: string;
 }
 
+export interface PathParam {
+  key: string;
+  value: string;
+  description?: string;
+}
+
 export interface RequestParam extends KeyValuePair {}
 export interface RequestHeader extends KeyValuePair {}
 

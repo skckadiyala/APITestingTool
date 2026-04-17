@@ -7,7 +7,7 @@ import GraphQLResponseData from './GraphQLResponseData';
 import GraphQLResponseErrors from './GraphQLResponseErrors';
 import GraphQLResponseExtensions from './GraphQLResponseExtensions';
 
-export type ResponseTabType = 'body' | 'data' | 'errors' | 'extensions' | 'headers' | 'cookies' | 'tests' | 'console';
+export type ResponseTabType = 'body' | 'data' | 'errors' | 'extensions' | 'headers' | 'cookies' | 'tests' | 'console' | 'request';
 
 interface ResponseTabsProps {
   response: any;
@@ -18,6 +18,12 @@ interface ResponseTabsProps {
   time?: number;
   size?: number;
   requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
+  requestDetails?: {
+    method: string;
+    url: string;
+    originalUrl?: string;
+    pathParams?: Array<{ key: string; value: string }>;
+  };
 }
 
 const TAB_LABELS: Record<ResponseTabType, string> = {
@@ -29,6 +35,7 @@ const TAB_LABELS: Record<ResponseTabType, string> = {
   cookies: 'Cookies',
   tests: 'Test Results',
   console: 'Console',
+  request: 'Request',
 };
 
 // Helper to detect if response is GraphQL based on request type
@@ -49,7 +56,7 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-const ResponseTabs: React.FC<ResponseTabsProps> = ({ response, testResults, consoleLogs = [], status, statusText, time, size, requestType = 'REST' }) => {
+const ResponseTabs: React.FC<ResponseTabsProps> = ({ response, testResults, consoleLogs = [], status, statusText, time, size, requestType = 'REST', requestDetails }) => {
   const isGraphQL = isGraphQLResponse(requestType);
   const [activeTab, setActiveTab] = useState<ResponseTabType>(isGraphQL ? 'data' : 'body');
   
@@ -63,9 +70,10 @@ const ResponseTabs: React.FC<ResponseTabsProps> = ({ response, testResults, cons
   }, [isGraphQL]);
 
   // Determine which tabs to show
+  const hasPathParams = requestDetails?.originalUrl && requestDetails?.originalUrl !== requestDetails?.url;
   const visibleTabs: ResponseTabType[] = isGraphQL 
-    ? ['data', 'errors', 'extensions', 'headers', 'cookies', 'tests', 'console']
-    : ['body', 'headers', 'cookies', 'tests', 'console'];
+    ? ['data', 'errors', 'extensions', 'headers', 'cookies', ...(hasPathParams ? ['request' as ResponseTabType] : []), 'tests', 'console']
+    : ['body', 'headers', 'cookies', ...(hasPathParams ? ['request' as ResponseTabType] : []), 'tests', 'console'];
   
   // Count GraphQL errors
   const errorCount = isGraphQL && response?.body?.errors ? response.body.errors.length : 0;
@@ -151,6 +159,75 @@ const ResponseTabs: React.FC<ResponseTabsProps> = ({ response, testResults, cons
                 </div>
               ))
             )}
+          </div>
+        )}
+        {activeTab === 'request' && requestDetails && (
+          <div className="space-y-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <h3 className="text-sm font-semibold text-blue-700 dark:text-blue-300 mb-3 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Request Details
+              </h3>
+              
+              {/* Method */}
+              <div className="mb-3">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Method</div>
+                <div className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+                  {requestDetails.method}
+                </div>
+              </div>
+
+              {/* Original URL (with placeholders) */}
+              {requestDetails.originalUrl && requestDetails.originalUrl !== requestDetails.url && (
+                <div className="mb-3">
+                  <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    Requested URL (with placeholders)
+                  </div>
+                  <div className="font-mono text-xs bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700 break-all">
+                    {requestDetails.originalUrl}
+                  </div>
+                </div>
+              )}
+
+              {/* Actual URL (resolved) */}
+              <div className="mb-3">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Actual URL {requestDetails.originalUrl && requestDetails.originalUrl !== requestDetails.url ? '(resolved)' : ''}
+                </div>
+                <div className="font-mono text-xs bg-white dark:bg-gray-800 p-2 rounded border border-green-200 dark:border-green-700 border-2 break-all text-green-700 dark:text-green-400">
+                  {requestDetails.url}
+                </div>
+              </div>
+
+              {/* Path Parameters */}
+              {requestDetails.pathParams && requestDetails.pathParams.length > 0 && (
+                <div>
+                  <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                    Path Parameters Used
+                  </div>
+                  <div className="space-y-1">
+                    {requestDetails.pathParams.map((param, index) => (
+                      <div 
+                        key={index} 
+                        className="flex items-center gap-2 bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700"
+                      >
+                        <code className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400">
+                          :{param.key}
+                        </code>
+                        <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        <code className="font-mono text-xs text-gray-700 dark:text-gray-300 flex-1 break-all">
+                          {param.value || <span className="italic text-gray-400">(empty)</span>}
+                        </code>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

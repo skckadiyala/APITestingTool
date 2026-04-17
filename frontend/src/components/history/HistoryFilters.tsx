@@ -53,11 +53,11 @@ export const HistoryFilters: React.FC = () => {
     filters.endDate;
 
   return (
-    <div className="border-b border-gray-200">
+    <div className="border-b border-gray-200 dark:border-gray-700">
       {/* Filter toggle button */}
       <button
         onClick={toggleFilterPanel}
-        className="w-full px-4 py-3 flex items-center justify-between text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full px-4 py-3 flex items-center justify-between text-[12px] font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
       >
         <span className="flex items-center gap-2">
           <svg
@@ -75,7 +75,7 @@ export const HistoryFilters: React.FC = () => {
           </svg>
           Filters
           {hasActiveFilters && (
-            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full">
+            <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-[12px] rounded-full">
               Active
             </span>
           )}
@@ -97,10 +97,10 @@ export const HistoryFilters: React.FC = () => {
 
       {/* Filter panel */}
       {isFilterPanelOpen && (
-        <div className="text-left p-4 bg-gray-50 space-y-4">
+        <div className="text-left p-4 bg-gray-50 dark:bg-gray-800 space-y-4">
           {/* Method filter */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
+            <label className="block text-[12px] font-semibold text-gray-700 dark:text-gray-300 mb-2">
               HTTP Method
             </label>
             <div className="flex flex-wrap gap-2">
@@ -109,11 +109,11 @@ export const HistoryFilters: React.FC = () => {
                   key={method}
                   onClick={() => handleMethodToggle(method)}
                   className={`
-                    px-3 py-1 text-xs font-medium rounded border transition-colors
+                    px-4 py-2.5 text-[12px] font-medium rounded border transition-colors
                     ${
                       filters.method === method
-                        ? 'bg-blue-500 text-white border-blue-600'
-                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                        ? 'bg-blue-500 dark:bg-blue-600 text-white border-blue-600 dark:border-blue-700'
+                        : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
                     }
                   `}
                 >
@@ -125,7 +125,7 @@ export const HistoryFilters: React.FC = () => {
 
           {/* Status code range */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
+            <label className="block text-[12px] font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Status Code Range
             </label>
             <div className="flex flex-wrap gap-2">
@@ -139,11 +139,11 @@ export const HistoryFilters: React.FC = () => {
                     key={range.label}
                     onClick={() => handleStatusRangeChange(range.min, range.max)}
                     className={`
-                      px-3 py-1 text-xs font-medium rounded border transition-colors
+                      px-4 py-2.5 text-[12px] font-medium rounded border transition-colors
                       ${
                         isActive
-                          ? 'bg-blue-500 text-white border-blue-600'
-                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'
+                          ? 'bg-blue-500 dark:bg-blue-600 text-white border-blue-600 dark:border-blue-700'
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600'
                       }
                     `}
                   >
@@ -156,7 +156,7 @@ export const HistoryFilters: React.FC = () => {
 
           {/* URL pattern */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
+            <label className="block text-[12px] font-semibold text-gray-700 dark:text-gray-300 mb-2">
               URL Pattern
             </label>
             <div className="flex gap-2">
@@ -166,11 +166,11 @@ export const HistoryFilters: React.FC = () => {
                 onChange={(e) => setUrlPattern(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleUrlPatternChange()}
                 placeholder="e.g., api.example.com"
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 onClick={handleUrlPatternChange}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600 transition-colors"
+                className="px-4 py-2.5 text-[12px] font-medium text-white bg-blue-500 dark:bg-blue-600 rounded hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
               >
                 Apply
               </button>
@@ -179,32 +179,32 @@ export const HistoryFilters: React.FC = () => {
 
           {/* Date range */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-2">
+            <label className="block text-[12px] font-semibold text-gray-700 dark:text-gray-300 mb-2">
               Date Range
             </label>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-xs text-gray-600 mb-1">From</label>
+                <label className="block text-[12px] text-gray-600 dark:text-gray-400 mb-1">From</label>
                 <input
                   type="datetime-local"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-600 mb-1">To</label>
+                <label className="block text-[12px] text-gray-600 dark:text-gray-400 mb-1">To</label>
                 <input
                   type="datetime-local"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
             <button
               onClick={handleDateRangeChange}
-              className="mt-2 w-full px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600 transition-colors"
+              className="mt-2 w-full px-4 py-2.5 text-[12px] font-medium text-white bg-blue-500 dark:bg-blue-600 rounded hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors"
             >
               Apply Date Range
             </button>
@@ -214,7 +214,7 @@ export const HistoryFilters: React.FC = () => {
           {hasActiveFilters && (
             <button
               onClick={handleClearFilters}
-              className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+              className="w-full px-4 py-2.5 text-[12px] font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
             >
               Clear All Filters
             </button>

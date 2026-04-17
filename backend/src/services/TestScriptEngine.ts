@@ -167,6 +167,23 @@ export class TestScriptEngine {
         url: result.request?.url,
         headers: result.request?.headers || {},
         body: result.request?.body,
+        params: result.request?.params || [],
+        // Convert pathParams array to object for easy access
+        pathParams: this.convertPathParamsToObject(result.request?.pathParams || []),
+        
+        // Helper methods for path parameters
+        getPathParam: (key: string): string | undefined => {
+          const pathParamsObj = this.convertPathParamsToObject(result.request?.pathParams || []);
+          return pathParamsObj[key];
+        },
+        
+        setPathParam: (key: string, value: string): void => {
+          const pathParamsObj = this.convertPathParamsToObject(result.request?.pathParams || []);
+          pathParamsObj[key] = value;
+          // Note: In test scripts, this modifies the local copy only
+          // In pre-request scripts, this would need to update the execution context
+          consoleOutput.push(`Path parameter '${key}' set to '${value}'`);
+        },
       },
 
       // Test function
@@ -353,5 +370,20 @@ export class TestScriptEngine {
         consoleOutput.push('[ERROR] ' + args.map(a => String(a)).join(' '));
       },
     };
+  }
+
+  /**
+   * Convert pathParams array to object for easier access in scripts
+   * Example: [{key: 'userId', value: '123'}, {key: 'postId', value: '456'}]
+   *       => {userId: '123', postId: '456'}
+   */
+  private convertPathParamsToObject(pathParams: Array<{key: string; value: string}>): Record<string, string> {
+    const obj: Record<string, string> = {};
+    pathParams.forEach(param => {
+      if (param.key) {
+        obj[param.key] = param.value || '';
+      }
+    });
+    return obj;
   }
 }

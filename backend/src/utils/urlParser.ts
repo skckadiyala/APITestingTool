@@ -12,6 +12,11 @@ export interface PostmanUrlObject {
     value: string;
     disabled?: boolean;
   }>;
+  variable?: Array<{
+    key: string;
+    value: string;
+    description?: string;
+  }>;
 }
 
 export interface QueryParam {
@@ -20,14 +25,21 @@ export interface QueryParam {
   enabled?: boolean;
 }
 
+export interface PathParam {
+  key: string;
+  value: string;
+  description?: string;
+}
+
 export class URLParser {
   /**
    * Parse a Postman URL object from a string or object
    * Used during import to extract URL components
    */
-  static parsePostmanUrl(url: string | any): { url: string; params: QueryParam[] } {
+  static parsePostmanUrl(url: string | any): { url: string; params: QueryParam[]; pathParams: PathParam[] } {
     let urlString: string;
     let params: QueryParam[] = [];
+    let pathParams: PathParam[] = [];
 
     // Handle URL as string or object
     if (typeof url === 'string') {
@@ -43,18 +55,27 @@ export class URLParser {
           enabled: q.disabled !== true
         }));
       }
+      
+      // Extract path parameters from url.variable (Postman format)
+      if (url.variable && Array.isArray(url.variable)) {
+        pathParams = url.variable.map((v: any) => ({
+          key: v.key,
+          value: v.value || '',
+          description: v.description || undefined
+        }));
+      }
     } else {
       urlString = '';
     }
 
-    return { url: urlString, params };
+    return { url: urlString, params, pathParams };
   }
 
   /**
    * Build a Postman URL object from a URL string
    * Used during export to create Postman-compatible URL structure
    */
-  static buildPostmanUrl(urlString: string, params?: QueryParam[]): PostmanUrlObject {
+  static buildPostmanUrl(urlString: string, params?: QueryParam[], pathParams?: PathParam[]): PostmanUrlObject {
     const urlObj: PostmanUrlObject = {
       raw: urlString
     };
@@ -101,6 +122,15 @@ export class URLParser {
         key: p.key,
         value: p.value,
         disabled: p.enabled === false
+      }));
+    }
+
+    // Add path parameters (url.variable in Postman format) if present
+    if (pathParams && Array.isArray(pathParams) && pathParams.length > 0) {
+      urlObj.variable = pathParams.map((p: PathParam) => ({
+        key: p.key,
+        value: p.value,
+        description: p.description
       }));
     }
 

@@ -2,6 +2,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IRequestBody extends Document {
   requestId: string;
+  pathParams?: Array<{ key: string; value: string; description?: string }>;
+  params?: Array<{ key: string; value: string; enabled?: boolean }>;
   headers: Array<{ key: string; value: string; enabled?: boolean }>;
   body: {
     type: 'none' | 'json' | 'form-data' | 'xml' | 'raw' | 'binary';
@@ -18,6 +20,16 @@ export interface IRequestBody extends Document {
 
 const RequestBodySchema = new Schema<IRequestBody>({
   requestId: { type: String, required: true, index: true },
+  pathParams: [{
+    key: { type: String, required: true },
+    value: { type: String, required: true },
+    description: { type: String },
+  }],
+  params: [{
+    key: { type: String, required: true },
+    value: { type: String, required: true },
+    enabled: { type: Boolean, default: true },
+  }],
   headers: [{
     key: { type: String, required: true },
     value: { type: String, required: true },

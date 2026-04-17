@@ -11,8 +11,10 @@ import ProfileSettingsTabContent from '../profile/ProfileSettingsTabContent';
 import EnvironmentSettingsTabContent from '../environment/EnvironmentSettingsTabContent';
 import { type KeyValuePair } from '../request/KeyValueEditor';
 import { type BodyType } from '../request/BodyEditor';
+import type { PathParam } from '../../types/request.types';
 import { requestService, type ExecutionResult } from '../../services/requestService';
 import { fetchHistoryDetail, type HistoryEntry } from '../../services/historyService';
+import { extractPathParams } from '../../utils/urlHelpers';
 import { useCollectionStore } from '../../stores/collectionStore';
 import { useTabStore } from '../../stores/tabStore';
 import { useEnvironmentStore } from '../../stores/environmentStore';
@@ -77,6 +79,7 @@ const MainContent = forwardRef<MainContentRef, MainContentProps>((_, ref) => {
   };
   
   // Request configuration state
+  const [pathParams, setPathParams] = useState<PathParam[]>([]);
   const [params, setParams] = useState<KeyValuePair[]>([]);
   
   const [headers, setHeaders] = useState<KeyValuePair[]>([]);
@@ -217,6 +220,13 @@ pm.test("Response has correct structure", function () {
     setRequestName(newName);
     if (activeTabId && !isSyncingFromTab.current) {
       updateTab(activeTabId, { name: newName, isDirty: true });
+    }
+  };
+
+  const handlePathParamsChange = (newPathParams: PathParam[]) => {
+    setPathParams(newPathParams);
+    if (activeTabId && !isSyncingFromTab.current) {
+      updateTab(activeTabId, { pathParams: newPathParams, isDirty: true });
     }
   };
 
@@ -508,6 +518,11 @@ pm.test("Response has correct structure", function () {
     setUrl(currentTab.url || '');
     setRequestType(currentTab.requestType || 'REST');
     setRequestName(currentTab.name || 'New Request');
+    setPathParams(currentTab.pathParams?.map(p => ({
+      key: p.key,
+      value: p.value,
+      description: p.description,
+    })) || []);
     setParams(currentTab.params?.map((p, idx) => ({
       id: String(idx + 1),
       key: p.key,
@@ -578,10 +593,59 @@ pm.test("Response has correct structure", function () {
     // Clear the flag after a longer delay to allow all child components to mount
     const timer = setTimeout(() => {
       isSyncingFromTab.current = false;
+      console.log('[Path Params] Tab sync complete, auto-detection re-enabled');
     }, 100);
     
     return () => clearTimeout(timer);
-  }, [currentTab?.id, currentTab?.url, currentTab?.method, currentTab?.requestId]);
+  }, [currentTab?.id]); // Only sync when tab ID changes, not when URL/method changes within the same tab
+
+  // Auto-detect path parameters from URL changes
+  useEffect(() => {
+    // Skip if we're syncing from tab to avoid conflicts
+    if (isSyncingFromTab.current) {
+      console.log('[Path Params] Skipping auto-detection: syncing from tab');
+      return;
+    }
+
+    console.log('[Path Params] Auto-detecting from URL:', url);
+    
+    // Auto-detect path parameters from URL
+    const detected = extractPathParams(url);
+    console.log('[Path Params] Detected params:', detected);
+    
+    // Create path param objects from detected names
+    const newPathParams = detected.map(paramName => {
+      // Preserve existing values if param already exists
+      const existing = pathParams.find(p => p.key === paramName);
+      return {
+        key: paramName,
+        value: existing?.value || '',
+        description: existing?.description
+      };
+    });
+    
+    console.log('[Path Params] Current pathParams:', pathParams);
+    console.log('[Path Params] New pathParams:', newPathParams);
+    
+    // Only update if changed to avoid infinite loops
+    const currentKeys = JSON.stringify(pathParams.map(p => p.key).sort());
+    const newKeys = JSON.stringify(newPathParams.map(p => p.key).sort());
+    
+    console.log('[Path Params] Comparing keys - current:', currentKeys, 'new:', newKeys);
+    
+    if (currentKeys !== newKeys) {
+      console.log('[Path Params] Keys changed, updating state');
+      setPathParams(newPathParams);
+      
+      // Mark tab as dirty if path params changed
+      if (activeTabId) {
+        updateTab(activeTabId, { pathParams: newPathParams, isDirty: true });
+      }
+    } else {
+      console.log('[Path Params] Keys unchanged, skipping update');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url]); // Only run when URL changes (pathParams used inside is intentionally not a dependency)
 
   // Restore request from history
   const restoreFromHistory = async (entry: HistoryEntry) => {
@@ -625,6 +689,26 @@ pm.test("Response has correct structure", function () {
       ) || [];
       setHeaders(restoredHeaders);
 
+      // Restore query params
+      const restoredParams: KeyValuePair[] = historyDetail.requestBody?.params?.map(
+        (p, index) => ({
+          id: String(index + 1),
+          key: p.key,
+          value: p.value,
+          enabled: p.enabled !== false,
+        })
+      ) || [];
+      setParams(restoredParams);
+
+      // Restore path params
+      const restoredPathParams: PathParam[] = historyDetail.requestBody?.pathParams?.map(
+        (p) => ({
+          key: p.key,
+          value: p.value,
+        })
+      ) || [];
+      setPathParams(restoredPathParams);
+
       // Restore body
       let restoredBodyType: BodyType = 'json';
       let restoredBodyContent = '';
@@ -651,6 +735,8 @@ pm.test("Response has correct structure", function () {
           method: historyDetail.method,
           url: historyDetail.url,
           headers: restoredHeaders,
+          params: restoredParams,
+          pathParams: restoredPathParams,
           body: {
             type: restoredBodyType,
             content: restoredBodyContent
@@ -803,6 +889,26 @@ pm.test("Response has correct structure", function () {
       return;
     }
 
+    // Validate path parameters
+    const emptyPathParams = pathParams.filter(p => !p.value || p.value.trim() === '');
+    if (emptyPathParams.length > 0) {
+      const paramNames = emptyPathParams.map(p => `:${p.key}`).join(', ');
+      const confirmed = window.confirm(
+        `Path parameter${emptyPathParams.length > 1 ? 's' : ''} ${paramNames} ${emptyPathParams.length > 1 ? 'have' : 'has'} no value. Send request anyway?\n\n` +
+        `The URL may not resolve correctly without ${emptyPathParams.length > 1 ? 'these values' : 'this value'}.`
+      );
+      
+      if (!confirmed) {
+        // User cancelled, don't send request
+        console.warn('⚠️ Request cancelled: Empty path parameters');
+        toast('Request cancelled', { icon: '⚠️' });
+        return;
+      }
+      
+      // Log warning about empty path params
+      console.warn(`⚠️ Sending request with empty path parameters: ${paramNames}`);
+    }
+
     setIsLoading(true);
     setHasResponse(false);
     
@@ -855,6 +961,7 @@ pm.test("Response has correct structure", function () {
         method: method as any,
         url: url.trim(),
         requestType: requestType, // Include request type
+        pathParams: pathParams,
         params: requestType === 'GRAPHQL' ? [] : params, // GraphQL doesn't use query params
         headers,
         body: {
@@ -1095,6 +1202,7 @@ pm.test("Response has correct structure", function () {
         method,
         url,
         requestType, // Include request type
+        pathParams, // Include pathParams
         params: paramsToSave,
         headers: headersToSave,
         body: (bodyContentToSave || bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
@@ -1112,6 +1220,7 @@ pm.test("Response has correct structure", function () {
         name: requestName,
         method,
         url,
+        pathParams, // Include pathParams
         params: paramsToSave,
         headers: headersToSave,
         body: (bodyContentToSave || bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
@@ -1178,6 +1287,7 @@ pm.test("Response has correct structure", function () {
         undefined, // requestBodyId
         testScript.trim() || undefined,
         preRequestScript.trim() || undefined,
+        pathParams, // Include pathParams
         paramsToSave,
         headersToSave,
         (bodyContentToSave || bodyType !== 'none') ? { type: bodyType, content: bodyContentToSave } : undefined,
@@ -1245,12 +1355,14 @@ pm.test("Response has correct structure", function () {
             url={url}
             requestType={requestType}
             requestName={requestName}
+            pathParams={pathParams}
             onMethodChange={handleMethodChange}
             onUrlChange={handleUrlChange}
             onRequestNameChange={handleRequestNameChange}
             onRequestTypeChange={handleRequestTypeChange}
             onSend={handleSend}
             onSave={handleSave}
+            onViewPathParams={() => handleActiveTabChange('params')}
             isLoading={isLoading}
             isSaved={isSaved}
             isExistingRequest={!!tabs.find(t => t.id === activeTabId)?.requestId}
@@ -1262,6 +1374,7 @@ pm.test("Response has correct structure", function () {
               activeTab={activeTab}
               onTabChange={handleActiveTabChange}
               requestType={requestType}
+              pathParams={pathParams}
               params={params}
               headers={headers}
               bodyType={bodyType}
@@ -1276,6 +1389,7 @@ pm.test("Response has correct structure", function () {
               graphqlSchema={graphqlSchema}
               schemaUrl={url}
               schemaLoading={schemaLoading}
+              onPathParamsChange={handlePathParamsChange}
               onParamsChange={handleParamsChange}
               onHeadersChange={handleHeadersChange}
               onBodyTypeChange={handleBodyTypeChange}
@@ -1339,6 +1453,12 @@ pm.test("Response has correct structure", function () {
                       testResults={executionResult.testResults}
                       consoleLogs={consoleLogs}
                       requestType={requestType}
+                      requestDetails={executionResult.request ? {
+                        method: executionResult.request.method,
+                        url: executionResult.request.url,
+                        originalUrl: executionResult.request.originalUrl,
+                        pathParams: executionResult.request.pathParams,
+                      } : undefined}
                     />
                   </div>
                 )}

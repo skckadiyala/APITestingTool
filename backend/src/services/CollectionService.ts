@@ -32,6 +32,7 @@ export interface AddRequestDto {
   url: string;
   requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
   requestBodyId?: string;
+  pathParams?: any;
   params?: any;
   headers?: any;
   body?: any;
@@ -50,6 +51,7 @@ export interface UpdateRequestDto {
   method?: string;
   url?: string;
   requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
+  pathParams?: any;
   params?: any;
   headers?: any;
   body?: any;

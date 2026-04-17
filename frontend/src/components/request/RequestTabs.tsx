@@ -4,8 +4,9 @@ import BodyEditor, { type BodyType } from './BodyEditor';
 import Editor from '@monaco-editor/react';
 import GraphQLQueryPanel from './GraphQLQueryPanel';
 import GraphQLSchemaViewer from './GraphQLSchemaViewer';
-import type { GraphQLSchema, RequestType } from '../../types/request.types';
+import type { GraphQLSchema, RequestType, PathParam } from '../../types/request.types';
 import type { AuthConfig } from '../../types';
+import { configureScriptIntelliSense } from '../../utils/scriptIntelliSense';
 
 type TabType = 'params' | 'headers' | 'body' | 'query' | 'schema' | 'auth' | 'pre-request' | 'tests';
 type AuthType = 'noauth' | 'bearer' | 'basic' | 'apikey' | 'oauth2' | 'none';
@@ -14,6 +15,7 @@ interface RequestTabsProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
   requestType?: RequestType;
+  pathParams: PathParam[];
   params: KeyValuePair[];
   headers: KeyValuePair[];
   bodyType: BodyType;
@@ -30,6 +32,7 @@ interface RequestTabsProps {
   schemaUrl?: string;
   schemaLastFetched?: Date;
   schemaLoading?: boolean;
+  onPathParamsChange: (pathParams: PathParam[]) => void;
   onParamsChange: (params: KeyValuePair[]) => void;
   onHeadersChange: (headers: KeyValuePair[]) => void;
   onBodyTypeChange: (type: BodyType) => void;
@@ -75,6 +78,7 @@ export default function RequestTabs({
   activeTab,
   onTabChange,
   requestType = 'REST',
+  pathParams,
   params,
   headers,
   bodyType,
@@ -90,6 +94,7 @@ export default function RequestTabs({
   schemaUrl,
   schemaLastFetched,
   schemaLoading = false,
+  onPathParamsChange,
   onParamsChange,
   onHeadersChange,
   onBodyTypeChange,
@@ -137,6 +142,11 @@ export default function RequestTabs({
     }
   }, [parentAuthConfig?.type]);
 
+  // Configure Monaco Editor IntelliSense for script editing
+  useEffect(() => {
+    configureScriptIntelliSense();
+  }, []);
+
   const TabButton = ({ tab, label, count }: { tab: TabType; label: string; count?: number }) => (
     <button
       onClick={() => onTabChange(tab)}
@@ -183,14 +193,165 @@ export default function RequestTabs({
       <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-800 p-1.5">
         {/* Params Tab */}
         {activeTab === 'params' && (
-          <div>
-            <KeyValueEditor
-              pairs={params}
-              onChange={onParamsChange}
-              placeholder={{ key: 'Parameter', value: 'Value' }}
-              showDescription={true}
-              bulkEditMode={true}
-            />
+          <div className="space-y-4">
+            {/* Query Parameters Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-2 px-4 py-2 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+                <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Query Parameters
+                </span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">
+                  {params.filter(p => p.enabled).length} active
+                </span>
+              </div>
+              <KeyValueEditor
+                pairs={params}
+                onChange={onParamsChange}
+                placeholder={{ key: 'key', value: 'value' }}
+                showDescription={true}
+                bulkEditMode={true}
+              />
+            </div>
+
+            {/* Path Parameters Section */}
+            <div>
+              <div className="flex items-center gap-2 mb-2 px-4 py-2 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                  Path Parameters
+                </span>
+                <span className="text-xs text-blue-600 dark:text-blue-400">
+                  {pathParams.length} variable{pathParams.length !== 1 ? 's' : ''}
+                </span>
+                {/* Info Icon with Tooltip */}
+                <div className="relative group ml-auto">
+                  <button
+                    onClick={() => window.open('https://github.com/APITestingTool/docs/blob/main/features/path-parameters.md', '_blank')}
+                    className="p-1 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                    title="Learn more about path parameters"
+                  >
+                    <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                  {/* Tooltip */}
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block z-50">
+                    <div className="bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded-lg py-2 px-3 shadow-lg whitespace-nowrap">
+                      <div className="font-semibold mb-1">Path Parameters vs Query Parameters</div>
+                      <div className="text-left space-y-1">
+                        <div>• Path: <code className="text-blue-300 dark:text-blue-600">/users/:id</code> - Resource identifier</div>
+                        <div>• Query: <code className="text-blue-300 dark:text-blue-600">?status=active</code> - Filters/options</div>
+                      </div>
+                      <div className="mt-2 text-blue-300 dark:text-blue-600 underline">Click for full documentation</div>
+                      {/* Arrow */}
+                      <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-900 dark:border-t-gray-100"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {pathParams.length > 0 ? (
+                <>
+                  {/* Validation Warnings */}
+                  {(() => {
+                    const warnings: Array<{ param: string; message: string; type: 'error' | 'warning' }> = [];
+                    
+                    // Check for empty values
+                    pathParams.forEach(p => {
+                      if (!p.value || p.value.trim() === '') {
+                        warnings.push({
+                          param: p.key,
+                          message: `Path parameter ':${p.key}' has no value`,
+                          type: 'error'
+                        });
+                      }
+                    });
+                    
+                    // Check for duplicate param names
+                    const paramNames = pathParams.map(p => p.key);
+                    const duplicates = paramNames.filter((name, index) => paramNames.indexOf(name) !== index);
+                    const uniqueDuplicates = [...new Set(duplicates)];
+                    uniqueDuplicates.forEach(dup => {
+                      warnings.push({
+                        param: dup,
+                        message: `Duplicate path parameter ':${dup}' - same value will be used for all occurrences`,
+                        type: 'warning'
+                      });
+                    });
+                    
+                    // Check for special characters
+                    pathParams.forEach(p => {
+                      if (p.value && p.value.includes('/')) {
+                        warnings.push({
+                          param: p.key,
+                          message: `Path parameter ':${p.key}' contains '/' character - this may be a mistake`,
+                          type: 'warning'
+                        });
+                      }
+                    });
+                    
+                    if (warnings.length === 0) return null;
+                    
+                    return (
+                      <div className="px-4 py-2 space-y-1 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800">
+                        {warnings.map((warning, idx) => (
+                          <div 
+                            key={idx} 
+                            className={`flex items-start gap-2 text-xs ${
+                              warning.type === 'error' 
+                                ? 'text-red-700 dark:text-red-400' 
+                                : 'text-yellow-700 dark:text-yellow-400'
+                            }`}
+                          >
+                            <svg 
+                              className="w-4 h-4 flex-shrink-0 mt-0.5" 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24"
+                            >
+                              {warning.type === 'error' ? (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              ) : (
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              )}
+                            </svg>
+                            <span>{warning.message}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                  
+                  <KeyValueEditor
+                    pairs={pathParams.map((p, idx) => ({ 
+                      id: String(idx + 1), 
+                      key: p.key, 
+                      value: p.value, 
+                      description: p.description || '',
+                      enabled: true 
+                    }))}
+                    onChange={(pairs) => {
+                      // Filter out empty rows (KeyValueEditor auto-adds them, but we don't want them for path params)
+                      const updated = pairs
+                        .filter(p => p.key.trim() !== '') // Only keep rows with actual path param names
+                        .map(p => ({ key: p.key, value: p.value, description: p.description }));
+                      onPathParamsChange(updated);
+                    }}
+                    placeholder={{ key: 'param', value: 'value' }}
+                    showDescription={true}
+                    bulkEditMode={true}
+                  />
+                </>
+              ) : (
+                <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                  No path parameters detected in URL. Use <code className="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">:paramName</code> or <code className="px-1 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">{'{paramName}'}</code> in the URL.
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -549,9 +710,13 @@ export default function RequestTabs({
             </div>
             <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-md text-xs text-gray-600 dark:text-gray-400">
               <p className="font-medium mb-2">Available APIs:</p>
+              <code className="block">pm.request.pathParams.userId = "123"</code>
               <code className="block">pm.environment.set("key", "value")</code>
-              <code className="block">pm.request.headers.add({'{'}key: "value"{'}'})</code>
+              <code className="block">pm.collectionVariables.set("key", "value")</code>
               <code className="block">pm.variables.get("key")</code>
+              <div className="mt-2 text-xs text-gray-500">
+                💡 Tip: Type <code className="px-1 bg-gray-200 dark:bg-gray-700 rounded">pm.</code> to see all available methods
+              </div>
             </div>
           </div>
         )}
@@ -584,6 +749,13 @@ export default function RequestTabs({
               <code className="block mt-2">pm.test("Response has users array", () =&gt; {"{"}</code>
               <code className="block ml-4">pm.expect(pm.response.json()).to.have.property("users");</code>
               <code className="block">{"}"})</code>
+              <code className="block mt-2">pm.test("Path param was used correctly", () =&gt; {"{"}</code>
+              <code className="block ml-4">const userId = pm.request.pathParams.userId;</code>
+              <code className="block ml-4">pm.expect(userId).to.equal("123");</code>
+              <code className="block">{"}"})</code>
+              <div className="mt-2 text-xs text-gray-500">
+                💡 Tip: Type <code className="px-1 bg-gray-200 dark:bg-gray-700 rounded">pm.</code> to see all available methods
+              </div>
             </div>
           </div>
         )}
