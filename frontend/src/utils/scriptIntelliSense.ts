@@ -1,5 +1,8 @@
 import * as monaco from 'monaco-editor';
 
+// Monaco 0.55+ marks languages.typescript as deprecated in types but the runtime API still works
+const ts = monaco.languages.typescript as any;
+
 /**
  * Type definitions for the pm object (Postman-like API)
  * Used for IntelliSense in pre-request and test scripts
@@ -257,32 +260,32 @@ declare const console: {
  */
 export function configureScriptIntelliSense() {
   // Add extra libraries for IntelliSense
-  monaco.languages.typescript.javascriptDefaults.addExtraLib(
+  ts.javascriptDefaults.addExtraLib(
     PM_TYPE_DEFINITIONS,
     'ts:pm-api.d.ts'
   );
 
   // Configure JavaScript/TypeScript compiler options
-  monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-    target: monaco.languages.typescript.ScriptTarget.ES2015,
+  ts.javascriptDefaults.setCompilerOptions({
+    target: ts.ScriptTarget.ES2015,
     allowNonTsExtensions: true,
-    moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-    module: monaco.languages.typescript.ModuleKind.CommonJS,
+    moduleResolution: ts.ModuleResolutionKind.NodeJs,
+    module: ts.ModuleKind.CommonJS,
     noEmit: true,
     esModuleInterop: true,
-    jsx: monaco.languages.typescript.JsxEmit.React,
+    jsx: ts.JsxEmit.React,
     allowJs: true,
     typeRoots: ['node_modules/@types'],
   });
 
   // Enable suggestions
-  monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+  ts.javascriptDefaults.setDiagnosticsOptions({
     noSemanticValidation: false,
     noSyntaxValidation: false,
   });
 
   // Disable eager model sync to improve performance
-  monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
+  ts.javascriptDefaults.setEagerModelSync(true);
 }
 
 /**

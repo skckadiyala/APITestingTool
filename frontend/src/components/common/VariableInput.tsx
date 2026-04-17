@@ -5,6 +5,7 @@ interface VariableInputProps {
   value: string;
   onChange: (value: string) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onBlur?: () => void;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -14,6 +15,7 @@ export default function VariableInput({
   value,
   onChange,
   onKeyDown,
+  onBlur,
   placeholder,
   className = '',
   disabled = false,
@@ -133,6 +135,7 @@ export default function VariableInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
+        onBlur={onBlur}
         placeholder={placeholder}
         disabled={disabled}
         className={className}

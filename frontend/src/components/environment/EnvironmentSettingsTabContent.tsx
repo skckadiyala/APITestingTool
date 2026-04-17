@@ -259,15 +259,6 @@ export default function EnvironmentSettingsTabContent() {
     setVariables(updated);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white dark:bg-gray-900">
       {/* Content */}
