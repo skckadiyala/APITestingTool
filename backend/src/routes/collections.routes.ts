@@ -11,6 +11,19 @@ import { requireWorkspaceViewer, requireWorkspaceEditor } from '../middleware/wo
 // mergeParams: true allows access to params from parent route (workspaceId)
 const router = Router({ mergeParams: true });
 
+// Security: Maximum script size to prevent DOS attacks and database bloat
+const MAX_SCRIPT_SIZE = 50 * 1024; // 50KB
+
+/**
+ * Validate script size to prevent resource exhaustion
+ */
+function validateScriptSize(script: string | undefined, scriptType: string): string | null {
+  if (script !== undefined && script.length > MAX_SCRIPT_SIZE) {
+    return `${scriptType} exceeds maximum size of 50KB (current: ${Math.round(script.length / 1024)}KB)`;
+  }
+  return null;
+}
+
 /**
  * POST /api/v1/collections
  * POST /api/v1/workspaces/:workspaceId/collections
@@ -118,6 +131,19 @@ router.put('/:id', authenticate, requireWorkspaceEditor(), async (req: Request, 
       res.status(400).json({
         error: 'At least one field must be provided: name, description, variables, preRequestScript, testScript, or auth',
       });
+      return;
+    }
+
+    // Validate script sizes
+    const preRequestError = validateScriptSize(preRequestScript, 'Pre-request script');
+    if (preRequestError) {
+      res.status(400).json({ error: preRequestError });
+      return;
+    }
+
+    const testScriptError = validateScriptSize(testScript, 'Test script');
+    if (testScriptError) {
+      res.status(400).json({ error: testScriptError });
       return;
     }
 
@@ -236,6 +262,19 @@ router.post('/:id/requests', async (req: Request, res: Response): Promise<void> 
       }
     }
 
+    // Validate script sizes
+    const preRequestError = validateScriptSize(preRequestScript, 'Pre-request script');
+    if (preRequestError) {
+      res.status(400).json({ error: preRequestError });
+      return;
+    }
+
+    const testScriptError = validateScriptSize(testScript, 'Test script');
+    if (testScriptError) {
+      res.status(400).json({ error: testScriptError });
+      return;
+    }
+
     const request = await CollectionService.addRequest(id, {
       name,
       method: method || 'POST', // GraphQL always uses POST, default for backward compatibility
@@ -298,6 +337,19 @@ router.put('/requests/:id', async (req: Request, res: Response): Promise<void> =
         });
         return;
       }
+    }
+
+    // Validate script sizes
+    const preRequestError = validateScriptSize(preRequestScript, 'Pre-request script');
+    if (preRequestError) {
+      res.status(400).json({ error: preRequestError });
+      return;
+    }
+
+    const testScriptError = validateScriptSize(testScript, 'Test script');
+    if (testScriptError) {
+      res.status(400).json({ error: testScriptError });
+      return;
     }
 
     const request = await CollectionService.updateRequest(id, {

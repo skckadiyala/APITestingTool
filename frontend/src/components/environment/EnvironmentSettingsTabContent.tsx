@@ -103,13 +103,11 @@ export default function EnvironmentSettingsTabContent() {
     if (isCreating) {
       await createEnvironment(currentWorkspaceId, environmentName, nonEmptyVariables);
       setIsCreating(false);
-      toast.success('Environment created successfully');
     } else if (selectedEnvironmentId) {
       await updateEnvironment(selectedEnvironmentId, {
         name: environmentName,
         variables: nonEmptyVariables,
       });
-      toast.success('Environment updated successfully');
     }
   };
 
@@ -137,12 +135,10 @@ export default function EnvironmentSettingsTabContent() {
       setEnvironmentName('');
       setVariables([]);
     }
-    toast.success('Environment deleted successfully');
   };
 
   const handleDuplicate = async (id: string) => {
     await duplicateEnvironment(id);
-    toast.success('Environment duplicated successfully');
   };
 
   const handleExport = () => {

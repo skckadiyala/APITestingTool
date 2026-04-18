@@ -1,6 +1,12 @@
 import express, { Request, Response } from 'express';
 import { AuthService } from '../services/AuthService';
 import { authenticate, AuthRequest } from '../middleware/auth.middleware';
+import {
+  authLimiter,
+  passwordResetLimiter,
+  refreshTokenLimiter,
+  generalAuthLimiter,
+} from '../middleware/rateLimiter.middleware';
 
 const router = express.Router();
 
@@ -9,7 +15,7 @@ const router = express.Router();
  * @desc    Register a new user
  * @access  Public
  */
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', authLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
 
@@ -42,7 +48,7 @@ router.post('/register', async (req: Request, res: Response) => {
  * @desc    Login user
  * @access  Public
  */
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', authLimiter, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -75,7 +81,7 @@ router.post('/login', async (req: Request, res: Response) => {
  * @desc    Refresh access token
  * @access  Public
  */
-router.post('/refresh', async (req: Request, res: Response) => {
+router.post('/refresh', refreshTokenLimiter, async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
 
@@ -107,7 +113,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
  * @desc    Logout user
  * @access  Public
  */
-router.post('/logout', async (req: Request, res: Response) => {
+router.post('/logout', generalAuthLimiter, async (req: Request, res: Response) => {
   try {
     const { refreshToken } = req.body;
 
@@ -132,7 +138,7 @@ router.post('/logout', async (req: Request, res: Response) => {
  * @desc    Request password reset
  * @access  Public
  */
-router.post('/forgot-password', async (req: Request, res: Response) => {
+router.post('/forgot-password', passwordResetLimiter, async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
 
@@ -164,7 +170,7 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
  * @desc    Reset password with token
  * @access  Public
  */
-router.post('/reset-password', async (req: Request, res: Response) => {
+router.post('/reset-password', passwordResetLimiter, async (req: Request, res: Response) => {
   try {
     const { token, password } = req.body;
 
@@ -195,7 +201,7 @@ router.post('/reset-password', async (req: Request, res: Response) => {
  * @desc    Get user profile
  * @access  Private
  */
-router.get('/profile', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/profile', authenticate, generalAuthLimiter, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -227,7 +233,7 @@ router.get('/profile', authenticate, async (req: AuthRequest, res: Response) => 
  * @desc    Update user profile
  * @access  Private
  */
-router.put('/profile', authenticate, async (req: AuthRequest, res: Response) => {
+router.put('/profile', authenticate, generalAuthLimiter, async (req: AuthRequest, res: Response) => {
   try {
     const { name } = req.body;
 
@@ -251,7 +257,7 @@ router.put('/profile', authenticate, async (req: AuthRequest, res: Response) => 
  * @desc    Change user password
  * @access  Private
  */
-router.post('/change-password', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/change-password', authenticate, authLimiter, async (req: AuthRequest, res: Response) => {
   try {
     if (!req.user) {
       res.status(401).json({
@@ -286,35 +292,11 @@ router.post('/change-password', authenticate, async (req: AuthRequest, res: Resp
 });
 
 /**
- * @route   PUT /api/auth/profile
- * @desc    Update user profile
- * @access  Private
- */
-router.put('/profile', authenticate, async (req: AuthRequest, res: Response) => {
-  try {
-    const { name } = req.body;
-
-    const result = await AuthService.updateProfile(req.user!.userId, { name });
-
-    res.status(200).json({
-      success: true,
-      message: 'Profile updated successfully',
-      data: result,
-    });
-  } catch (error: any) {
-    res.status(400).json({
-      success: false,
-      message: error.message || 'Profile update failed',
-    });
-  }
-});
-
-/**
  * @route   GET /api/auth/verify
  * @desc    Verify if token is valid
  * @access  Private
  */
-router.get('/verify', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/verify', authenticate, generalAuthLimiter, async (req: AuthRequest, res: Response) => {
   res.status(200).json({
     success: true,
     message: 'Token is valid',

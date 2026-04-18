@@ -244,11 +244,8 @@ export default function Sidebar({ mainContentRef }: SidebarProps) {
     return null;
   };
 
-  useEffect(() => {
-    // Load collections when workspace changes
-    loadCollections(currentWorkspaceId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentWorkspaceId]); // Only reload when workspace changes, not when loadCollections function changes
+  // Collections are loaded automatically by setWorkspaceId in Layout.tsx
+  // No need to load them again here to avoid duplicate requests
 
   // Filter collections based on search query
   const filterCollections = (collections: Collection[]): Collection[] => {

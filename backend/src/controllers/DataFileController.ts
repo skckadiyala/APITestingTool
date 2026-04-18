@@ -33,10 +33,12 @@ export class DataFileController {
         data: dataFile
       });
     } catch (error: any) {
+      // Log full error details for debugging
       console.error('Upload data file error:', error);
+      // Send sanitized error to client
       res.status(400).json({
         success: false,
-        message: error.message || 'Failed to upload data file'
+        message: 'Failed to upload data file'
       });
     }
   }
@@ -57,10 +59,12 @@ export class DataFileController {
         data: dataFile
       });
     } catch (error: any) {
+      // Log full error details for debugging
       console.error('Get data file error:', error);
+      // Send sanitized error to client
       res.status(404).json({
         success: false,
-        message: error.message || 'Data file not found'
+        message: 'Data file not found'
       });
     }
   }
@@ -81,10 +85,12 @@ export class DataFileController {
         data: dataFiles
       });
     } catch (error: any) {
+      // Log full error details for debugging
       console.error('Get data files error:', error);
-      res.status(400).json({
+      // Send sanitized error to client
+      res.status(500).json({
         success: false,
-        message: error.message || 'Failed to get data files'
+        message: 'Failed to get data files'
       });
     }
   }
@@ -105,10 +111,12 @@ export class DataFileController {
         data
       });
     } catch (error: any) {
+      // Log full error details for debugging
       console.error('Get parsed data error:', error);
+      // Send sanitized error to client
       res.status(404).json({
         success: false,
-        message: error.message || 'Data file not found'
+        message: 'Data file not found'
       });
     }
   }
@@ -129,10 +137,12 @@ export class DataFileController {
         message: 'Data file deleted successfully'
       });
     } catch (error: any) {
+      // Log full error details for debugging
       console.error('Delete data file error:', error);
-      res.status(404).json({
+      // Send sanitized error to client
+      res.status(500).json({
         success: false,
-        message: error.message || 'Failed to delete data file'
+        message: 'Failed to delete data file'
       });
     }
   }

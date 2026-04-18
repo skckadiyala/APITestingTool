@@ -538,6 +538,14 @@ export class RequestExecutor {
 
     // Handle SSL validation
     if (config.validateSSL === false) {
+      // Security Warning: SSL validation is disabled - log this for security auditing
+      console.warn('⚠️  [SECURITY] SSL certificate validation disabled for request:', {
+        url: config.url,
+        method: config.method,
+        timestamp: new Date().toISOString(),
+        warning: 'This connection is vulnerable to man-in-the-middle attacks',
+      });
+      
       axiosConfig.httpsAgent = new https.Agent({
         rejectUnauthorized: false,
       });
@@ -862,7 +870,7 @@ export class RequestExecutor {
       error: {
         message: error.message || 'Request failed',
         code: error.code,
-        stack: error.stack,
+        // Stack trace intentionally omitted for security - logged server-side only
       },
       executedAt: new Date(startTime),
     };

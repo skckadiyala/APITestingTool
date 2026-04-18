@@ -95,11 +95,12 @@ export class GraphQLController {
         }
       });
     } catch (error: any) {
+      // Log full error details for debugging
       console.error('GraphQL execute error:', error);
+      // Send sanitized error to client
       res.status(500).json({
         success: false,
-        message: error.message || 'Failed to execute GraphQL query',
-        error: error.toString()
+        message: 'Failed to execute GraphQL query'
       });
     }
   }
@@ -165,11 +166,12 @@ export class GraphQLController {
         }
       });
     } catch (error: any) {
+      // Log full error details for debugging
       console.error('GraphQL introspect error:', error);
+      // Send sanitized error to client
       res.status(500).json({
         success: false,
-        message: error.message || 'Failed to introspect GraphQL schema',
-        error: error.toString()
+        message: 'Failed to introspect GraphQL schema'
       });
     }
   }
@@ -250,11 +252,12 @@ export class GraphQLController {
         }
       });
     } catch (error: any) {
+      // Log full error details for debugging
       console.error('Get GraphQL schema error:', error);
+      // Send sanitized error to client
       res.status(500).json({
         success: false,
-        message: error.message || 'Failed to retrieve GraphQL schema',
-        error: error.toString()
+        message: 'Failed to retrieve GraphQL schema'
       });
     }
   }
@@ -305,11 +308,12 @@ export class GraphQLController {
         }
       });
     } catch (error: any) {
+      // Log full error details for debugging
       console.error('GraphQL validate error:', error);
+      // Send sanitized error to client
       res.status(500).json({
         success: false,
-        message: error.message || 'Failed to validate GraphQL query',
-        error: error.toString()
+        message: 'Failed to validate GraphQL query'
       });
     }
   }
