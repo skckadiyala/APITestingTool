@@ -708,7 +708,7 @@ export default function RequestTabs({
                 }}
               />
             </div>
-            <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-md text-xs text-gray-600 dark:text-gray-400">
+            <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-md text-xs text-gray-600 dark:text-gray-400 text-left">
               <p className="font-medium mb-2">Available APIs:</p>
               <code className="block">pm.request.pathParams.userId = "123"</code>
               <code className="block">pm.environment.set("key", "value")</code>
@@ -741,7 +741,7 @@ export default function RequestTabs({
                 }}
               />
             </div>
-            <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-md text-xs text-gray-600 dark:text-gray-400">
+            <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-md text-xs text-gray-600 dark:text-gray-400 text-left">
               <p className="font-medium mb-2">Example tests:</p>
               <code className="block">pm.test("Status code is 200", () =&gt; {"{"}</code>
               <code className="block ml-4">pm.response.to.have.status(200);</code>

@@ -43,7 +43,9 @@ export function extractPathParams(url: string): string[] {
 
   // Regex to match :paramName or {paramName} patterns
   // For colon notation: must be preceded by / to avoid matching port numbers
-  const paramRegex = /(?:\/|^):(\w+)|\{(\w+)\}/g;
+  // For brace notation: exclude {{variableName}} by using negative lookahead/lookbehind
+  // Match {paramName} but NOT {{variableName}}
+  const paramRegex = /(?:\/|^):(\w+)|(?<!\{)\{(\w+)\}(?!\})/g;
   const params: string[] = [];
   let match;
 
@@ -101,8 +103,9 @@ export function substitutePathParams(url: string, params: Record<string, string>
     if (value !== undefined && value !== null) {
       // Replace both :paramName and {paramName} patterns
       // Use word boundary \b to avoid partial replacements
+      // For braces, use negative lookahead/lookbehind to avoid matching {{variableName}}
       const colonPattern = new RegExp(`:${key}\\b`, 'g');
-      const bracePattern = new RegExp(`\\{${key}\\}`, 'g');
+      const bracePattern = new RegExp(`(?<!\\{)\\{${key}\\}(?!\\})`, 'g');
       
       result = result.replace(colonPattern, value);
       result = result.replace(bracePattern, value);

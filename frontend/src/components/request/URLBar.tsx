@@ -75,8 +75,11 @@ export default function URLBar({
 
   // Render URL with syntax highlighting for path params
   const renderHighlightedUrl = (url: string) => {
-    const parts = url.split(/(:[\w]+|\{[\w]+\})/g);
+    // Split by path params (:paramName or {paramName})
+    // Exclude {{variableName}} by using negative lookahead/lookbehind for braces
+    const parts = url.split(/(:[\w]+|(?<!\{)\{[\w]+\}(?!\}))/g);
     return parts.map((part, i) => {
+      // After split, check if this part is a path param (split already excluded {{variableName}})
       if (part.match(/^:[\w]+$/) || part.match(/^\{[\w]+\}$/)) {
         const paramKey = part.replace(/^:|^\{|\}$/g, '');
         const paramValue = pathParams.find(p => p.key === paramKey);
@@ -257,50 +260,6 @@ export default function URLBar({
                 placeholder={getUrlPlaceholder()}
                 className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
-            )}
-            {/* Path Parameters Badge */}
-            {detectedPathParams.length > 0 && (
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                {/* View Path Params Button */}
-                {onViewPathParams && (
-                  <button
-                    onClick={onViewPathParams}
-                    className="flex items-center gap-1 px-2 py-0.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded text-xs font-medium transition-colors"
-                    title="View path parameters in Params tab"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    View Params
-                  </button>
-                )}
-                {/* Path Params Count Badge */}
-                <div
-                  onClick={onViewPathParams}
-                  className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-                    hasEmptyPathParams
-                      ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 cursor-pointer hover:bg-red-200 dark:hover:bg-red-900/50'
-                      : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-900/50'
-                  } transition-colors`}
-                  title={
-                    hasEmptyPathParams
-                      ? `${emptyPathParams.length} path parameter(s) missing value: ${emptyPathParams.map(p => ':' + p.key).join(', ')}. Click to fill.`
-                      : `Path parameters detected: ${detectedPathParams.map(p => ':' + p).join(', ')}. Click to view.`
-                  }
-                >
-                  {hasEmptyPathParams ? (
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  ) : (
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                    </svg>
-                  )}
-                  <span>{detectedPathParams.length} param{detectedPathParams.length !== 1 ? 's' : ''}</span>
-                </div>
-              </div>
             )}
           </div>
         </div>
