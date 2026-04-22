@@ -17,6 +17,7 @@ export default function WorkspaceSettingsTabContent() {
   const [selectedRole, setSelectedRole] = useState<WorkspaceRole>(WorkspaceRole.VIEWER);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
+  const [showSSLWarning, setShowSSLWarning] = useState(false);
   
   const { currentWorkspace, updateWorkspace, deleteWorkspace } = useWorkspaceStore();
   const { user } = useAuthStore();
@@ -137,6 +138,29 @@ export default function WorkspaceSettingsTabContent() {
     } catch (error: any) {
       toast.error('Failed to update workspace');
     }
+  };
+
+  const handleSSLToggle = () => {
+    // If trying to disable SSL, show warning dialog
+    if (validateSSL) {
+      setShowSSLWarning(true);
+    } else {
+      // Re-enabling SSL is safe, no warning needed
+      setValidateSSL(true);
+    }
+  };
+
+  const confirmDisableSSL = () => {
+    setValidateSSL(false);
+    setShowSSLWarning(false);
+    toast('SSL validation disabled - connections are now vulnerable to MITM attacks', {
+      duration: 5000,
+      icon: '⚠️',
+      style: {
+        background: '#fef3c7',
+        color: '#92400e',
+      },
+    });
   };
 
   const handleDeleteWorkspace = async () => {
@@ -280,9 +304,17 @@ export default function WorkspaceSettingsTabContent() {
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                     Verify SSL certificates for HTTPS requests. Disable for self-signed certificates.
                   </p>
+                  {!validateSSL && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-medium flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      Warning: SSL validation disabled - vulnerable to MITM attacks
+                    </p>
+                  )}
                 </div>
                 <button
-                  onClick={() => setValidateSSL(!validateSSL)}
+                  onClick={handleSSLToggle}
                   disabled={!canEdit}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                     validateSSL ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'
@@ -566,6 +598,62 @@ export default function WorkspaceSettingsTabContent() {
                 className="flex-1 px-3 py-1.5 text-xs bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SSL Warning Dialog */}
+      {showSSLWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 dark:bg-red-900 flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                  Disable SSL Certificate Verification?
+                </h3>
+                <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <p className="font-medium text-red-600 dark:text-red-400">
+                    ⚠️ Security Warning: This is not recommended for production use
+                  </p>
+                  <p>
+                    Disabling SSL certificate verification will make your HTTPS connections vulnerable to man-in-the-middle (MITM) attacks.
+                  </p>
+                  <p className="font-medium">Risks include:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>Attackers can intercept and read sensitive data</li>
+                    <li>Credentials and API keys can be stolen</li>
+                    <li>Request/response data can be modified</li>
+                  </ul>
+                  <p className="mt-3 text-xs">
+                    <strong>Only disable this for:</strong>
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 ml-2 text-xs">
+                    <li>Testing with self-signed certificates in development</li>
+                    <li>Local testing environments</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={() => setShowSSLWarning(false)}
+                className="flex-1 px-4 py-2 text-sm bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+              >
+                Keep SSL Enabled (Recommended)
+              </button>
+              <button
+                onClick={confirmDisableSSL}
+                className="flex-1 px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+              >
+                Disable SSL Anyway
               </button>
             </div>
           </div>

@@ -108,17 +108,17 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ onRestoreRequest
   }
 
   return (
-    <div className="fixed right-0 top-0 h-screen w-96 bg-white border-l border-gray-200 shadow-xl flex flex-col z-40">
+    <div className="fixed right-0 top-0 h-screen w-96 bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700 shadow-xl flex flex-col z-40">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white">
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
         <div className="p-4 flex items-center justify-between">
           <div className="text-left">
-            <h2 className="text-lg font-semibold text-gray-900">History</h2>
-            <p className="text-xs text-gray-500">{total} total requests</p>
+            <h2 className="text-[12px] font-semibold text-gray-900 dark:text-white">History</h2>
+            <p className="text-[12px] text-gray-500 dark:text-gray-400">{total} total requests</p>
           </div>
           <button
             onClick={toggleSidebar}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
+            className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
             title="Close History"
           >
             <svg
@@ -142,7 +142,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ onRestoreRequest
           <button
             onClick={() => loadHistory(true)}
             disabled={loading}
-            className="flex-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 text-[12px] font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
             title="Refresh history"
           >
             <svg
@@ -163,7 +163,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ onRestoreRequest
           <button
             onClick={exportToJson}
             disabled={loading || history.length === 0}
-            className="flex-1 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex-1 px-4 py-2.5 text-[12px] font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
             title="Export history as JSON"
           >
             <svg
@@ -184,7 +184,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ onRestoreRequest
           <button
             onClick={clearAll}
             disabled={loading || history.length === 0}
-            className="px-3 py-2 text-sm font-medium text-red-600 bg-white border border-red-300 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
+            className="px-4 py-2.5 text-[12px] font-medium text-red-600 dark:text-red-400 bg-white dark:bg-gray-800 border border-red-300 dark:border-red-600 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
             title="Clear all history"
           >
             <svg
@@ -213,16 +213,17 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ onRestoreRequest
         className="flex-1 overflow-y-auto p-4"
       >
         {error && (
-          <div className="text-left p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          <div className="text-left p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-[12px] text-red-700 dark:text-red-400">
             <p className="font-semibold">Error loading history</p>
-            <p className="text-xs mt-1">{error}</p>
+            <p className="text-[12px] mt-1">{error}</p>
           </div>
         )}
 
+
         {!loading && history.length === 0 && !error && (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <svg
-              className="w-16 h-16 mx-auto mb-4 text-gray-300"
+              className="w-16 h-16 mx-auto mb-4 text-gray-300 dark:text-gray-600"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -234,8 +235,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ onRestoreRequest
                 d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <p className="text-sm font-medium">No history yet</p>
-            <p className="text-xs mt-1">Execute some requests to see them here</p>
+            <p className="text-[12px] font-medium">No history yet</p>
+            <p className="text-[12px] mt-1">Execute some requests to see them here</p>
           </div>
         )}
 
@@ -256,7 +257,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ onRestoreRequest
             className="text-center py-4"
           >
             {loading && (
-              <div className="flex items-center justify-center text-sm text-gray-500">
+              <div className="flex items-center justify-center text-[12px] text-gray-500 dark:text-gray-400">
                 <svg
                   className="animate-spin h-5 w-5 mr-2"
                   fill="none"
@@ -283,7 +284,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({ onRestoreRequest
         )}
 
         {!hasMore && history.length > 0 && (
-          <div className="text-center py-4 text-xs text-gray-400">
+          <div className="text-center py-4 text-[12px] text-gray-400 dark:text-gray-500">
             End of history
           </div>
         )}

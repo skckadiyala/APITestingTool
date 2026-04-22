@@ -33,8 +33,8 @@ export class ExportService {
       // Add requests
       if (folder.requests) {
         folder.requests.forEach((request: any) => {
-          // Use URLParser utility to build Postman URL object
-          const urlObj = URLParser.buildPostmanUrl(request.url, request.params);
+          // Use URLParser utility to build Postman URL object with query params and path params
+          const urlObj = URLParser.buildPostmanUrl(request.url, request.params, request.pathParams);
 
           // Convert body back to Postman format
           let postmanBody: any = {};
@@ -333,10 +333,10 @@ export class ExportService {
     ]);
 
     return new Promise((resolve, reject) => {
-      const chunks: Buffer[] = [];
+      const chunks: Uint8Array[] = [];
       const archive = archiver('zip', { zlib: { level: 9 } });
 
-      archive.on('data', (chunk) => chunks.push(chunk));
+      archive.on('data', (chunk: Uint8Array) => chunks.push(chunk));
       archive.on('end', () => resolve(Buffer.concat(chunks)));
       archive.on('error', reject);
 

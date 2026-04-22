@@ -7,6 +7,7 @@ import type {
   RequestParam, 
   RequestHeader 
 } from '../types';
+import type { PathParam } from '../types/request.types';
 import type { UpdateRequestDto } from '../types/collection.types';
 import toast from 'react-hot-toast';
 import { useWorkspaceStore } from './workspaceStore';
@@ -32,6 +33,7 @@ interface CollectionState {
     requestBodyId?: string, 
     testScript?: string, 
     preRequestScript?: string, 
+    pathParams?: PathParam[],
     params?: RequestParam[], 
     headers?: RequestHeader[], 
     body?: RequestBody | null, 
@@ -139,7 +141,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
     }
   },
 
-  addRequestToCollection: async (collectionId: string, name: string, method: string, url: string, requestBodyId?: string, testScript?: string, preRequestScript?: string, params?: RequestParam[], headers?: RequestHeader[], body?: RequestBody | null, auth?: AuthConfig | null, requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET', graphqlQuery?: string, graphqlVariables?: Record<string, any>, graphqlSchema?: any) => {
+  addRequestToCollection: async (collectionId: string, name: string, method: string, url: string, requestBodyId?: string, testScript?: string, preRequestScript?: string, pathParams?: PathParam[], params?: RequestParam[], headers?: RequestHeader[], body?: RequestBody | null, auth?: AuthConfig | null, requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET', graphqlQuery?: string, graphqlVariables?: Record<string, any>, graphqlSchema?: any) => {
     set({ loading: true, error: null });
     try {
       const workspaceId = get().currentWorkspaceId;
@@ -149,6 +151,7 @@ export const useCollectionStore = create<CollectionState>((set, get) => ({
         url,
         requestBodyId,
         requestType,
+        pathParams,
         params,
         headers,
         body,

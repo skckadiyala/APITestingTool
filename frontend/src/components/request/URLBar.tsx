@@ -1,15 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import VariableInput from '../common/VariableInput';
 import { useWorkspacePermission } from '../../hooks/useWorkspacePermission';
 import { useCollectionStore } from '../../stores/collectionStore';
-import type { RequestType } from '../../types/request.types';
+import type { RequestType, PathParam } from '../../types/request.types';
 import { REQUEST_TYPE_CONFIG, getRequestTypeLabel } from '../../utils/requestTypeConfig';
+import { extractPathParams } from '../../utils/urlHelpers';
 
 interface URLBarProps {
   method: string;
   url: string;
   requestType?: RequestType;
   requestName?: string;
+  pathParams?: PathParam[];
   onMethodChange: (method: string) => void;
   onUrlChange: (url: string) => void;
   onRequestTypeChange?: (type: RequestType) => void;
@@ -39,21 +41,60 @@ export default function URLBar({
   url,
   requestType = 'REST',
   requestName = 'Untitled Request',
+  pathParams = [],
   onMethodChange,
   onUrlChange,
   onRequestTypeChange,
   onRequestNameChange,
   onSend,
   onSave,
+  // onViewPathParams,
   isLoading = false,
   isSaved = false,
   isExistingRequest = false,
   isDirty = false,
 }: URLBarProps) {
   const [showRequestTypeMenu, setShowRequestTypeMenu] = useState(false);
+  const [showUrlPreview, setShowUrlPreview] = useState(false);
   const requestTypeRef = useRef<HTMLDivElement>(null);
   const { currentWorkspaceId } = useCollectionStore();
   const { canEdit } = useWorkspacePermission(currentWorkspaceId);
+
+  // Detect path parameters from URL
+  const detectedPathParams = useMemo(() => {
+    return extractPathParams(url);
+  }, [url]);
+
+  // Check which path params have empty values
+  // Render URL with syntax highlighting for path params
+  const renderHighlightedUrl = (url: string) => {
+    // Split by path params (:paramName or {paramName})
+    // Exclude {{variableName}} by using negative lookahead/lookbehind for braces
+    const parts = url.split(/(:[\w]+|(?<!\{)\{[\w]+\}(?!\}))/g);
+    return parts.map((part, i) => {
+      // After split, check if this part is a path param (split already excluded {{variableName}})
+      if (part.match(/^:[\w]+$/) || part.match(/^\{[\w]+\}$/)) {
+        const paramKey = part.replace(/^:|^\{|\}$/g, '');
+        const paramValue = pathParams.find(p => p.key === paramKey);
+        const isEmpty = !paramValue?.value || paramValue.value.trim() === '';
+        
+        return (
+          <span
+            key={i}
+            className={`font-semibold px-1 rounded ${
+              isEmpty
+                ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30'
+                : 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
+            }`}
+            title={isEmpty ? `Path parameter '${part}' has no value` : `${part} = ${paramValue?.value}`}
+          >
+            {part}
+          </span>
+        );
+      }
+      return <span key={i}>{part}</span>;
+    });
+  };
 
   // Close request type menu when clicking outside
   useEffect(() => {
@@ -195,13 +236,24 @@ export default function URLBar({
         {/* URL Input with Variable Support */}
         <div className="flex-1 relative">
           <div className="relative">
-            <VariableInput
-              value={url}
-              onChange={onUrlChange}
-              onKeyDown={handleKeyPress}
-              placeholder={getUrlPlaceholder()}
-              className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+            {showUrlPreview && detectedPathParams.length > 0 ? (
+              <div
+                onClick={() => setShowUrlPreview(false)}
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 min-h-[34px] flex items-center cursor-text"
+                title="Click to edit URL"
+              >
+                {renderHighlightedUrl(url)}
+              </div>
+            ) : (
+              <VariableInput
+                value={url}
+                onChange={onUrlChange}
+                onKeyDown={handleKeyPress}
+                onBlur={() => detectedPathParams.length > 0 && setShowUrlPreview(true)}
+                placeholder={getUrlPlaceholder()}
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            )}
           </div>
         </div>
 

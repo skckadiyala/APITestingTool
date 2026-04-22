@@ -6,9 +6,15 @@ interface ResponseViewerProps {
   testResults?: any;
   consoleLogs?: Array<{ type: 'request' | 'response' | 'error' | 'info'; message: string; timestamp: number }>;
   requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET';
+  requestDetails?: {
+    method: string;
+    url: string;
+    originalUrl?: string;
+    pathParams?: Array<{ key: string; value: string }>;
+  };
 }
 
-const ResponseViewer: React.FC<ResponseViewerProps> = ({ response, testResults, consoleLogs = [], requestType = 'REST' }) => {
+const ResponseViewer: React.FC<ResponseViewerProps> = ({ response, testResults, consoleLogs = [], requestType = 'REST', requestDetails }) => {
   if (!response) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400">
@@ -33,6 +39,7 @@ const ResponseViewer: React.FC<ResponseViewerProps> = ({ response, testResults, 
         time={time}
         size={size}
         requestType={requestType}
+        requestDetails={requestDetails}
       />
     </div>
   );

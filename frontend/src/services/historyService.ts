@@ -8,6 +8,7 @@ export interface HistoryEntry {
   userId: string;
   method: string;
   url: string;
+  originalUrl?: string; // URL template with path param placeholders
   requestBodyId: string;
   responseBodyId?: string;
   statusCode?: number;
@@ -52,7 +53,10 @@ export interface HistoryDetail extends HistoryEntry {
     auth: {
       type: string;
     };
+    params?: Array<{ key: string; value: string; enabled?: boolean }>;
+    pathParams?: Array<{ key: string; value: string }>;
   };
+  originalUrl?: string; // URL template with path param placeholders
   responseBody?: {
     headers: Array<{ key: string; value: string }>;
     body: any;

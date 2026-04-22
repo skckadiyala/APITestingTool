@@ -18,6 +18,7 @@ export interface RunResult {
   requestName: string;
   method: string;
   url: string;
+  pathParams?: Array<{ key: string; value: string }>;
   status: 'passed' | 'failed' | 'skipped';
   statusCode?: number;
   responseTime?: number;
@@ -365,6 +366,7 @@ export class CollectionRunner {
         url: request.url,
         headers: request.headers || [],
         params: request.params || [],
+        pathParams: request.pathParams || [],
         body: request.body || { type: 'none' },
         auth: request.auth || { type: 'none' },
         testScript: request.testScript || '',
@@ -399,6 +401,7 @@ export class CollectionRunner {
         requestName: request.name,
         method: result.request.method,
         url: result.request.url,
+        pathParams: result.request.pathParams,
         status,
         statusCode: result.response?.status,
         responseTime,
@@ -426,6 +429,7 @@ export class CollectionRunner {
         requestName: request.name,
         method: request.method,
         url: request.url,
+        pathParams: request.pathParams,
         status: 'failed',
         error: error.message,
         responseTime: Date.now() - startTime,
@@ -469,6 +473,7 @@ export class CollectionRunner {
       url: replaceVariables(config.url),
       headers: replaceInObject(config.headers),
       params: replaceInObject(config.params),
+      pathParams: replaceInObject(config.pathParams),
       body: replaceInObject(config.body),
     };
   }

@@ -33,7 +33,13 @@ export default function EnvironmentSettingsTabContent() {
       const env = environments.find((e) => e.id === selectedEnvironmentId);
       if (env) {
         setEnvironmentName(env.name);
-        setVariables(env.variables || []);
+        const vars = env.variables || [];
+        // Ensure there's always at least one empty row for editing
+        if (vars.length === 0 || vars[vars.length - 1].key || vars[vars.length - 1].value) {
+          setVariables([...vars, { key: '', value: '', type: 'default', enabled: true, description: '' }]);
+        } else {
+          setVariables(vars);
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -47,7 +53,8 @@ export default function EnvironmentSettingsTabContent() {
     setIsCreating(true);
     setSelectedView(null);
     setEnvironmentName('');
-    setVariables([]);
+    // Start with one empty row
+    setVariables([{ key: '', value: '', type: 'default', enabled: true, description: '' }]);
   };
 
   const handleSelectGlobals = () => {
@@ -57,11 +64,20 @@ export default function EnvironmentSettingsTabContent() {
     // Trigger a refresh in the background (don't await to prevent re-render)
     fetchWorkspaces().then(() => {
       const globalVars = getGlobalVariables();
-      setVariables(globalVars.length > 0 ? globalVars : []);
+      // Ensure there's always at least one empty row
+      if (globalVars.length === 0 || globalVars[globalVars.length - 1].key || globalVars[globalVars.length - 1].value) {
+        setVariables([...globalVars, { key: '', value: '', type: 'default', enabled: true, description: '' }]);
+      } else {
+        setVariables(globalVars);
+      }
     });
     // Set initial variables immediately
     const globalVars = getGlobalVariables();
-    setVariables(globalVars.length > 0 ? globalVars : []);
+    if (globalVars.length === 0 || globalVars[globalVars.length - 1].key || globalVars[globalVars.length - 1].value) {
+      setVariables([...globalVars, { key: '', value: '', type: 'default', enabled: true, description: '' }]);
+    } else {
+      setVariables(globalVars);
+    }
   };
 
   const handleSelectEnvironment = (id: string) => {
@@ -70,9 +86,12 @@ export default function EnvironmentSettingsTabContent() {
   };
 
   const handleSave = async () => {
+    // Filter out empty variables (rows with no key and no value)
+    const nonEmptyVariables = variables.filter(v => v.key || v.value);
+    
     if (isGlobals) {
       // Save global variables
-      await updateGlobalVariables(variables);
+      await updateGlobalVariables(nonEmptyVariables);
       return;
     }
 
@@ -82,15 +101,13 @@ export default function EnvironmentSettingsTabContent() {
     }
 
     if (isCreating) {
-      await createEnvironment(currentWorkspaceId, environmentName, variables);
+      await createEnvironment(currentWorkspaceId, environmentName, nonEmptyVariables);
       setIsCreating(false);
-      toast.success('Environment created successfully');
     } else if (selectedEnvironmentId) {
       await updateEnvironment(selectedEnvironmentId, {
         name: environmentName,
-        variables,
+        variables: nonEmptyVariables,
       });
-      toast.success('Environment updated successfully');
     }
   };
 
@@ -118,12 +135,10 @@ export default function EnvironmentSettingsTabContent() {
       setEnvironmentName('');
       setVariables([]);
     }
-    toast.success('Environment deleted successfully');
   };
 
   const handleDuplicate = async (id: string) => {
     await duplicateEnvironment(id);
-    toast.success('Environment duplicated successfully');
   };
 
   const handleExport = () => {
@@ -214,30 +229,30 @@ export default function EnvironmentSettingsTabContent() {
     }
   };
 
-  const addVariable = () => {
-    setVariables([
-      ...variables,
-      { key: '', value: '', type: 'default', enabled: true, description: '' },
-    ]);
-  };
-
   const updateVariable = (index: number, field: keyof EnvironmentVariable, value: any) => {
     const updated = [...variables];
     updated[index] = { ...updated[index], [field]: value };
+    
+    // Auto-add a new empty row if the last row is being edited and has content
+    const isLastRow = index === variables.length - 1;
+    const hasContent = updated[index].key || updated[index].value;
+    
+    if (isLastRow && hasContent) {
+      updated.push({ key: '', value: '', type: 'default', enabled: true, description: '' });
+    }
+    
     setVariables(updated);
   };
 
   const removeVariable = (index: number) => {
-    setVariables(variables.filter((_, i) => i !== index));
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+    const updated = variables.filter((_, i) => i !== index);
+    
+    // Ensure there's always at least one empty row
+    if (updated.length === 0) {
+      updated.push({ key: '', value: '', type: 'default', enabled: true, description: '' });
+    }
+    
+    setVariables(updated);
   };
 
   return (
@@ -247,18 +262,18 @@ export default function EnvironmentSettingsTabContent() {
         {/* Sidebar - Environment List */}
         <div className="w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col bg-gray-50 dark:bg-gray-800/50">
           {/* Search Bar with Actions */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2 mb-3">
+          <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search environments..."
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-1.5 pl-8 text-[12px] border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
                 <svg
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                  className="absolute left-2.5 top-2 w-[12px] h-[12px] text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -271,7 +286,7 @@ export default function EnvironmentSettingsTabContent() {
                 className="p-2 bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
                 title="Import environment"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
               </button>
@@ -280,7 +295,7 @@ export default function EnvironmentSettingsTabContent() {
                 className="p-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
                 title="New environment"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </button>
@@ -292,12 +307,14 @@ export default function EnvironmentSettingsTabContent() {
                 className="hidden"
               />
             </div>
-            {searchQuery && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          </div>
+          {searchQuery && (
+            <div className="px-4 py-1.5 bg-gray-50 dark:bg-gray-800/30 border-b border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {filteredEnvironments.length} environment{filteredEnvironments.length !== 1 ? 's' : ''} found
               </p>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Environment List */}
           <div className="flex-1 overflow-y-auto">
@@ -305,7 +322,7 @@ export default function EnvironmentSettingsTabContent() {
             <div
               onClick={handleSelectGlobals}
               className={`
-                px-4 py-3 cursor-pointer border-l-4 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors border-b border-gray-200 dark:border-gray-700
+                px-4 py-2.5 cursor-pointer border-l-4 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors
                 ${
                   isGlobals
                     ? 'border-l-primary-500 bg-white dark:bg-gray-700'
@@ -313,18 +330,13 @@ export default function EnvironmentSettingsTabContent() {
                 }
               `}
             >
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    Globals
-                  </span>
-                </div>
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                {getGlobalVariables().length} variable{getGlobalVariables().length !== 1 ? 's' : ''}
+              <div className="flex items-center gap-2">
+                <svg className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
+                  Globals <span className="text-xs font-normal text-gray-500 dark:text-gray-400">({getGlobalVariables().length})</span>
+                </span>
               </div>
             </div>
 
@@ -355,26 +367,22 @@ export default function EnvironmentSettingsTabContent() {
                   key={env.id}
                   onClick={() => handleSelectEnvironment(env.id)}
                   className={`
-                    px-4 py-3 cursor-pointer border-l-4 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors
+                    px-4 py-2.5 cursor-pointer border-l-4 hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors
                     ${selectedEnvironmentId === env.id 
                       ? 'border-l-primary-500 bg-white dark:bg-gray-700' 
                       : 'border-l-transparent'
                     }
                   `}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                      {env.name}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-gray-900 dark:text-gray-100 truncate">
+                      {env.name} <span className="text-xs font-normal text-gray-500 dark:text-gray-400">({env.variables?.length || 0})</span>
                     </span>
                     {activeEnvironmentId === env.id && (
                       <span className="flex-shrink-0 ml-2 px-2 py-0.5 text-xs font-medium text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/40 rounded">
                         Active
                       </span>
                     )}
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span>{env.variables?.length || 0} variables</span>
-                    {env.createdAt && <span>{formatDate(env.createdAt)}</span>}
                   </div>
                 </div>
               ))
@@ -387,11 +395,11 @@ export default function EnvironmentSettingsTabContent() {
           {(isCreating || selectedEnvironmentId || isGlobals) ? (
             <>
               {/* Environment Name & Actions */}
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30">
+              <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30">
                 <div className="flex items-center gap-4">
                   {isGlobals ? (
-                    <div className="flex-1 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
-                      <svg className="w-5 h-5 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-1 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      <svg className="w-3.5 h-3.5 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       Globals
@@ -403,7 +411,7 @@ export default function EnvironmentSettingsTabContent() {
                       value={environmentName}
                       onChange={(e) => setEnvironmentName(e.target.value)}
                       placeholder="Environment name (e.g., Development, Staging, Production)"
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                     />
                   )}
                   <div className="flex gap-2">
@@ -411,7 +419,7 @@ export default function EnvironmentSettingsTabContent() {
                       <>
                         <button
                           onClick={() => setActiveEnvironment(selectedEnvironmentId)}
-                          className={`px-4 py-2 text-sm rounded-md font-medium transition-colors ${
+                          className={`px-3 py-1.5 text-xs rounded-md font-medium transition-colors ${
                             activeEnvironmentId === selectedEnvironmentId
                               ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 cursor-default'
                               : 'bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-500'
@@ -422,25 +430,25 @@ export default function EnvironmentSettingsTabContent() {
                         </button>
                         <button
                           onClick={() => selectedEnvironmentId && handleDuplicate(selectedEnvironmentId)}
-                          className="px-4 py-2 text-sm bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 font-medium transition-colors flex items-center gap-2"
+                          className="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 font-medium transition-colors flex items-center gap-1.5"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                           Duplicate
                         </button>
                         <button
                           onClick={handleExport}
-                          className="px-4 py-2 text-sm bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 font-medium transition-colors flex items-center gap-2"
+                          className="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 font-medium transition-colors flex items-center gap-1.5"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                           Export
                         </button>
                         <button
                           onClick={() => handleStartDelete(environments.find(e => e.id === selectedEnvironmentId))}
-                          className="px-4 py-2 text-sm bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 font-medium transition-colors"
+                          className="px-3 py-1.5 text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-md hover:bg-red-200 dark:hover:bg-red-900/50 font-medium transition-colors"
                         >
                           Delete
                         </button>
@@ -449,8 +457,11 @@ export default function EnvironmentSettingsTabContent() {
                     <button
                       onClick={handleSave}
                       disabled={!isGlobals && !environmentName.trim()}
-                      className="px-4 py-2 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1.5 text-xs bg-primary-600 text-white rounded-md hover:bg-primary-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
                     >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                       {isCreating ? 'Create' : 'Save'}
                     </button>
                   </div>
@@ -459,19 +470,6 @@ export default function EnvironmentSettingsTabContent() {
 
               {/* Variables Section */}
               <div className="flex-1 overflow-y-auto p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Variables</h3>
-                  <button
-                    onClick={addVariable}
-                    className="px-4 py-2 text-sm bg-primary-600 text-white rounded-md hover:bg-primary-700 font-medium transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Variable
-                  </button>
-                </div>
-
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full">
@@ -539,29 +537,13 @@ export default function EnvironmentSettingsTabContent() {
                                 className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
                                 title="Remove variable"
                               >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                               </button>
                             </td>
                           </tr>
                         ))}
-                        {variables.length === 0 && (
-                          <tr>
-                            <td colSpan={6} className="px-4 py-12 text-center text-gray-500 dark:text-gray-400">
-                              <svg className="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
-                              </svg>
-                              <p className="mb-2">No variables yet</p>
-                              <button
-                                onClick={addVariable}
-                                className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                              >
-                                Click "Add Variable" to create one
-                              </button>
-                            </td>
-                          </tr>
-                        )}
                       </tbody>
                     </table>
                   </div>
@@ -621,14 +603,14 @@ export default function EnvironmentSettingsTabContent() {
                   setDeleteConfirmId(null);
                   setDeleteConfirmName('');
                 }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
                 disabled={deleteConfirmName !== environments.find((e) => e.id === deleteConfirmId)?.name}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Delete Environment
               </button>

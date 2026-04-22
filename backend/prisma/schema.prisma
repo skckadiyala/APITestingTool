@@ -103,6 +103,7 @@ model Request {
   
   // REST-specific fields
   requestBodyId   String?      @map("request_body_id")
+  pathParams      Json?        @default("[]") @map("path_params")
   params          Json?        @default("[]")
   headers         Json?        @default("[]")
   body            Json?
@@ -149,6 +150,7 @@ model RequestHistory {
   userId          String?   @map("user_id")
   method          String
   url             String
+  originalUrl     String?   @map("original_url")  // URL template with path param placeholders
   requestBodyId   String    @map("request_body_id")
   responseBodyId  String?   @map("response_body_id")
   statusCode      Int?      @map("status_code")

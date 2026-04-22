@@ -6,6 +6,7 @@ import {
   ExecutionResponse,
   ExecutionResult,
   KeyValuePair,
+  PathParam,
 } from '../types/request.types';
 import { TestScriptEngine } from './TestScriptEngine';
 import { VariableService } from './VariableService';
@@ -30,8 +31,46 @@ export class RequestExecutor {
     // Ensure required fields have default values
     config.headers = config.headers || [];
     config.params = config.params || [];
+    config.pathParams = config.pathParams || [];
     config.auth = config.auth || { type: 'none' };
     config.body = config.body || { type: 'none' };
+
+    // Store original URL (with path param placeholders)
+    const originalUrl = config.url;
+
+    // Validate path parameters and collect warnings
+    const validationResult = this.validatePathParams(config.pathParams);
+    const allWarnings: string[] = [...validationResult.warnings];
+
+    // Log validation warnings to console
+    if (allWarnings.length > 0) {
+      console.warn('⚠️ Path Parameter Validation Warnings:');
+      allWarnings.forEach(warning => console.warn(`  - ${warning}`));
+    }
+
+    // Check for critical errors
+    if (validationResult.errors.length > 0) {
+      console.error('❌ Path Parameter Validation Errors:');
+      validationResult.errors.forEach(error => console.error(`  - ${error}`));
+      
+      return {
+        success: false,
+        error: {
+          message: `Path parameter validation failed: ${validationResult.errors.join(', ')}`,
+          code: 'PATH_PARAM_VALIDATION_ERROR'
+        },
+        request: {
+          method: config.method,
+          url: config.url,
+          originalUrl,
+          pathParams: config.pathParams,
+          params: config.params,
+          headers: this.buildHeaders(config.headers, config.auth),
+          body: this.buildBody(config.body),
+        },
+        executedAt: new Date()
+      };
+    }
 
     // Get workspace ID from collection or environment
     let workspaceId: string | null = null;
@@ -214,7 +253,15 @@ export class RequestExecutor {
         } as AxiosResponse;
       } else {
         // Build the request for REST
-        const axiosConfig = this.buildAxiosConfig(config);
+        const { axiosConfig, warnings: buildWarnings } = this.buildAxiosConfig(config);
+        
+        // Log URL substitution warnings
+        if (buildWarnings.length > 0) {
+          console.warn('⚠️ URL Build Warnings:');
+          buildWarnings.forEach(warning => console.warn(`  - ${warning}`));
+          allWarnings.push(...buildWarnings);
+        }
+        
         actualUrl = axiosConfig.url!; // Store the actual URL with query params
 
         // Execute the REST request
@@ -224,7 +271,7 @@ export class RequestExecutor {
       const endTime = Date.now();
 
       // Parse and return the result
-      const result = this.buildSuccessResult(config, response, startTime, endTime, actualUrl);
+      const result = this.buildSuccessResult(config, response, startTime, endTime, actualUrl, originalUrl);
 
       // Execute test scripts if provided
       if (config.testScript && config.testScript.trim()) {
@@ -265,9 +312,9 @@ export class RequestExecutor {
       return result;
     } catch (error) {
       const endTime = Date.now();
-      const axiosConfig = this.buildAxiosConfig(config);
+      const { axiosConfig } = this.buildAxiosConfig(config);
       const actualUrl = axiosConfig.url!;
-      const result = this.buildErrorResult(config, error as AxiosError, startTime, endTime, actualUrl);
+      const result = this.buildErrorResult(config, error as AxiosError, startTime, endTime, actualUrl, originalUrl);
 
       // Execute test scripts even on error (to allow tests to check error conditions)
       if (config.testScript && config.testScript.trim()) {
@@ -299,11 +346,171 @@ export class RequestExecutor {
   }
 
   /**
+   * Validate path parameters and detect issues
+   * Returns validation warnings and errors
+   */
+  private validatePathParams(
+    pathParams: PathParam[] | undefined
+  ): { warnings: string[]; errors: string[] } {
+    const warnings: string[] = [];
+    const errors: string[] = [];
+
+    if (!pathParams || pathParams.length === 0) {
+      return { warnings, errors };
+    }
+
+    // Detect duplicate param names
+    const paramNames = pathParams.map(p => p.key);
+    const duplicates = paramNames.filter((name, index) => paramNames.indexOf(name) !== index);
+    if (duplicates.length > 0) {
+      const uniqueDuplicates = [...new Set(duplicates)];
+      uniqueDuplicates.forEach(dup => {
+        warnings.push(`Duplicate path parameter ':${dup}' - same value will be used for all occurrences`);
+      });
+    }
+
+    // Check for empty values
+    const emptyParams = pathParams.filter(p => !p.value || p.value.trim() === '');
+    if (emptyParams.length > 0) {
+      emptyParams.forEach(param => {
+        warnings.push(`Path parameter ':${param.key}' has no value`);
+      });
+    }
+
+    // Check for special characters
+    pathParams.forEach(param => {
+      if (param.value) {
+        // Warn if param value contains forward slash (likely mistake)
+        if (param.value.includes('/')) {
+          warnings.push(`Path parameter ':${param.key}' contains '/' character - this may be a mistake`);
+        }
+      }
+    });
+
+    // Detect malformed URL after substitution (basic check)
+    // We'll do more thorough validation after substitution
+
+    return { warnings, errors };
+  }
+
+  /**
+   * Encode path parameter value to be URL-safe
+   * Handles spaces, special characters, etc.
+   */
+  private encodePathParamValue(value: string): string {
+    // Don't encode if already looks encoded (contains %)
+    if (value.includes('%')) {
+      try {
+        // Try to decode and re-encode to ensure proper encoding
+        const decoded = decodeURIComponent(value);
+        return encodeURIComponent(decoded);
+      } catch {
+        // If decoding fails, encode as-is
+        return encodeURIComponent(value);
+      }
+    }
+    
+    // Encode the value
+    return encodeURIComponent(value);
+  }
+
+  /**
+   * Substitute path parameters in URL
+   * Replaces :paramName and {paramName} patterns with actual values
+   * Auto-encodes special characters
+   */
+  private substitutePathParams(
+    url: string,
+    pathParams: PathParam[] | undefined,
+    warnings: string[] = []
+  ): { url: string; unresolvedParams: string[] } {
+    if (!pathParams || pathParams.length === 0) {
+      return { url, unresolvedParams: [] };
+    }
+
+    let resultUrl = url;
+    const unresolvedParams: string[] = [];
+
+    pathParams.forEach(param => {
+      if (param.key) {
+        if (param.value !== undefined && param.value !== '') {
+          // Encode the value to handle special characters
+          const encodedValue = this.encodePathParamValue(param.value);
+          
+          // Replace both :paramName and {paramName} patterns
+          const colonPattern = new RegExp(`:${param.key}\\b`, 'g');
+          const bracePattern = new RegExp(`\\{${param.key}\\}`, 'g');
+          resultUrl = resultUrl.replace(colonPattern, encodedValue);
+          resultUrl = resultUrl.replace(bracePattern, encodedValue);
+        } else {
+          // Track unresolved params (empty value)
+          unresolvedParams.push(param.key);
+          // Leave placeholder in URL
+          warnings.push(`Path parameter ':${param.key}' not resolved (empty value)`);
+        }
+      }
+    });
+
+    return { url: resultUrl, unresolvedParams };
+  }
+
+  /**
+   * Validate URL after path param substitution
+   * Detects common issues like trailing slashes, double slashes, etc.
+   */
+  private validateSubstitutedUrl(url: string): string[] {
+    const warnings: string[] = [];
+
+    try {
+      const urlObj = new URL(url);
+      
+      // Check for trailing slash after path params
+      if (urlObj.pathname.endsWith('/') && urlObj.pathname.length > 1) {
+        warnings.push('URL path ends with / - check if path parameter values are correct');
+      }
+
+      // Check for double slashes in path (except after protocol)
+      const pathWithoutProtocol = url.replace(/^https?:\/\//, '');
+      if (pathWithoutProtocol.includes('//')) {
+        warnings.push('URL contains consecutive slashes // - check path parameter values');
+      }
+
+      // Check if path params placeholders still exist (unresolved)
+      if (url.match(/:[\w]+/) || url.match(/\{[\w]+\}/)) {
+        const unresolvedPlaceholders = url.match(/:[\w]+|\{[\w]+\}/g) || [];
+        warnings.push(`Unresolved path parameters in URL: ${unresolvedPlaceholders.join(', ')}`);
+      }
+    } catch (error) {
+      warnings.push('Malformed URL after path parameter substitution');
+    }
+
+    return warnings;
+  }
+
+  /**
    * Build axios configuration from our request config
    */
-  private buildAxiosConfig(config: RequestConfig): AxiosRequestConfig {
-    // Build URL with query params and auth query params
-    let url = this.buildUrl(config.url, config.params);
+  private buildAxiosConfig(config: RequestConfig): { axiosConfig: AxiosRequestConfig; warnings: string[] } {
+    const warnings: string[] = [];
+    
+    // First, substitute path parameters
+    const { url: urlWithPathParams, unresolvedParams } = this.substitutePathParams(
+      config.url,
+      config.pathParams,
+      warnings
+    );
+    
+    // Log if there are unresolved params
+    if (unresolvedParams.length > 0) {
+      console.warn(`⚠️ Unresolved path parameters: ${unresolvedParams.join(', ')}`);
+    }
+    
+    // Validate URL after substitution
+    const urlWarnings = this.validateSubstitutedUrl(urlWithPathParams);
+    warnings.push(...urlWarnings);
+    
+    // Then, build URL with query params and auth query params
+    let url = this.buildUrl(urlWithPathParams, config.params);
     
     // Add API key to query params if auth type is apikey with in: 'query'
     if (config.auth && config.auth.type === 'apikey' && 
@@ -331,6 +538,14 @@ export class RequestExecutor {
 
     // Handle SSL validation
     if (config.validateSSL === false) {
+      // Security Warning: SSL validation is disabled - log this for security auditing
+      console.warn('⚠️  [SECURITY] SSL certificate validation disabled for request:', {
+        url: config.url,
+        method: config.method,
+        timestamp: new Date().toISOString(),
+        warning: 'This connection is vulnerable to man-in-the-middle attacks',
+      });
+      
       axiosConfig.httpsAgent = new https.Agent({
         rejectUnauthorized: false,
       });
@@ -373,7 +588,7 @@ export class RequestExecutor {
     axiosConfig.httpAgent = new http.Agent({ keepAlive: true });
     axiosConfig.httpsAgent = axiosConfig.httpsAgent || new https.Agent({ keepAlive: true });
 
-    return axiosConfig;
+    return { axiosConfig, warnings };
   }
 
   /**
@@ -513,7 +728,8 @@ export class RequestExecutor {
     response: AxiosResponse,
     startTime: number,
     endTime: number,
-    actualUrl: string
+    actualUrl: string,
+    originalUrl?: string
   ): ExecutionResult {
     const responseTime = endTime - startTime;
 
@@ -555,6 +771,13 @@ export class RequestExecutor {
       request: {
         method: config.method,
         url: actualUrl,
+        originalUrl: originalUrl && originalUrl !== actualUrl ? originalUrl : undefined,
+        pathParams: config.pathParams && config.pathParams.length > 0 
+          ? config.pathParams.map(p => ({ key: p.key, value: p.value })) 
+          : undefined,
+        params: config.params && config.params.length > 0
+          ? config.params.filter(p => p.enabled).map(p => ({ key: p.key, value: p.value, enabled: p.enabled }))
+          : undefined,
         headers: this.buildHeaders(config.headers, config.auth),
         body: config.body.type !== 'none' ? this.buildBody(config.body) : undefined,
       },
@@ -571,7 +794,8 @@ export class RequestExecutor {
     error: AxiosError,
     startTime: number,
     endTime: number,
-    actualUrl: string
+    actualUrl: string,
+    originalUrl?: string
   ): ExecutionResult {
     const responseTime = endTime - startTime;
 
@@ -595,7 +819,14 @@ export class RequestExecutor {
         success: false,
         request: {
           method: config.method,
-          url: config.url,
+          url: actualUrl,
+          originalUrl: originalUrl && originalUrl !== actualUrl ? originalUrl : undefined,
+          pathParams: config.pathParams && config.pathParams.length > 0 
+            ? config.pathParams.map(p => ({ key: p.key, value: p.value })) 
+            : undefined,
+          params: config.params && config.params.length > 0
+            ? config.params.filter(p => p.enabled).map(p => ({ key: p.key, value: p.value, enabled: p.enabled }))
+            : undefined,
           headers: this.buildHeaders(config.headers, config.auth),
           body: config.body.type !== 'none' ? this.buildBody(config.body) : undefined,
         },
@@ -626,13 +857,20 @@ export class RequestExecutor {
       request: {
         method: config.method,
         url: actualUrl,
+        originalUrl: originalUrl && originalUrl !== actualUrl ? originalUrl : undefined,
+        pathParams: config.pathParams && config.pathParams.length > 0 
+          ? config.pathParams.map(p => ({ key: p.key, value: p.value })) 
+          : undefined,
+        params: config.params && config.params.length > 0
+          ? config.params.filter(p => p.enabled).map(p => ({ key: p.key, value: p.value, enabled: p.enabled }))
+          : undefined,
         headers: this.buildHeaders(config.headers, config.auth),
         body: config.body.type !== 'none' ? this.buildBody(config.body) : undefined,
       },
       error: {
         message: error.message || 'Request failed',
         code: error.code,
-        stack: error.stack,
+        // Stack trace intentionally omitted for security - logged server-side only
       },
       executedAt: new Date(startTime),
     };
@@ -838,6 +1076,14 @@ export class RequestExecutor {
         resolvedConfig.params = resolvedConfig.params.map(param => ({
           ...param,
           key: replaceVars(param.key),
+          value: replaceVars(param.value),
+        }));
+      }
+
+      // Resolve path parameters
+      if (resolvedConfig.pathParams) {
+        resolvedConfig.pathParams = resolvedConfig.pathParams.map(param => ({
+          ...param,
           value: replaceVars(param.value),
         }));
       }

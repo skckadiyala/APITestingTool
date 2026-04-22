@@ -1,4 +1,5 @@
 import type { TestResult, ExecuteResponse } from './api.types';
+import type { PathParam } from './request.types';
 
 export type DataFileFormat = 'csv' | 'json';
 
@@ -64,6 +65,7 @@ export interface RequestResult {
   name: string; // Alias for backward compatibility
   method: string;
   url: string;
+  pathParams?: PathParam[];
   status: 'passed' | 'failed' | 'skipped';
   statusCode?: number;
   response: ExecuteResponse;

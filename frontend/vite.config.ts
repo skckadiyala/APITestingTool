@@ -8,6 +8,12 @@ export default defineConfig(({ mode }) => {
   
   return {
     plugins: [react()],
+    worker: {
+      format: 'es',
+    },
+    optimizeDeps: {
+      include: ['monaco-editor'],
+    },
     server: {
       host: host.toLowerCase(),
       port: parseInt(env.VITE_FRONTEND_PORT || '5173'),

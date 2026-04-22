@@ -190,10 +190,10 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
         <div className="p-6">
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+            <h1 className="text-[12px] font-bold text-gray-900 dark:text-gray-100 mb-2">
               Run Collection
             </h1>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
+            <p className="text-[12px] text-gray-600 dark:text-gray-400">
               {collectionName}
             </p>
           </div>
@@ -208,10 +208,10 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-blue-900 dark:text-blue-100">
+                  <p className="text-[12px] font-medium text-blue-900 dark:text-blue-100">
                     Active Environment: {activeEnvironmentId ? environments.find(e => e.id === activeEnvironmentId)?.name || 'Unknown' : 'None'}
                   </p>
-                  <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                  <p className="text-[12px] text-blue-700 dark:text-blue-300 mt-0.5">
                     {activeEnvironmentId ? 'Variables from this environment will be used' : 'No environment selected. Use the environment selector in the top bar.'}
                   </p>
                 </div>
@@ -220,14 +220,14 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
 
             {/* Data File Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Data File (Optional)
               </label>
               <div className="flex gap-2">
                 <select
                   value={selectedDataFileId}
                   onChange={(e) => setSelectedDataFileId(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   disabled={loading || isRunning}
                 >
                   <option value="">No Data File</option>
@@ -240,7 +240,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                 <button
                   onClick={() => setShowUploadDialog(true)}
                   disabled={isRunning}
-                  className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2.5 text-[12px] bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Upload new data file"
                 >
                   <Upload className="w-4 h-4" />
@@ -248,7 +248,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                 {selectedDataFile && (
                   <button
                     onClick={() => setShowPreviewDialog(true)}
-                    className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md flex items-center gap-1.5"
+                    className="px-4 py-2.5 text-[12px] bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md flex items-center gap-1.5"
                     title="Preview data file"
                   >
                     <Eye className="w-4 h-4" />
@@ -256,11 +256,11 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                 )}
               </div>
               {selectedDataFile ? (
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-[12px] text-gray-500 dark:text-gray-400">
                   Will run {selectedDataFile.rowCount} iterations
                 </p>
               ) : (
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-[12px] text-gray-500 dark:text-gray-400">
                   Upload CSV/JSON to iterate with data
                 </p>
               )}
@@ -269,7 +269,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
             {/* Iterations (only if no data file) */}
             {!selectedDataFile && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Iterations
                 </label>
                 <input
@@ -278,10 +278,10 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                   max="100"
                   value={iterations}
                   onChange={(e) => setIterations(parseInt(e.target.value) || 1)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                   disabled={isRunning}
                 />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-[12px] text-gray-500 dark:text-gray-400">
                   Number of times to run the collection
                 </p>
               </div>
@@ -289,7 +289,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
 
             {/* Delay */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-[12px] font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Delay Between Requests (ms)
               </label>
               <input
@@ -299,10 +299,10 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                 step="100"
                 value={delay}
                 onChange={(e) => setDelay(parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
                 disabled={isRunning}
               />
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-[12px] text-gray-500 dark:text-gray-400">
                 Wait time between requests
               </p>
             </div>
@@ -310,10 +310,10 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
             {/* Stop on Error */}
             <div className="flex items-center justify-between py-2">
               <div>
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 block">
+                <label className="text-[12px] font-medium text-gray-700 dark:text-gray-300 block">
                   Stop on Error
                 </label>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">
                   Stop if a request fails
                 </p>
               </div>
@@ -338,7 +338,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
             {!hasResults && !isRunning && (
               <button
                 onClick={handleRun}
-                className="w-full px-4 py-2.5 text-sm bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-2.5 text-[12px] bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -350,7 +350,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
             {hasResults && !isRunning && (
               <button
                 onClick={handleConfigureNewRun}
-                className="w-full px-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors flex items-center justify-center gap-2"
+                className="w-full px-4 py-2.5 text-[12px] border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -390,10 +390,10 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
               <svg className="w-20 h-20 mx-auto mb-4 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
               </svg>
-              <h3 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-2">
+              <h3 className="text-[12px] font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Ready to Run
               </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-[12px] text-gray-500 dark:text-gray-400">
                 Configure your collection settings and click "Run Collection"
               </p>
             </div>
@@ -412,9 +412,9 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>
               </svg>
-              <div className="font-medium text-base text-gray-900 dark:text-gray-100 mb-2">Running Collection</div>
-              <div className="text-xs text-gray-600 dark:text-gray-400">{collectionName}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">Executing requests...</div>
+              <div className="font-medium text-[12px] text-gray-900 dark:text-gray-100 mb-2">Running Collection</div>
+              <div className="text-[12px] text-gray-600 dark:text-gray-400">{collectionName}</div>
+              <div className="text-[12px] text-gray-500 dark:text-gray-500 mt-2">Executing requests...</div>
             </div>
           </div>
         )}
@@ -427,10 +427,10 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
               <div className="flex items-center justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                    <h2 className="text-[12px] font-bold text-gray-900 dark:text-gray-100">
                       Results
                     </h2>
-                    <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
+                    <div className="flex items-center gap-3 text-[12px] text-gray-600 dark:text-gray-400">
                       <span className="flex items-center gap-1">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
@@ -452,7 +452,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleConfigureNewRun}
-                    className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors flex items-center gap-2"
+                    className="px-4 py-2.5 text-[12px] bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -464,7 +464,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                   <div className="relative" ref={exportMenuRef}>
                     <button
                       onClick={() => setShowExportMenu(!showExportMenu)}
-                      className="px-3 py-1.5 text-sm bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors flex items-center gap-2"
+                      className="px-4 py-2.5 text-[12px] bg-primary-600 hover:bg-primary-700 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors flex items-center gap-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -476,7 +476,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                     <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg z-10">
                       <button
                         onClick={() => handleExportResults('json')}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                        className="w-full text-left px-4 py-2.5 text-[12px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -485,7 +485,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                       </button>
                       <button
                         onClick={() => handleExportResults('html')}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                        className="w-full text-left px-4 py-2.5 text-[12px] text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -506,7 +506,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                     statusFilter === 'all' ? 'ring-2 ring-gray-500 dark:ring-gray-400 shadow-md' : ''
                   }`}
                 >
-                  <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  <div className="text-[12px] font-semibold text-gray-900 dark:text-gray-100">
                     Total ({runResults.totalRequests})
                   </div>
                 </button>
@@ -516,7 +516,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                     statusFilter === 'passed' ? 'ring-2 ring-green-500 dark:ring-green-400 shadow-md' : ''
                   }`}
                 >
-                  <div className="text-sm font-semibold text-green-700 dark:text-green-300">
+                  <div className="text-[12px] font-semibold text-green-700 dark:text-green-300">
                     Passed ({runResults.totalPassed})
                   </div>
                 </button>
@@ -526,17 +526,17 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                     statusFilter === 'failed' ? 'ring-2 ring-red-500 dark:ring-red-400 shadow-md' : ''
                   }`}
                 >
-                  <div className="text-sm font-semibold text-red-700 dark:text-red-300">
+                  <div className="text-[12px] font-semibold text-red-700 dark:text-red-300">
                     Failed ({runResults.totalFailed})
                   </div>
                 </button>
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg px-4 py-2.5">
-                  <div className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                  <div className="text-[12px] font-semibold text-blue-700 dark:text-blue-300">
                     Success ({successRate}%)
                   </div>
                 </div>
                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg px-4 py-2.5">
-                  <div className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+                  <div className="text-[12px] font-semibold text-purple-700 dark:text-purple-300">
                     Time ({runResults.totalTime}ms)
                   </div>
                 </div>
@@ -548,7 +548,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
               {/* Iterations Sidebar */}
               <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto flex-shrink-0">
                 <div className="p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                  <h3 className="text-[12px] font-semibold text-gray-900 dark:text-gray-100 mb-3">
                     Iterations ({runResults.iterations.length})
                   </h3>
                   <div className="space-y-2">
@@ -558,7 +558,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                         onClick={() => {
                           updateRunnerState({ selectedIteration: index, selectedRequest: null });
                         }}
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                        className={`w-full text-left px-3 py-2 rounded-md text-[12px] transition-colors ${
                           selectedIteration === index
                             ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 border border-primary-200 dark:border-primary-800'
                             : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
@@ -585,7 +585,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                 {/* Request List */}
                 <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-y-auto flex-shrink-0">
                   <div className="p-4">
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                  <h3 className="text-[12px] font-semibold text-gray-900 dark:text-gray-100 mb-3">
                       Requests ({currentIteration?.results.filter((r: RequestResult) => 
                         statusFilter === 'all' || r.status === statusFilter
                       ).length || 0})
@@ -597,7 +597,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                         <button
                           key={index}
                           onClick={() => updateRunnerState({ selectedRequest: result })}
-                          className={`w-full text-left p-3 rounded-md text-sm transition-colors border ${
+                          className={`w-full text-left p-3 rounded-md text-[12px] transition-colors border ${
                             selectedRequest === result
                               ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
                               : 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -619,6 +619,14 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                           <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                             {result.statusCode && <span>Status: {result.statusCode}</span>}
                             {result.responseTime && <span>• {result.responseTime}ms</span>}
+                            {result.pathParams && result.pathParams.length > 0 && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {result.pathParams.length} param{result.pathParams.length !== 1 ? 's' : ''}
+                              </span>
+                            )}
                           </div>
                         </button>
                       ))}
@@ -632,16 +640,36 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                     <div className="p-6">
                       <div className="mb-6">
                         <div className="flex items-center gap-3 mb-4">
-                          <span className={`px-3 py-1 text-sm font-medium rounded ${getMethodColor(selectedRequest.method)}`}>
+                          <span className={`px-3 py-1 text-[12px] font-medium rounded ${getMethodColor(selectedRequest.method)}`}>
                             {selectedRequest.method}
                           </span>
-                          <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">
+                          <h2 className="text-[12px] font-bold text-gray-900 dark:text-gray-100">
                             {selectedRequest.requestName}
                           </h2>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 font-mono bg-gray-50 dark:bg-gray-900 p-3 rounded">
+                        <div className="text-[12px] text-gray-600 dark:text-gray-400 font-mono bg-gray-50 dark:bg-gray-900 p-3 rounded">
                           {selectedRequest.url}
                         </div>
+                        
+                        {/* Path Parameters */}
+                        {selectedRequest.pathParams && selectedRequest.pathParams.length > 0 && (
+                          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+                            <div className="flex items-center gap-2 mb-2">
+                              <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className="text-[12px] font-semibold text-blue-700 dark:text-blue-300">Path Parameters</span>
+                            </div>
+                            <div className="space-y-1">
+                              {selectedRequest.pathParams.map((param, index) => (
+                                <div key={index} className="flex items-center gap-2 text-[12px]">
+                                  <span className="font-medium text-blue-800 dark:text-blue-200">{param.key}:</span>
+                                  <span className="text-blue-600 dark:text-blue-400 font-mono">{param.value}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Status */}
@@ -667,13 +695,13 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                           </span>
                         </div>
                         {selectedRequest.statusCode && (
-                          <div className="text-sm">
+                          <div className="text-[12px]">
                             <span className="text-gray-600 dark:text-gray-400">Status Code:</span>{' '}
                             <span className="font-medium text-gray-900 dark:text-gray-100">{selectedRequest.statusCode}</span>
                           </div>
                         )}
                         {selectedRequest.responseTime && (
-                          <div className="text-sm">
+                          <div className="text-[12px]">
                             <span className="text-gray-600 dark:text-gray-400">Response Time:</span>{' '}
                             <span className="font-medium text-gray-900 dark:text-gray-100">{selectedRequest.responseTime}ms</span>
                           </div>
@@ -683,8 +711,8 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                       {/* Error */}
                       {selectedRequest.error && (
                         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
-                          <h3 className="text-sm font-semibold text-red-800 dark:text-red-300 mb-2">Error</h3>
-                          <pre className="text-xs text-red-700 dark:text-red-400 font-mono whitespace-pre-wrap">
+                          <h3 className="text-[12px] font-semibold text-red-800 dark:text-red-300 mb-2">Error</h3>
+                          <pre className="text-[12px] text-red-700 dark:text-red-400 font-mono whitespace-pre-wrap">
                             {selectedRequest.error}
                           </pre>
                         </div>
@@ -693,7 +721,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                       {/* Test Results */}
                       {selectedRequest.testResults && (
                         <div>
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                          <h3 className="text-[12px] font-semibold text-gray-900 dark:text-gray-100 mb-3">
                             Test Results ({Array.isArray(selectedRequest.testResults) 
                               ? selectedRequest.testResults.filter(t => t.passed).length
                               : selectedRequest.testResults.passed} passed, {Array.isArray(selectedRequest.testResults)
@@ -724,13 +752,13 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                                     </svg>
                                   )}
                                   <div className="flex-1">
-                                    <div className={`text-sm font-medium ${
+                                    <div className={`text-[12px] font-medium ${
                                       test.passed ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'
                                     }`}>
                                       {test.name}
                                     </div>
                                     {test.error && (
-                                      <div className="text-xs text-red-700 dark:text-red-400 mt-1 font-mono">
+                                      <div className="text-[12px] text-red-700 dark:text-red-400 mt-1 font-mono">
                                         {test.error}
                                       </div>
                                     )}
@@ -748,7 +776,7 @@ export default function CollectionRunnerTab({ collectionId, collectionName }: Co
                         <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                         </svg>
-                        <p className="text-sm">Select a request to view details</p>
+                        <p className="text-[12px]">Select a request to view details</p>
                       </div>
                     </div>
                   )}

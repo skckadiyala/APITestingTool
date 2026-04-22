@@ -5,6 +5,12 @@ export interface KeyValuePair {
   description?: string;
 }
 
+export interface PathParam {
+  key: string;
+  value: string;
+  description?: string;
+}
+
 export type RequestType = 'REST' | 'GRAPHQL' | 'WEBSOCKET';
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS';
 export type BodyType = 'none' | 'json' | 'x-www-form-urlencoded' | 'form-data' | 'xml' | 'raw' | 'binary';
@@ -93,6 +99,7 @@ export interface RequestConfig {
   requestType?: RequestType;
   method: HttpMethod;
   url: string;
+  pathParams?: PathParam[];
   params: KeyValuePair[];
   headers: KeyValuePair[];
   body: {
@@ -161,6 +168,9 @@ export interface ExecutionResult {
   request: {
     method: HttpMethod;
     url: string;
+    originalUrl?: string; // URL with path param placeholders (e.g., /users/:id)
+    pathParams?: Array<{ key: string; value: string }>;
+    params?: KeyValuePair[];
     headers: Record<string, string>;
     body?: any;
   };

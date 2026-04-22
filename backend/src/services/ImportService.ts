@@ -72,8 +72,8 @@ export class ImportService {
     const processItems = async (items: any[], parentId: string) => {
       for (const item of items) {
         if (item.request) {
-          // It's a request - use URLParser utility
-          const { url, params } = URLParser.parsePostmanUrl(item.request.url);
+          // It's a request - use URLParser utility to extract URL, query params, and path params
+          const { url, params, pathParams } = URLParser.parsePostmanUrl(item.request.url);
 
           // Convert headers to our format using utility
           const headers = URLParser.convertHeadersFromPostman(item.request.header || []);
@@ -180,6 +180,7 @@ export class ImportService {
               name: item.name || 'Untitled Request',
               method: item.request.method || 'GET',
               url,
+              pathParams: pathParams.length > 0 ? pathParams : [] as any,
               params: params.length > 0 ? params : [] as any,
               headers: headers,
               body: body,

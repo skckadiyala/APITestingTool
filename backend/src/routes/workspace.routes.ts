@@ -30,10 +30,12 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
       data: workspace,
     });
   } catch (error: any) {
+    // Log full error details for debugging
     console.error('Create workspace error:', error);
+    // Send sanitized error to client
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to create workspace',
+      message: 'Failed to create workspace',
     });
   }
 });
@@ -51,10 +53,12 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       data: workspaces,
     });
   } catch (error: any) {
+    // Log full error details for debugging
     console.error('Get workspaces error:', error);
+    // Send sanitized error to client
     return res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch workspaces',
+      message: 'Failed to fetch workspaces',
     });
   }
 });
@@ -74,11 +78,14 @@ router.get('/:id', authenticate, requireWorkspaceViewer(), async (req: AuthReque
       data: workspace,
     });
   } catch (error: any) {
+    // Log full error details for debugging
     console.error('Get workspace error:', error);
-    const statusCode = error.message.includes('not found') ? 404 : 500;
+    // Determine status code based on error type (not message content for security)
+    const statusCode = error.statusCode || 500;
+    // Send sanitized error to client
     return res.status(statusCode).json({
       success: false,
-      message: error.message || 'Failed to fetch workspace',
+      message: statusCode === 404 ? 'Workspace not found' : 'Failed to fetch workspace',
     });
   }
 });
@@ -112,11 +119,14 @@ router.put('/:id', authenticate, requireWorkspaceViewer(), async (req: AuthReque
       data: workspace,
     });
   } catch (error: any) {
+    // Log full error details for debugging
     console.error('Update workspace error:', error);
-    const statusCode = error.message.includes('not found') ? 404 : 500;
+    // Determine status code based on error type (not message content for security)
+    const statusCode = error.statusCode || 500;
+    // Send sanitized error to client
     return res.status(statusCode).json({
       success: false,
-      message: error.message || 'Failed to update workspace',
+      message: statusCode === 404 ? 'Workspace not found' : 'Failed to update workspace',
     });
   }
 });
@@ -136,15 +146,14 @@ router.delete('/:id', authenticate, requireWorkspaceOwner(), async (req: AuthReq
       message: 'Workspace deleted successfully',
     });
   } catch (error: any) {
+    // Log full error details for debugging
     console.error('Delete workspace error:', error);
-    const statusCode = error.message.includes('not found')
-      ? 404
-      : error.message.includes('only workspace')
-      ? 400
-      : 500;
+    // Determine status code based on error type (not message content for security)
+    const statusCode = error.statusCode || 500;
+    // Send sanitized error to client
     return res.status(statusCode).json({
       success: false,
-      message: error.message || 'Failed to delete workspace',
+      message: statusCode === 404 ? 'Workspace not found' : statusCode === 403 ? 'Cannot delete last workspace' : 'Failed to delete workspace',
     });
   }
 });
@@ -165,11 +174,14 @@ router.post('/:id/duplicate', authenticate, requireWorkspaceViewer(), async (req
       data: workspace,
     });
   } catch (error: any) {
+    // Log full error details for debugging
     console.error('Duplicate workspace error:', error);
-    const statusCode = error.message.includes('not found') ? 404 : 500;
+    // Determine status code based on error type (not message content for security)
+    const statusCode = error.statusCode || 500;
+    // Send sanitized error to client
     return res.status(statusCode).json({
       success: false,
-      message: error.message || 'Failed to duplicate workspace',
+      message: statusCode === 404 ? 'Workspace not found' : 'Failed to duplicate workspace',
     });
   }
 });

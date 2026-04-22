@@ -1,4 +1,5 @@
 import apiClient from './api';
+import type { PathParam } from '../types/request.types';
 
 export interface KeyValuePair {
   key: string;
@@ -32,6 +33,7 @@ export interface RequestConfig {
   method: HttpMethod;
   url: string;
   requestType?: 'REST' | 'GRAPHQL' | 'WEBSOCKET'; // Request type
+  pathParams?: PathParam[];
   params: KeyValuePair[];
   headers: KeyValuePair[];
   body: {
@@ -82,6 +84,8 @@ export interface ExecutionResult {
   request: {
     method: HttpMethod;
     url: string;
+    originalUrl?: string; // URL with path param placeholders
+    pathParams?: Array<{ key: string; value: string }>; // Path parameters used
     headers: Record<string, string>;
     body?: any;
   };
