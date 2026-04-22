@@ -18,7 +18,6 @@ interface URLBarProps {
   onRequestNameChange?: (name: string) => void;
   onSend: () => void;
   onSave: () => void;
-  onViewPathParams?: () => void;
   isLoading?: boolean;
   isSaved?: boolean;
   isExistingRequest?: boolean;
@@ -49,7 +48,7 @@ export default function URLBar({
   onRequestNameChange,
   onSend,
   onSave,
-  onViewPathParams,
+  // onViewPathParams,
   isLoading = false,
   isSaved = false,
   isExistingRequest = false,
@@ -67,12 +66,6 @@ export default function URLBar({
   }, [url]);
 
   // Check which path params have empty values
-  const emptyPathParams = useMemo(() => {
-    return pathParams.filter(p => !p.value || p.value.trim() === '');
-  }, [pathParams]);
-
-  const hasEmptyPathParams = emptyPathParams.length > 0;
-
   // Render URL with syntax highlighting for path params
   const renderHighlightedUrl = (url: string) => {
     // Split by path params (:paramName or {paramName})

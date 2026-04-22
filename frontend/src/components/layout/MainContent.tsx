@@ -1362,7 +1362,6 @@ pm.test("Response has correct structure", function () {
             onRequestTypeChange={handleRequestTypeChange}
             onSend={handleSend}
             onSave={handleSave}
-            onViewPathParams={() => handleActiveTabChange('params')}
             isLoading={isLoading}
             isSaved={isSaved}
             isExistingRequest={!!tabs.find(t => t.id === activeTabId)?.requestId}
